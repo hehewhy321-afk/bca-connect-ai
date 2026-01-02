@@ -13,20 +13,24 @@ import {
   LogOut,
   Menu,
   X,
-  Bell,
   ChevronDown,
+  MessageSquare,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 
 const sidebarLinks = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Events", href: "/dashboard/events", icon: Calendar },
   { name: "Resources", href: "/dashboard/resources", icon: BookOpen },
   { name: "AI Assistant", href: "/dashboard/ai-assistant", icon: Bot },
+  { name: "Forum", href: "/dashboard/forum", icon: MessageSquare },
   { name: "Community", href: "/dashboard/community", icon: Users },
   { name: "Achievements", href: "/dashboard/achievements", icon: Trophy },
+  { name: "Admin", href: "/dashboard/admin", icon: Shield },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -147,10 +151,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {/* Right Side */}
             <div className="flex items-center gap-3">
               {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-secondary rounded-full" />
-              </Button>
+              <NotificationsDropdown />
 
               {/* User Menu */}
               <div className="flex items-center gap-2">

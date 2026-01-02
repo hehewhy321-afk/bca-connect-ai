@@ -14,6 +14,15 @@ import Resources from "./pages/Resources";
 import Achievements from "./pages/Achievements";
 import Community from "./pages/Community";
 import Settings from "./pages/Settings";
+import Forum from "./pages/Forum";
+import ForumPost from "./pages/ForumPost";
+import NewForumPost from "./pages/NewForumPost";
+import AdminPanel from "./pages/admin/AdminPanel";
+import AdminEvents from "./pages/admin/AdminEvents";
+import EventForm from "./pages/admin/EventForm";
+import AdminResources from "./pages/admin/AdminResources";
+import ResourceForm from "./pages/admin/ResourceForm";
+import AdminMembers from "./pages/admin/AdminMembers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,62 +56,24 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthRedirect />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/ai-assistant"
-              element={
-                <ProtectedRoute>
-                  <AIAssistant />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/events"
-              element={
-                <ProtectedRoute>
-                  <Events />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/resources"
-              element={
-                <ProtectedRoute>
-                  <Resources />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/achievements"
-              element={
-                <ProtectedRoute>
-                  <Achievements />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/community"
-              element={
-                <ProtectedRoute>
-                  <Community />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/ai-assistant" element={<ProtectedRoute><AIAssistant /></ProtectedRoute>} />
+            <Route path="/dashboard/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+            <Route path="/dashboard/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+            <Route path="/dashboard/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+            <Route path="/dashboard/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+            <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/dashboard/forum" element={<ProtectedRoute><Forum /></ProtectedRoute>} />
+            <Route path="/dashboard/forum/new" element={<ProtectedRoute><NewForumPost /></ProtectedRoute>} />
+            <Route path="/dashboard/forum/:id" element={<ProtectedRoute><ForumPost /></ProtectedRoute>} />
+            <Route path="/dashboard/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+            <Route path="/dashboard/admin/events" element={<ProtectedRoute><AdminEvents /></ProtectedRoute>} />
+            <Route path="/dashboard/admin/events/new" element={<ProtectedRoute><EventForm /></ProtectedRoute>} />
+            <Route path="/dashboard/admin/events/:id" element={<ProtectedRoute><EventForm /></ProtectedRoute>} />
+            <Route path="/dashboard/admin/resources" element={<ProtectedRoute><AdminResources /></ProtectedRoute>} />
+            <Route path="/dashboard/admin/resources/new" element={<ProtectedRoute><ResourceForm /></ProtectedRoute>} />
+            <Route path="/dashboard/admin/resources/:id" element={<ProtectedRoute><ResourceForm /></ProtectedRoute>} />
+            <Route path="/dashboard/admin/members" element={<ProtectedRoute><AdminMembers /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
