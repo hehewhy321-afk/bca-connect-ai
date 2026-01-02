@@ -1,44 +1,70 @@
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { GraduationCap, Mail, Phone, MapPin, Facebook, Instagram, Twitter, Linkedin, Github } from "lucide-react";
 
 const footerLinks = {
   quickLinks: [
-    { name: "About Us", href: "#about" },
-    { name: "Features", href: "#features" },
-    { name: "Events", href: "#events" },
-    { name: "Resources", href: "#resources" },
-    { name: "Community", href: "#community" },
+    { name: "About Us", href: "/about" },
+    { name: "Events", href: "/dashboard/events", requiresAuth: true },
+    { name: "Resources", href: "/dashboard/resources", requiresAuth: true },
+    { name: "Community", href: "/dashboard/community", requiresAuth: true },
+    { name: "Notice", href: "/notice" },
   ],
   resources: [
-    { name: "Study Materials", href: "#" },
-    { name: "Past Papers", href: "#" },
-    { name: "Project Repository", href: "#" },
-    { name: "Interview Prep", href: "#" },
-    { name: "Career Portal", href: "#" },
+    { name: "Study Materials", href: "/dashboard/resources", requiresAuth: true },
+    { name: "Past Papers", href: "/dashboard/resources", requiresAuth: true },
+    { name: "AI Assistant", href: "/dashboard/ai-assistant", requiresAuth: true },
+    { name: "Forum", href: "/dashboard/forum", requiresAuth: true },
+    { name: "Achievements", href: "/dashboard/achievements", requiresAuth: true },
   ],
   support: [
-    { name: "FAQs", href: "#" },
-    { name: "Contact Us", href: "#" },
-    { name: "Privacy Policy", href: "#" },
-    { name: "Terms of Service", href: "#" },
+    { name: "FAQs", href: "/faq" },
+    { name: "Contact Us", href: "/contact" },
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms of Service", href: "/terms" },
   ],
 };
 
 const socialLinks = [
-  { icon: Facebook, href: "#", label: "Facebook" },
-  { icon: Instagram, href: "#", label: "Instagram" },
-  { icon: Twitter, href: "#", label: "Twitter" },
-  { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: Github, href: "#", label: "GitHub" },
+  { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
+  { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+  { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
+  { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
+  { icon: Github, href: "https://github.com", label: "GitHub" },
 ];
 
 export function Footer() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavClick = (href: string) => {
+    // Check if it's a hash link for the home page
+    if (href.startsWith("#")) {
+      if (location.pathname === "/") {
+        const element = document.querySelector(href);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      } else {
+        navigate("/");
+        setTimeout(() => {
+          const element = document.querySelector(href);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 100);
+      }
+    } else {
+      navigate(href);
+    }
+  };
+
   return (
     <footer className="bg-card border-t border-border">
       <div className="container mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <a href="#home" className="flex items-center gap-2 mb-4">
+            <Link to="/" className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <GraduationCap className="w-6 h-6 text-primary-foreground" />
               </div>
@@ -48,7 +74,7 @@ export function Footer() {
                 </span>
                 <span className="text-xs text-muted-foreground">MMAMC Nepal</span>
               </div>
-            </a>
+            </Link>
             <p className="text-muted-foreground mb-6 max-w-sm">
               Empowering future tech leaders through AI-powered learning,
               collaborative projects, and industry connections.
@@ -60,14 +86,14 @@ export function Footer() {
                 <MapPin className="w-4 h-4 text-primary" />
                 <span>MMAMC College, Biratnagar, Nepal</span>
               </div>
-              <div className="flex items-center gap-3">
+              <a href="mailto:bca@mmamc.edu.np" className="flex items-center gap-3 hover:text-primary transition-colors">
                 <Mail className="w-4 h-4 text-primary" />
                 <span>bca@mmamc.edu.np</span>
-              </div>
-              <div className="flex items-center gap-3">
+              </a>
+              <a href="tel:+97721123456" className="flex items-center gap-3 hover:text-primary transition-colors">
                 <Phone className="w-4 h-4 text-primary" />
                 <span>+977 21-123456</span>
-              </div>
+              </a>
             </div>
 
             {/* Social Links */}
@@ -76,6 +102,8 @@ export function Footer() {
                 <a
                   key={social.label}
                   href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={social.label}
                   className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
                 >
@@ -93,12 +121,12 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.quickLinks.map((link) => (
                 <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-muted-foreground hover:text-primary transition-colors"
+                  <button
+                    onClick={() => handleNavClick(link.href)}
+                    className="text-muted-foreground hover:text-primary transition-colors text-left"
                   >
                     {link.name}
-                  </a>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -112,12 +140,12 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.resources.map((link) => (
                 <li key={link.name}>
-                  <a
-                    href={link.href}
-                    className="text-muted-foreground hover:text-primary transition-colors"
+                  <button
+                    onClick={() => handleNavClick(link.href)}
+                    className="text-muted-foreground hover:text-primary transition-colors text-left"
                   >
                     {link.name}
-                  </a>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -131,12 +159,12 @@ export function Footer() {
             <ul className="space-y-3">
               {footerLinks.support.map((link) => (
                 <li key={link.name}>
-                  <a
-                    href={link.href}
+                  <Link
+                    to={link.href}
                     className="text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -148,9 +176,15 @@ export function Footer() {
           <p className="text-sm text-muted-foreground">
             © 2026 BCA Association, MMAMC College. All rights reserved.
           </p>
-          <p className="text-sm text-muted-foreground">
-            Made with ❤️ in Nepal
-          </p>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <Link to="/privacy" className="hover:text-primary transition-colors">
+              Privacy
+            </Link>
+            <Link to="/terms" className="hover:text-primary transition-colors">
+              Terms
+            </Link>
+            <span>Made with ❤️ in Nepal</span>
+          </div>
         </div>
       </div>
     </footer>
