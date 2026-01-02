@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -69,7 +69,7 @@ export default function ResourceForm() {
       });
     } catch (error) {
       console.error("Error fetching resource:", error);
-      navigate("/dashboard/admin/resources");
+      navigate("/admin/resources");
     }
   };
 
@@ -158,7 +158,7 @@ export default function ResourceForm() {
         });
       }
 
-      navigate("/dashboard/admin/resources");
+      navigate("/admin/resources");
     } catch (error) {
       console.error("Error saving resource:", error);
       toast({
@@ -172,12 +172,12 @@ export default function ResourceForm() {
   };
 
   return (
-    <DashboardLayout>
+    <AdminLayout>
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <Link
-            to="/dashboard/admin/resources"
+            to="/admin/resources"
             className="p-2 rounded-lg hover:bg-muted transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -349,13 +349,13 @@ export default function ResourceForm() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/dashboard/admin/resources")}
+              onClick={() => navigate("/admin/resources")}
             >
               Cancel
             </Button>
           </div>
         </motion.form>
       </div>
-    </DashboardLayout>
+    </AdminLayout>
   );
 }
