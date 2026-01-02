@@ -26,6 +26,11 @@ import AdminMembers from "./pages/admin/AdminMembers";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminNotices from "./pages/admin/AdminNotices";
 import Notice from "./pages/Notice";
+import FAQ from "./pages/FAQ";
+import Contact from "./pages/Contact";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +65,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthRedirect />} />
             <Route path="/notice" element={<Notice />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/about" element={<About />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard/ai-assistant" element={<ProtectedRoute><AIAssistant /></ProtectedRoute>} />
             <Route path="/dashboard/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
