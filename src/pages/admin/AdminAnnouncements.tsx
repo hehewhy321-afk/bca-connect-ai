@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -202,7 +202,7 @@ export default function AdminAnnouncements() {
   };
 
   return (
-    <DashboardLayout>
+    <AdminLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -389,6 +389,6 @@ export default function AdminAnnouncements() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </AdminLayout>
   );
 }

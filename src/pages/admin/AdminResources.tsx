@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -92,13 +92,13 @@ export default function AdminResources() {
   );
 
   return (
-    <DashboardLayout>
+    <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link
-              to="/dashboard/admin"
+              to="/admin"
               className="p-2 rounded-lg hover:bg-muted transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -112,7 +112,7 @@ export default function AdminResources() {
               </p>
             </div>
           </div>
-          <Button onClick={() => navigate("/dashboard/admin/resources/new")}>
+          <Button onClick={() => navigate("/admin/resources/new")}>
             <Plus className="w-4 h-4 mr-2" />
             Upload Resource
           </Button>
@@ -148,7 +148,7 @@ export default function AdminResources() {
             <p className="text-muted-foreground mb-4">
               Upload your first resource to get started.
             </p>
-            <Button onClick={() => navigate("/dashboard/admin/resources/new")}>
+            <Button onClick={() => navigate("/admin/resources/new")}>
               <Plus className="w-4 h-4 mr-2" />
               Upload Resource
             </Button>
@@ -202,7 +202,7 @@ export default function AdminResources() {
                       variant="ghost"
                       size="icon"
                       onClick={() =>
-                        navigate(`/dashboard/admin/resources/${resource.id}`)
+                        navigate(`/admin/resources/${resource.id}`)
                       }
                     >
                       <Edit className="w-4 h-4" />
@@ -222,6 +222,6 @@ export default function AdminResources() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </AdminLayout>
   );
 }

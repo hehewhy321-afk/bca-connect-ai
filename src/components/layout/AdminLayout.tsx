@@ -1,62 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   GraduationCap,
-  LayoutDashboard,
+  Shield,
   Calendar,
   BookOpen,
   Users,
-  Bot,
-  Trophy,
-  Settings,
+  Bell,
+  FileText,
   LogOut,
   Menu,
   X,
-  ChevronDown,
-  MessageSquare,
-  Shield,
+  LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 import { useUserRole } from "@/hooks/useUserRole";
 
-interface SidebarLink {
-  name: string;
-  href: string;
-  icon: typeof LayoutDashboard;
-  adminOnly?: boolean;
-}
-
-const sidebarLinks: SidebarLink[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Events", href: "/dashboard/events", icon: Calendar },
-  { name: "Resources", href: "/dashboard/resources", icon: BookOpen },
-  { name: "AI Assistant", href: "/dashboard/ai-assistant", icon: Bot },
-  { name: "Forum", href: "/dashboard/forum", icon: MessageSquare },
-  { name: "Community", href: "/dashboard/community", icon: Users },
-  { name: "Achievements", href: "/dashboard/achievements", icon: Trophy },
-  { name: "Admin Panel", href: "/admin", icon: Shield, adminOnly: true },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+const adminLinks = [
+  { name: "Overview", href: "/admin", icon: Shield },
+  { name: "Events", href: "/admin/events", icon: Calendar },
+  { name: "Resources", href: "/admin/resources", icon: BookOpen },
+  { name: "Members", href: "/admin/members", icon: Users },
+  { name: "Announcements", href: "/admin/announcements", icon: Bell },
+  { name: "Notices", href: "/admin/notices", icon: FileText },
 ];
 
-interface DashboardLayoutProps {
+interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
-  const { isAdmin, isModerator } = useUserRole();
+  const { isAdmin, isModerator, loading } = useUserRole();
 
-  const filteredLinks = sidebarLinks.filter(
-    (link) => !link.adminOnly || isAdmin || isModerator
-  );
+  useEffect(() => {
+    if (!loading && !isAdmin && !isModerator) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to access the admin panel.",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
+    }
+  }, [isAdmin, isModerator, loading, navigate, toast]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -66,6 +59,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     });
     navigate("/");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAdmin && !isModerator) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -90,23 +95,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         {/* Logo */}
         <div className="p-4 border-b border-border">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/admin" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-primary-foreground" />
+              <Shield className="w-6 h-6 text-primary-foreground" />
             </div>
             <div className="flex flex-col">
               <span className="font-heading font-bold text-lg text-foreground">
-                BCA Association
+                Admin Panel
               </span>
-              <span className="text-xs text-muted-foreground">MMAMC Nepal</span>
+              <span className="text-xs text-muted-foreground">MMAMC BCA</span>
             </div>
           </Link>
         </div>
 
         {/* Nav Links */}
         <nav className="p-4 space-y-1">
-          {filteredLinks.map((link) => {
-            const isActive = location.pathname === link.href || location.pathname.startsWith(link.href + "/");
+          {adminLinks.map((link) => {
+            const isActive = location.pathname === link.href || 
+              (link.href !== "/admin" && location.pathname.startsWith(link.href));
             return (
               <Link
                 key={link.name}
@@ -125,8 +131,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           })}
         </nav>
 
-        {/* Sign Out */}
-        <div className="absolute bottom-4 left-4 right-4">
+        {/* Bottom Actions */}
+        <div className="absolute bottom-4 left-4 right-4 space-y-2">
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-3"
+            onClick={() => navigate("/dashboard")}
+          >
+            <LayoutDashboard className="w-5 h-5" />
+            User Dashboard
+          </Button>
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
@@ -157,25 +171,21 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
             {/* Page Title */}
             <h1 className="font-heading font-semibold text-lg text-foreground hidden lg:block">
-              {sidebarLinks.find((l) => l.href === location.pathname)?.name ||
-                "Dashboard"}
+              {adminLinks.find((l) => location.pathname === l.href || 
+                (l.href !== "/admin" && location.pathname.startsWith(l.href)))?.name || "Admin"}
             </h1>
 
             {/* Right Side */}
             <div className="flex items-center gap-3">
-              {/* Notifications */}
-              <NotificationsDropdown />
-
-              {/* User Menu */}
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-medium text-sm">
-                  {user?.email?.charAt(0).toUpperCase() || "U"}
+                  {user?.email?.charAt(0).toUpperCase() || "A"}
                 </div>
                 <div className="hidden md:block">
                   <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
                     {user?.user_metadata?.full_name || user?.email?.split("@")[0]}
                   </p>
-                  <p className="text-xs text-muted-foreground">Member</p>
+                  <p className="text-xs text-primary font-medium">Admin</p>
                 </div>
               </div>
             </div>
