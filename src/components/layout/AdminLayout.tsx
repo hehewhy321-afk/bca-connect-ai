@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   LayoutDashboard,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +27,7 @@ const adminLinks = [
   { name: "Members", href: "/admin/members", icon: Users },
   { name: "Announcements", href: "/admin/announcements", icon: Bell },
   { name: "Notices", href: "/admin/notices", icon: FileText },
+  { name: "Contacts", href: "/admin/contacts", icon: MessageSquare },
 ];
 
 interface AdminLayoutProps {
