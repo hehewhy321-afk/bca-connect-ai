@@ -1,14 +1,48 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { ArrowRight, Sparkles, Users, Calendar, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
-const stats = [
-  { icon: Users, value: "500+", label: "Active Members" },
-  { icon: Calendar, value: "50+", label: "Events/Year" },
-  { icon: BookOpen, value: "200+", label: "Resources" },
-];
+interface Stats {
+  members: number;
+  events: number;
+  resources: number;
+}
 
 export function HeroSection() {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState<Stats>({ members: 0, events: 0, resources: 0 });
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const [profilesRes, eventsRes, resourcesRes] = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("events").select("id", { count: "exact", head: true }),
+        supabase.from("resources").select("id", { count: "exact", head: true }),
+      ]);
+
+      setStats({
+        members: profilesRes.count || 0,
+        events: eventsRes.count || 0,
+        resources: resourcesRes.count || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
+
+  const statItems = [
+    { icon: Users, value: `${stats.members}+`, label: "Active Members" },
+    { icon: Calendar, value: `${stats.events}+`, label: "Events" },
+    { icon: BookOpen, value: `${stats.resources}+`, label: "Resources" },
+  ];
+
   return (
     <section
       id="home"
@@ -72,11 +106,13 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
           >
-            <Button variant="hero" size="xl" className="group">
+            <Button variant="hero" size="xl" className="group" onClick={() => navigate("/auth")}>
               Get Started
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button variant="heroOutline" size="xl">
+            <Button variant="heroOutline" size="xl" onClick={() => {
+              document.querySelector("#features")?.scrollIntoView({ behavior: "smooth" });
+            }}>
               Explore Features
             </Button>
           </motion.div>
@@ -88,7 +124,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="grid grid-cols-3 gap-4 max-w-lg mx-auto"
           >
-            {stats.map((stat, index) => (
+            {statItems.map((stat, index) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, scale: 0.8 }}

@@ -1,20 +1,23 @@
 import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, GraduationCap, ChevronDown } from "lucide-react";
+import { Menu, X, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navLinks = [
   { name: "Home", href: "#home" },
   { name: "About", href: "#about" },
   { name: "Features", href: "#features" },
   { name: "Events", href: "#events" },
-  { name: "Resources", href: "#resources" },
   { name: "Community", href: "#community" },
 ];
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,6 +26,16 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleNavClick = (href: string) => {
+    if (href.startsWith("#")) {
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+    setIsOpen(false);
+  };
 
   return (
     <motion.header
@@ -38,7 +51,7 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <nav className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <a href="#home" className="flex items-center gap-2 group">
+          <Link to="/" className="flex items-center gap-2 group">
             <div className="relative">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg group-hover:shadow-glow transition-shadow duration-300">
                 <GraduationCap className="w-6 h-6 text-primary-foreground" />
@@ -50,29 +63,37 @@ export function Navbar() {
               </span>
               <span className="text-xs text-muted-foreground">MMAMC Nepal</span>
             </div>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => (
-              <a
+              <button
                 key={link.name}
-                href={link.href}
+                onClick={() => handleNavClick(link.href)}
                 className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors duration-200 rounded-lg hover:bg-primary/5"
               >
                 {link.name}
-              </a>
+              </button>
             ))}
           </div>
 
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center gap-3">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-            <Button variant="default" size="sm">
-              Join Now
-            </Button>
+            {user ? (
+              <Button variant="default" size="sm" onClick={() => navigate("/dashboard")}>
+                Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>
+                  Sign In
+                </Button>
+                <Button variant="default" size="sm" onClick={() => navigate("/auth")}>
+                  Join Now
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -101,22 +122,29 @@ export function Navbar() {
             >
               <div className="py-4 space-y-2 border-t border-border">
                 {navLinks.map((link) => (
-                  <a
+                  <button
                     key={link.name}
-                    href={link.href}
-                    onClick={() => setIsOpen(false)}
-                    className="block px-4 py-3 text-base font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                    onClick={() => handleNavClick(link.href)}
+                    className="block w-full text-left px-4 py-3 text-base font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
                   >
                     {link.name}
-                  </a>
+                  </button>
                 ))}
                 <div className="pt-4 space-y-2 border-t border-border mt-4">
-                  <Button variant="outline" className="w-full">
-                    Sign In
-                  </Button>
-                  <Button variant="default" className="w-full">
-                    Join Now
-                  </Button>
+                  {user ? (
+                    <Button variant="default" className="w-full" onClick={() => navigate("/dashboard")}>
+                      Dashboard
+                    </Button>
+                  ) : (
+                    <>
+                      <Button variant="outline" className="w-full" onClick={() => navigate("/auth")}>
+                        Sign In
+                      </Button>
+                      <Button variant="default" className="w-full" onClick={() => navigate("/auth")}>
+                        Join Now
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>

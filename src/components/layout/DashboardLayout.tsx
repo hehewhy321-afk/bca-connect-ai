@@ -21,8 +21,16 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
+import { useUserRole } from "@/hooks/useUserRole";
 
-const sidebarLinks = [
+interface SidebarLink {
+  name: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  adminOnly?: boolean;
+}
+
+const sidebarLinks: SidebarLink[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Events", href: "/dashboard/events", icon: Calendar },
   { name: "Resources", href: "/dashboard/resources", icon: BookOpen },
@@ -30,7 +38,7 @@ const sidebarLinks = [
   { name: "Forum", href: "/dashboard/forum", icon: MessageSquare },
   { name: "Community", href: "/dashboard/community", icon: Users },
   { name: "Achievements", href: "/dashboard/achievements", icon: Trophy },
-  { name: "Admin", href: "/dashboard/admin", icon: Shield },
+  { name: "Admin", href: "/dashboard/admin", icon: Shield, adminOnly: true },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -44,6 +52,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { isAdmin, isModerator } = useUserRole();
+
+  const filteredLinks = sidebarLinks.filter(
+    (link) => !link.adminOnly || isAdmin || isModerator
+  );
 
   const handleSignOut = async () => {
     await signOut();
@@ -92,8 +105,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Nav Links */}
         <nav className="p-4 space-y-1">
-          {sidebarLinks.map((link) => {
-            const isActive = location.pathname === link.href;
+          {filteredLinks.map((link) => {
+            const isActive = location.pathname === link.href || location.pathname.startsWith(link.href + "/");
             return (
               <Link
                 key={link.name}
