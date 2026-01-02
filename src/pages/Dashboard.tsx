@@ -9,6 +9,8 @@ import {
   Clock,
   ArrowRight,
   Sparkles,
+  Megaphone,
+  Pin,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,15 @@ interface Event {
   location: string;
 }
 
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  priority: string;
+  is_pinned: boolean;
+  created_at: string;
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
@@ -40,6 +51,7 @@ export default function Dashboard() {
     level: 1,
   });
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -73,6 +85,15 @@ export default function Dashboard() {
           .order("start_date", { ascending: true })
           .limit(3);
 
+        // Fetch active announcements
+        const { data: announcementsData } = await supabase
+          .from("announcements")
+          .select("id, title, content, priority, is_pinned, created_at")
+          .or("expires_at.is.null,expires_at.gt.now()")
+          .order("is_pinned", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(3);
+
         setStats({
           eventsCount: eventsCount || 0,
           resourcesCount: resourcesCount || 0,
@@ -81,6 +102,7 @@ export default function Dashboard() {
         });
 
         setUpcomingEvents(events || []);
+        setAnnouncements(announcementsData || []);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -130,6 +152,17 @@ export default function Dashboard() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return "border-l-destructive bg-destructive/5";
+      case "low":
+        return "border-l-muted-foreground bg-muted/50";
+      default:
+        return "border-l-primary bg-primary/5";
+    }
   };
 
   return (
@@ -257,7 +290,7 @@ export default function Dashboard() {
             )}
           </motion.div>
 
-          {/* Quick Actions */}
+          {/* Quick Actions & Announcements */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -310,6 +343,48 @@ export default function Dashboard() {
             </div>
           </motion.div>
         </div>
+
+        {/* Announcements Section */}
+        {announcements.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="bg-card rounded-2xl border border-border p-6"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Megaphone className="w-5 h-5 text-primary" />
+              <h2 className="font-heading text-lg font-semibold text-foreground">
+                Announcements
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {announcements.map((announcement) => (
+                <div
+                  key={announcement.id}
+                  className={`p-4 rounded-xl border-l-4 ${getPriorityColor(announcement.priority || "normal")}`}
+                >
+                  <div className="flex items-start gap-2">
+                    {announcement.is_pinned && (
+                      <Pin className="w-4 h-4 text-primary fill-primary flex-shrink-0 mt-0.5" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-foreground">
+                        {announcement.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                        {announcement.content}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {formatDate(announcement.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
     </DashboardLayout>
   );

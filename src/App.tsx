@@ -23,6 +23,7 @@ import EventForm from "./pages/admin/EventForm";
 import AdminResources from "./pages/admin/AdminResources";
 import ResourceForm from "./pages/admin/ResourceForm";
 import AdminMembers from "./pages/admin/AdminMembers";
+import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/dashboard/admin/resources/new" element={<ProtectedRoute><ResourceForm /></ProtectedRoute>} />
             <Route path="/dashboard/admin/resources/:id" element={<ProtectedRoute><ResourceForm /></ProtectedRoute>} />
             <Route path="/dashboard/admin/members" element={<ProtectedRoute><AdminMembers /></ProtectedRoute>} />
+            <Route path="/dashboard/admin/announcements" element={<ProtectedRoute><AdminAnnouncements /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
