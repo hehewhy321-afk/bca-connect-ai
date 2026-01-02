@@ -230,12 +230,12 @@ export default function AdminPanel() {
               Upload Resource
             </Button>
             <Button
-              onClick={() => navigate("/dashboard/admin/announcements/new")}
+              onClick={() => navigate("/dashboard/admin/announcements")}
               variant="outline"
               className="justify-start gap-2"
             >
               <Bell className="w-4 h-4" />
-              New Announcement
+              Manage Announcements
             </Button>
             <Button
               onClick={() => navigate("/dashboard/admin/members")}
