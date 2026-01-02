@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Send, Bot, User, Sparkles, Trash2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -245,8 +246,8 @@ export default function AIAssistant() {
                             : "bg-muted text-foreground rounded-bl-md"
                         }`}
                       >
-                        <div className="whitespace-pre-wrap text-sm">
-                          {message.content}
+                        <div className="text-sm">
+                          <MarkdownRenderer content={message.content} />
                         </div>
                       </div>
                       {message.role === "assistant" && message.content && (
