@@ -246,14 +246,19 @@ export default function Contact() {
                 </div>
               </div>
 
-              {/* Map Placeholder */}
+              {/* Google Maps Embed */}
               <div className="bg-card border border-border rounded-xl overflow-hidden">
-                <div className="aspect-video bg-muted flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground">MMAMC College, Biratnagar, Nepal</p>
-                  </div>
-                </div>
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3571.8977654589453!2d87.27679867543865!3d26.454047976908867!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39ef744e8c5f1b47%3A0x5f0be6c0a1d9c8e9!2sMMAMC%20Biratnagar!5e0!3m2!1sen!2snp!4v1704067200000!5m2!1sen!2snp"
+                  width="100%"
+                  height="300"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="MMAMC College Location"
+                  className="w-full"
+                />
               </div>
             </motion.div>
           </div>
