@@ -8,8 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 const navLinks = [
   { name: "Home", href: "#home" },
   { name: "About", href: "#about" },
-  { name: "Features", href: "#features" },
   { name: "Events", href: "#events" },
+  { name: "Notice", href: "/notice" },
   { name: "Community", href: "#community" },
 ];
 
@@ -33,6 +33,8 @@ export function Navbar() {
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
       }
+    } else {
+      navigate(href);
     }
     setIsOpen(false);
   };
@@ -42,11 +44,7 @@ export function Navbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-card/95 backdrop-blur-xl shadow-lg border-b border-border"
-          : "bg-transparent"
-      }`}
+      className="fixed top-0 left-0 right-0 z-50 bg-transparent"
     >
       <div className="container mx-auto px-4">
         <nav className="flex items-center justify-between h-16 md:h-20">
@@ -59,21 +57,21 @@ export function Navbar() {
               <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-accent border-2 border-background" />
             </div>
             <div className="flex flex-col">
-              <span className="font-heading font-bold text-lg leading-tight text-foreground">
+              <span className="font-heading font-bold text-lg leading-tight text-white">
                 BCA Association
               </span>
-              <span className="text-xs text-muted-foreground font-medium">MMAMC Nepal</span>
+              <span className="text-xs text-white/70 font-medium">MMAMC Nepal</span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center">
-            <div className="flex items-center bg-muted/50 rounded-full px-2 py-1.5">
+            <div className="flex items-center bg-white/10 backdrop-blur-sm rounded-full px-2 py-1.5">
               {navLinks.map((link) => (
                 <button
                   key={link.name}
                   onClick={() => handleNavClick(link.href)}
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 rounded-full hover:bg-background/80"
+                  className="px-4 py-2 text-sm font-medium text-white/90 hover:text-white transition-colors duration-200 rounded-full hover:bg-white/10"
                 >
                   {link.name}
                 </button>
@@ -86,7 +84,7 @@ export function Navbar() {
             {user ? (
               <Button 
                 onClick={() => navigate("/dashboard")}
-                className="group px-6"
+                className="group px-6 bg-white text-primary hover:bg-white/90"
               >
                 Dashboard
                 <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
@@ -94,7 +92,7 @@ export function Navbar() {
             ) : (
               <Button 
                 onClick={() => navigate("/auth")}
-                className="group px-6 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300"
+                className="group px-6 bg-white text-primary hover:bg-white/90 shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 Join Now
                 <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-0.5 transition-transform" />
@@ -105,13 +103,13 @@ export function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden p-2.5 rounded-xl hover:bg-muted transition-colors border border-border/50"
+            className="lg:hidden p-2.5 rounded-xl hover:bg-white/10 transition-colors border border-white/20"
             aria-label="Toggle menu"
           >
             {isOpen ? (
-              <X className="w-5 h-5 text-foreground" />
+              <X className="w-5 h-5 text-white" />
             ) : (
-              <Menu className="w-5 h-5 text-foreground" />
+              <Menu className="w-5 h-5 text-white" />
             )}
           </button>
         </nav>
@@ -126,23 +124,23 @@ export function Navbar() {
               transition={{ duration: 0.3 }}
               className="lg:hidden overflow-hidden"
             >
-              <div className="py-4 space-y-1 border-t border-border">
+              <div className="py-4 space-y-1 border-t border-white/10 bg-black/20 backdrop-blur-xl rounded-b-2xl">
                 {navLinks.map((link) => (
                   <button
                     key={link.name}
                     onClick={() => handleNavClick(link.href)}
-                    className="block w-full text-left px-4 py-3 text-base font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-xl transition-colors"
+                    className="block w-full text-left px-4 py-3 text-base font-medium text-white hover:text-primary hover:bg-white/10 rounded-xl transition-colors"
                   >
                     {link.name}
                   </button>
                 ))}
-                <div className="pt-4 border-t border-border mt-4">
+                <div className="pt-4 border-t border-white/10 mt-4 px-4">
                   {user ? (
-                    <Button className="w-full" onClick={() => navigate("/dashboard")}>
+                    <Button className="w-full bg-white text-primary hover:bg-white/90" onClick={() => navigate("/dashboard")}>
                       Dashboard
                     </Button>
                   ) : (
-                    <Button className="w-full" onClick={() => navigate("/auth")}>
+                    <Button className="w-full bg-white text-primary hover:bg-white/90" onClick={() => navigate("/auth")}>
                       Join Now
                     </Button>
                   )}

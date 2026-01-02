@@ -6,18 +6,13 @@ import {
   Calendar,
   BookOpen,
   Bell,
+  FileText,
   Plus,
-  Edit,
-  Trash2,
-  Search,
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
 interface Stats {
@@ -25,6 +20,7 @@ interface Stats {
   totalEvents: number;
   totalResources: number;
   upcomingEvents: number;
+  totalAnnouncements: number;
 }
 
 export default function AdminPanel() {
@@ -33,51 +29,18 @@ export default function AdminPanel() {
     totalEvents: 0,
     totalResources: 0,
     upcomingEvents: 0,
+    totalAnnouncements: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkAdminRole();
-  }, [user]);
-
-  const checkAdminRole = async () => {
-    if (!user) {
-      navigate("/dashboard");
-      return;
-    }
-
-    try {
-      const { data: roleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (roleData?.role !== "admin" && roleData?.role !== "moderator") {
-        toast({
-          title: "Access Denied",
-          description: "You don't have permission to access the admin panel.",
-          variant: "destructive",
-        });
-        navigate("/dashboard");
-        return;
-      }
-
-      setIsAdmin(true);
-      fetchStats();
-    } catch (error) {
-      console.error("Error checking admin role:", error);
-      navigate("/dashboard");
-    }
-  };
+    fetchStats();
+  }, []);
 
   const fetchStats = async () => {
     try {
-      const [membersRes, eventsRes, resourcesRes, upcomingRes] = await Promise.all([
+      const [membersRes, eventsRes, resourcesRes, upcomingRes, announcementsRes] = await Promise.all([
         supabase.from("profiles").select("*", { count: "exact", head: true }),
         supabase.from("events").select("*", { count: "exact", head: true }),
         supabase.from("resources").select("*", { count: "exact", head: true }),
@@ -85,6 +48,7 @@ export default function AdminPanel() {
           .from("events")
           .select("*", { count: "exact", head: true })
           .eq("status", "upcoming"),
+        supabase.from("announcements").select("*", { count: "exact", head: true }),
       ]);
 
       setStats({
@@ -92,6 +56,7 @@ export default function AdminPanel() {
         totalEvents: eventsRes.count || 0,
         totalResources: resourcesRes.count || 0,
         upcomingEvents: upcomingRes.count || 0,
+        totalAnnouncements: announcementsRes.count || 0,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -100,22 +65,12 @@ export default function AdminPanel() {
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   const adminCards = [
     {
       title: "Manage Events",
       description: "Create, edit, and delete events",
       icon: Calendar,
-      href: "/dashboard/admin/events",
+      href: "/admin/events",
       color: "from-primary to-primary/70",
       stat: stats.totalEvents,
       statLabel: "Total Events",
@@ -124,7 +79,7 @@ export default function AdminPanel() {
       title: "Manage Resources",
       description: "Upload and organize study materials",
       icon: BookOpen,
-      href: "/dashboard/admin/resources",
+      href: "/admin/resources",
       color: "from-accent to-accent/70",
       stat: stats.totalResources,
       statLabel: "Total Resources",
@@ -133,24 +88,33 @@ export default function AdminPanel() {
       title: "Manage Members",
       description: "View and manage user accounts",
       icon: Users,
-      href: "/dashboard/admin/members",
+      href: "/admin/members",
       color: "from-secondary to-secondary/70",
       stat: stats.totalMembers,
       statLabel: "Total Members",
     },
     {
       title: "Announcements",
-      description: "Create announcements and notifications",
+      description: "Dashboard announcements",
       icon: Bell,
-      href: "/dashboard/admin/announcements",
+      href: "/admin/announcements",
       color: "from-primary to-accent",
+      stat: stats.totalAnnouncements,
+      statLabel: "Total Announcements",
+    },
+    {
+      title: "Public Notices",
+      description: "Manage public notices",
+      icon: FileText,
+      href: "/admin/notices",
+      color: "from-accent to-primary",
       stat: stats.upcomingEvents,
       statLabel: "Upcoming Events",
     },
   ];
 
   return (
-    <DashboardLayout>
+    <AdminLayout>
       <div className="space-y-8">
         {/* Header */}
         <div>
@@ -163,14 +127,14 @@ export default function AdminPanel() {
                 Admin Panel
               </h1>
               <p className="text-muted-foreground">
-                Manage events, resources, and members
+                Manage events, resources, members, and announcements
               </p>
             </div>
           </div>
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {adminCards.map((card, index) => (
             <motion.div
               key={card.title}
@@ -213,16 +177,16 @@ export default function AdminPanel() {
           <h2 className="font-heading text-lg font-semibold text-foreground mb-4">
             Quick Actions
           </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <Button
-              onClick={() => navigate("/dashboard/admin/events/new")}
+              onClick={() => navigate("/admin/events/new")}
               className="justify-start gap-2"
             >
               <Plus className="w-4 h-4" />
               Create Event
             </Button>
             <Button
-              onClick={() => navigate("/dashboard/admin/resources/new")}
+              onClick={() => navigate("/admin/resources/new")}
               variant="outline"
               className="justify-start gap-2"
             >
@@ -230,15 +194,23 @@ export default function AdminPanel() {
               Upload Resource
             </Button>
             <Button
-              onClick={() => navigate("/dashboard/admin/announcements")}
+              onClick={() => navigate("/admin/announcements")}
               variant="outline"
               className="justify-start gap-2"
             >
               <Bell className="w-4 h-4" />
-              Manage Announcements
+              Announcements
             </Button>
             <Button
-              onClick={() => navigate("/dashboard/admin/members")}
+              onClick={() => navigate("/admin/notices")}
+              variant="outline"
+              className="justify-start gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              Notices
+            </Button>
+            <Button
+              onClick={() => navigate("/admin/members")}
               variant="outline"
               className="justify-start gap-2"
             >
@@ -248,6 +220,6 @@ export default function AdminPanel() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </AdminLayout>
   );
 }
