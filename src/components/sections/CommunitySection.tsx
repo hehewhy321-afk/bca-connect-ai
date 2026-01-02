@@ -1,5 +1,15 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Quote, Star } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Member {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+  batch: string | null;
+  is_alumni: boolean | null;
+}
 
 const testimonials = [
   {
@@ -28,14 +38,48 @@ const testimonials = [
   },
 ];
 
-const stats = [
-  { value: "500+", label: "Active Members" },
-  { value: "25+", label: "Batches Connected" },
-  { value: "150+", label: "Alumni Network" },
-  { value: "50+", label: "Events/Year" },
-];
-
 export function CommunitySection() {
+  const [stats, setStats] = useState({
+    total: 0,
+    students: 0,
+    alumni: 0,
+    batches: 0,
+  });
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("batch, is_alumni");
+
+      if (error) throw error;
+
+      const uniqueBatches = new Set(data?.filter(p => p.batch).map(p => p.batch));
+      const alumniCount = data?.filter(p => p.is_alumni).length || 0;
+      const studentCount = data?.filter(p => !p.is_alumni).length || 0;
+
+      setStats({
+        total: data?.length || 0,
+        students: studentCount,
+        alumni: alumniCount,
+        batches: uniqueBatches.size,
+      });
+    } catch (error) {
+      console.error("Error fetching community stats:", error);
+    }
+  };
+
+  const statItems = [
+    { value: `${stats.total}+`, label: "Active Members" },
+    { value: `${stats.batches}+`, label: "Batches Connected" },
+    { value: `${stats.alumni}+`, label: "Alumni Network" },
+    { value: `${stats.students}+`, label: "Current Students" },
+  ];
+
   return (
     <section
       id="community"
@@ -73,7 +117,7 @@ export function CommunitySection() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16"
         >
-          {stats.map((stat, index) => (
+          {statItems.map((stat, index) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, scale: 0.8 }}
