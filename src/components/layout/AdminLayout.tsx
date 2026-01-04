@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  GraduationCap,
   Shield,
   Calendar,
   BookOpen,
@@ -16,13 +15,12 @@ import {
   MessageSquare,
   UserPlus,
   Award,
-  ClipboardList,
-  Star,
   QrCode,
   Settings,
   HelpCircle,
   Bot,
 } from "lucide-react";
+import logoImg from "@/assets/logo.jpg";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -112,9 +110,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* Logo */}
         <div className="p-4 border-b border-border">
           <Link to="/admin" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Shield className="w-6 h-6 text-primary-foreground" />
-            </div>
+            <img src={logoImg} alt="BCA Association Logo" className="w-10 h-10 rounded-xl object-cover" />
             <div className="flex flex-col">
               <span className="font-heading font-bold text-lg text-foreground">
                 Admin Panel
