@@ -18,6 +18,7 @@ import {
   Award,
   ClipboardList,
   Star,
+  QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,6 +30,7 @@ import { Settings, HelpCircle } from "lucide-react";
 const adminLinks = [
   { name: "Overview", href: "/admin", icon: Shield },
   { name: "Events", href: "/admin/events", icon: Calendar },
+  { name: "QR Check-in", href: "/admin/qr-scanner", icon: QrCode },
   { name: "Resources", href: "/admin/resources", icon: BookOpen },
   { name: "Members", href: "/admin/members", icon: Users },
   { name: "Founding Members", href: "/admin/founding-members", icon: Award },
