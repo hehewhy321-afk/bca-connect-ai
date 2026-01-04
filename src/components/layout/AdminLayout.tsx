@@ -27,6 +27,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 const adminLinks = [
   { name: "Overview", href: "/admin", icon: Shield },
   { name: "Events", href: "/admin/events", icon: Calendar },
+  { name: "Internal Registrations", href: "/admin/internal-registrations", icon: Users },
   { name: "Public Registrations", href: "/admin/public-registrations", icon: ClipboardList },
   { name: "Event Feedback", href: "/admin/event-feedback", icon: Star },
   { name: "Resources", href: "/admin/resources", icon: BookOpen },

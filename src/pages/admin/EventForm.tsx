@@ -11,8 +11,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-const categories = ["Workshop", "Seminar", "Competition", "Social", "Webinar"];
+const categories = ["Workshop", "Seminar", "Competition", "Social", "Webinar", "Hackathon"];
 const statuses = ["upcoming", "ongoing", "completed", "cancelled"];
+const visibilityOptions = ["public", "internal"];
+const teamTypes = [
+  { value: "solo", label: "Solo (Individual)", minSize: 1, maxSize: 1 },
+  { value: "duo", label: "Duo (2 members)", minSize: 2, maxSize: 2 },
+  { value: "squad", label: "Squad (3-5 members)", minSize: 3, maxSize: 5 },
+  { value: "any", label: "Any size", minSize: 1, maxSize: 10 },
+];
 
 export default function EventForm() {
   const { id } = useParams();
@@ -34,6 +41,10 @@ export default function EventForm() {
     is_featured: false,
     status: "upcoming",
     image_url: "",
+    visibility: "public",
+    team_type: "solo",
+    team_size_min: 1,
+    team_size_max: 1,
   });
 
   useEffect(() => {
@@ -67,6 +78,10 @@ export default function EventForm() {
         is_featured: data.is_featured || false,
         status: data.status || "upcoming",
         image_url: data.image_url || "",
+        visibility: data.visibility || "public",
+        team_type: data.team_type || "solo",
+        team_size_min: data.team_size_min || 1,
+        team_size_max: data.team_size_max || 1,
       });
     } catch (error) {
       console.error("Error fetching event:", error);
@@ -133,6 +148,10 @@ export default function EventForm() {
         status: formData.status as "upcoming" | "ongoing" | "completed" | "cancelled",
         image_url: formData.image_url || null,
         created_by: user.id,
+        visibility: formData.visibility,
+        team_type: formData.team_type,
+        team_size_min: formData.team_size_min,
+        team_size_max: formData.team_size_max,
       };
 
       if (isEditing) {
@@ -365,6 +384,91 @@ export default function EventForm() {
             />
             <Label htmlFor="is_featured">Featured Event</Label>
           </div>
+
+          {/* Visibility */}
+          <div className="space-y-2">
+            <Label>Event Visibility *</Label>
+            <div className="flex gap-4">
+              {visibilityOptions.map((option) => (
+                <label key={option} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value={option}
+                    checked={formData.visibility === option}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, visibility: e.target.value }))
+                    }
+                    className="w-4 h-4"
+                  />
+                  <span className="capitalize">
+                    {option === "public" ? "Public (Anyone can register)" : "Internal (Members only)"}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Team Type */}
+          <div className="space-y-2">
+            <Label htmlFor="team_type">Participation Type *</Label>
+            <select
+              id="team_type"
+              value={formData.team_type}
+              onChange={(e) => {
+                const selected = teamTypes.find((t) => t.value === e.target.value);
+                setFormData((prev) => ({
+                  ...prev,
+                  team_type: e.target.value,
+                  team_size_min: selected?.minSize || 1,
+                  team_size_max: selected?.maxSize || 1,
+                }));
+              }}
+              className="w-full px-4 py-2 rounded-lg bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {teamTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Team Size (for squad/any) */}
+          {(formData.team_type === "squad" || formData.team_type === "any") && (
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="team_size_min">Min Team Size</Label>
+                <Input
+                  id="team_size_min"
+                  type="number"
+                  min={1}
+                  value={formData.team_size_min}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      team_size_min: parseInt(e.target.value) || 1,
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="team_size_max">Max Team Size</Label>
+                <Input
+                  id="team_size_max"
+                  type="number"
+                  min={formData.team_size_min}
+                  value={formData.team_size_max}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      team_size_max: parseInt(e.target.value) || 1,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+          )}
 
           {/* Submit */}
           <div className="flex items-center gap-4 pt-4 border-t border-border">
