@@ -21,7 +21,7 @@ const defaultSettings: WebsiteSettings = {
   site_logo: "",
   site_name: "BCA Association",
   site_subtitle: "MMAMC Nepal",
-  phone: "+977 21-123456",
+  phone: "+977-9800923746",
   email_primary: "bca@mmamc.edu.np",
   email_secondary: "info@mmamc.edu.np",
   address: "MMAMC College, Biratnagar, Nepal",
