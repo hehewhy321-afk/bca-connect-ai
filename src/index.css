@@ -53,16 +53,25 @@
     --gradient-primary: linear-gradient(135deg, hsl(210 79% 55%) 0%, hsl(210 79% 40%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(26 100% 55%) 0%, hsl(26 100% 45%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(168 100% 42%) 0%, hsl(168 100% 32%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(220 20% 7% / 0.98) 0%, hsl(210 79% 15% / 0.95) 100%);
-    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.08) 0%, hsl(0 0% 100% / 0.03) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(220 25% 8%) 0%, hsl(210 60% 12%) 50%, hsl(220 30% 6%) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(210 79% 55% / 0.12) 0%, hsl(168 100% 42% / 0.06) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(220 20% 13%) 0%, hsl(220 20% 9%) 100%);
+    --gradient-surface: linear-gradient(180deg, hsl(220 20% 11%) 0%, hsl(220 20% 8%) 100%);
+    
+    /* Glass Effect Colors */
+    --glass-bg: hsl(210 79% 55% / 0.08);
+    --glass-border: hsl(210 79% 55% / 0.2);
+    --glass-highlight: hsl(0 0% 100% / 0.05);
     
     /* Shadows */
-    --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.3);
-    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
-    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
-    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 8px 10px -6px hsl(0 0% 0% / 0.3);
-    --shadow-glow: 0 0 40px hsl(210 79% 55% / 0.4);
-    --shadow-glow-orange: 0 0 40px hsl(26 100% 55% / 0.4);
+    --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.4);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.5), 0 2px 4px -2px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.5), 0 4px 6px -4px hsl(0 0% 0% / 0.4);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.5), 0 8px 10px -6px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 0 50px hsl(210 79% 55% / 0.35), 0 0 100px hsl(210 79% 55% / 0.15);
+    --shadow-glow-orange: 0 0 50px hsl(26 100% 55% / 0.35), 0 0 100px hsl(26 100% 55% / 0.15);
+    --shadow-glow-accent: 0 0 50px hsl(168 100% 42% / 0.3), 0 0 80px hsl(168 100% 42% / 0.1);
+    --shadow-inner-glow: inset 0 1px 0 0 hsl(0 0% 100% / 0.05);
     
     /* Sidebar */
     --sidebar-background: 220 20% 10%;
@@ -147,22 +156,97 @@
 }
 
 @layer utilities {
+  /* Enhanced Glass Effects for Dark Mode */
   .glass {
-    @apply bg-white/10 backdrop-blur-xl border border-white/20;
+    background: linear-gradient(135deg, hsl(210 79% 55% / 0.1) 0%, hsl(168 100% 42% / 0.05) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid hsl(210 79% 55% / 0.15);
+    box-shadow: 
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.05),
+      0 4px 24px -1px hsl(0 0% 0% / 0.3);
   }
   
   .glass-card {
-    @apply bg-white/80 dark:bg-card/80 backdrop-blur-xl border border-white/20 dark:border-white/10;
+    background: linear-gradient(145deg, hsl(220 20% 13% / 0.9) 0%, hsl(220 20% 9% / 0.95) 100%);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid hsl(210 79% 55% / 0.12);
+    box-shadow: 
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.04),
+      0 8px 32px -4px hsl(0 0% 0% / 0.4),
+      0 0 0 1px hsl(220 20% 20% / 0.5);
   }
   
+  .glass-card:hover {
+    border-color: hsl(210 79% 55% / 0.25);
+    box-shadow: 
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.06),
+      0 12px 40px -4px hsl(0 0% 0% / 0.5),
+      0 0 60px -10px hsl(210 79% 55% / 0.2);
+  }
+  
+  /* Subtle glass variant */
+  .glass-subtle {
+    background: hsl(220 20% 12% / 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(220 15% 20% / 0.8);
+  }
+  
+  /* Vibrant glass with color tint */
+  .glass-primary {
+    background: linear-gradient(135deg, hsl(210 79% 55% / 0.15) 0%, hsl(210 79% 40% / 0.08) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(210 79% 55% / 0.25);
+    box-shadow: 0 0 40px -10px hsl(210 79% 55% / 0.3);
+  }
+  
+  .glass-accent {
+    background: linear-gradient(135deg, hsl(168 100% 42% / 0.12) 0%, hsl(168 100% 35% / 0.06) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(168 100% 42% / 0.2);
+    box-shadow: 0 0 40px -10px hsl(168 100% 42% / 0.25);
+  }
+  
+  .glass-orange {
+    background: linear-gradient(135deg, hsl(26 100% 55% / 0.12) 0%, hsl(26 100% 45% / 0.06) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(26 100% 55% / 0.2);
+    box-shadow: 0 0 40px -10px hsl(26 100% 55% / 0.25);
+  }
+  
+  /* Gradient text effects */
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(210 79% 60%) 0%, hsl(168 100% 50%) 100%);
   }
   
   .gradient-text-orange {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-secondary to-primary;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(26 100% 60%) 0%, hsl(210 79% 60%) 100%);
   }
   
+  .gradient-text-shine {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(90deg, hsl(210 79% 55%) 0%, hsl(0 0% 100%) 50%, hsl(210 79% 55%) 100%);
+    background-size: 200% auto;
+    animation: shine 3s linear infinite;
+  }
+  
+  /* Surface cards with depth */
+  .surface-elevated {
+    background: linear-gradient(145deg, hsl(220 20% 12%) 0%, hsl(220 20% 9%) 100%);
+    border: 1px solid hsl(220 15% 18%);
+    box-shadow: 
+      0 4px 24px -2px hsl(0 0% 0% / 0.4),
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.03);
+  }
+  
+  /* Animations */
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
@@ -173,6 +257,10 @@
   
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  .animate-glow-border {
+    animation: glow-border 3s ease-in-out infinite;
   }
   
   .text-balance {
@@ -191,10 +279,27 @@
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px hsl(210 79% 46% / 0.3);
+    box-shadow: 0 0 30px hsl(210 79% 55% / 0.3), 0 0 60px hsl(210 79% 55% / 0.1);
   }
   50% {
-    box-shadow: 0 0 40px hsl(210 79% 46% / 0.5);
+    box-shadow: 0 0 50px hsl(210 79% 55% / 0.5), 0 0 100px hsl(210 79% 55% / 0.2);
+  }
+}
+
+@keyframes glow-border {
+  0%, 100% {
+    border-color: hsl(210 79% 55% / 0.2);
+    box-shadow: 0 0 20px hsl(210 79% 55% / 0.1);
+  }
+  50% {
+    border-color: hsl(210 79% 55% / 0.4);
+    box-shadow: 0 0 40px hsl(210 79% 55% / 0.2);
+  }
+}
+
+@keyframes shine {
+  to {
+    background-position: 200% center;
   }
 }
 
