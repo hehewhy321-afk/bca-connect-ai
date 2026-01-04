@@ -109,20 +109,20 @@ export default function Contact() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-16 px-4 bg-gradient-to-b from-primary/5 to-background">
+      <section className="pt-24 sm:pt-32 pb-10 sm:pb-16 px-4 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
-              <MessageSquare className="w-8 h-8 text-primary" />
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-primary/10 mb-4 sm:mb-6">
+              <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <h1 className="font-heading text-4xl md:text-5xl font-bold text-foreground mb-4">
+            <h1 className="font-heading text-2xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4">
               Contact Us
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl mx-auto px-2">
               Have questions, suggestions, or want to collaborate? We'd love to hear from you.
             </p>
           </motion.div>
@@ -130,21 +130,21 @@ export default function Contact() {
       </section>
 
       {/* Contact Content */}
-      <section className="py-16 px-4">
+      <section className="py-10 sm:py-16 px-4">
         <div className="container mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             {/* Contact Form */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="bg-card border border-border rounded-2xl p-8">
-                <h2 className="font-heading text-2xl font-semibold text-foreground mb-6">
+              <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-4 sm:p-8">
+                <h2 className="font-heading text-xl sm:text-2xl font-semibold text-foreground mb-4 sm:mb-6">
                   Send us a Message
                 </h2>
                 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Your Name</Label>
@@ -231,27 +231,27 @@ export default function Contact() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
-              className="space-y-6"
+              className="space-y-4 sm:space-y-6"
             >
-              <h2 className="font-heading text-2xl font-semibold text-foreground mb-6">
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold text-foreground mb-4 sm:mb-6">
                 Get in Touch
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {contactInfo.map((info, index) => (
                   <motion.div
                     key={info.title}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className="bg-card border border-border rounded-xl p-6"
+                    className="bg-card border border-border rounded-lg sm:rounded-xl p-3 sm:p-6"
                   >
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                      <info.icon className="w-6 h-6 text-primary" />
+                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-2 sm:mb-4">
+                      <info.icon className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
                     </div>
-                    <h3 className="font-semibold text-foreground mb-2">{info.title}</h3>
+                    <h3 className="font-semibold text-foreground mb-1 sm:mb-2 text-sm sm:text-base">{info.title}</h3>
                     {info.details.map((detail, i) => (
-                      <p key={i} className="text-muted-foreground text-sm">
+                      <p key={i} className="text-muted-foreground text-xs sm:text-sm break-words">
                         {detail}
                       </p>
                     ))}
@@ -260,37 +260,37 @@ export default function Contact() {
               </div>
 
               {/* Social Links */}
-              <div className="bg-card border border-border rounded-xl p-6">
-                <h3 className="font-semibold text-foreground mb-4">Follow Us</h3>
-                <p className="text-muted-foreground text-sm mb-4">
+              <div className="bg-card border border-border rounded-lg sm:rounded-xl p-4 sm:p-6">
+                <h3 className="font-semibold text-foreground mb-2 sm:mb-4 text-sm sm:text-base">Follow Us</h3>
+                <p className="text-muted-foreground text-xs sm:text-sm mb-3 sm:mb-4">
                   Stay connected with us on social media for updates and announcements.
                 </p>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   {socialLinks.map((social) => (
                     <a
                       key={social.label}
                       href={social.href}
                       aria-label={social.label}
-                      className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
                     >
-                      <social.icon className="w-5 h-5" />
+                      <social.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </a>
                   ))}
                 </div>
               </div>
 
               {/* Google Maps Embed */}
-              <div className="bg-card border border-border rounded-xl overflow-hidden">
+              <div className="bg-card border border-border rounded-lg sm:rounded-xl overflow-hidden">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3571.8977654589453!2d87.27679867543865!3d26.454047976908867!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39ef744e8c5f1b47%3A0x5f0be6c0a1d9c8e9!2sMMAMC%20Biratnagar!5e0!3m2!1sen!2snp!4v1704067200000!5m2!1sen!2snp"
                   width="100%"
-                  height="300"
+                  height="200"
                   style={{ border: 0 }}
                   allowFullScreen
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   title="MMAMC College Location"
-                  className="w-full"
+                  className="w-full sm:h-[300px]"
                 />
               </div>
             </motion.div>

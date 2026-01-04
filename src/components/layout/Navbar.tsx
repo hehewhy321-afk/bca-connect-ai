@@ -137,33 +137,45 @@ export function Navbar() {
               transition={{ duration: 0.3 }}
               className="lg:hidden overflow-hidden"
             >
-              <div className="py-4 space-y-1 border-t border-white/10 bg-black/20 backdrop-blur-xl rounded-b-2xl">
-                {navLinks.map((link) => (
-                  <button
-                    key={link.name}
-                    onClick={() => handleNavClick(link.href)}
-                    className="block w-full text-left px-4 py-3 text-base font-medium text-white hover:text-primary hover:bg-white/10 rounded-xl transition-colors"
-                  >
-                    {link.name}
-                  </button>
-                ))}
-                <div className="pt-4 border-t border-white/10 mt-4 px-4">
+              <div className="py-4 space-y-1 border-t border-white/10 bg-white/10 backdrop-blur-xl rounded-b-2xl mt-2">
+                <div className="bg-white/5 backdrop-blur-sm rounded-xl mx-2 p-2">
+                  {navLinks.map((link, index) => (
+                    <motion.button
+                      key={link.name}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => handleNavClick(link.href)}
+                      className="block w-full text-left px-4 py-3 text-base font-medium text-white hover:text-white hover:bg-white/15 rounded-xl transition-all duration-200"
+                    >
+                      {link.name}
+                    </motion.button>
+                  ))}
+                </div>
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="pt-4 border-t border-white/10 mt-4 px-4"
+                >
                   {user ? (
                     <Button
-                      className="w-full bg-white text-primary hover:bg-white/90"
+                      className="w-full bg-white text-primary hover:bg-white/90 shadow-lg"
                       onClick={() => navigate("/dashboard")}
                     >
                       Dashboard
+                      <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   ) : (
                     <Button
-                      className="w-full bg-white text-primary hover:bg-white/90"
+                      className="w-full bg-white text-primary hover:bg-white/90 shadow-lg"
                       onClick={() => navigate("/auth")}
                     >
                       Join Now
+                      <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   )}
-                </div>
+                </motion.div>
               </div>
             </motion.div>
           )}

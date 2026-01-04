@@ -5,7 +5,7 @@ import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
 const footerLinks = {
   quickLinks: [
     { name: "About Us", href: "/about" },
-    { name: "Events", href: "/dashboard/events", requiresAuth: true },
+    { name: "Events", href: "/events" },
     { name: "Resources", href: "/dashboard/resources", requiresAuth: true },
     { name: "Community", href: "/dashboard/community", requiresAuth: true },
     { name: "Notice", href: "/notice" },
