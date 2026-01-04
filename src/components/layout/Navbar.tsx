@@ -48,7 +48,7 @@ export function Navbar() {
       transition={{ duration: 0.5, ease: "easeOut" }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
         scrolled 
-          ? "bg-primary/60 shadow-[0_8px_32px_rgba(0,0,0,0.2)] border-b border-white/10" 
+          ? "bg-primary/35 shadow-[0_8px_32px_rgba(0,0,0,0.15)] border-b border-white/10" 
           : "bg-transparent"
       }`}
       style={{
@@ -152,7 +152,7 @@ export function Navbar() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2, delay: 0.1 }}
-                className="py-4 space-y-1 border-t border-white/10 bg-primary/60 backdrop-blur-xl rounded-b-2xl mt-2 mx-2"
+                className="py-4 space-y-1 border-t border-white/10 bg-primary/35 backdrop-blur-xl rounded-b-2xl mt-2 mx-2"
               >
                 {navLinks.map((link, index) => {
                   const IconComponent = link.icon;
