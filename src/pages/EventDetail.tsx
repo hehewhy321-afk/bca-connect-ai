@@ -245,8 +245,8 @@ export default function EventDetail() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="pt-24 pb-16">
-        <div className="container mx-auto px-4">
+      <main className="pt-24 pb-24 md:pb-16">
+        <div className="container mx-auto px-3 sm:px-4">
           {/* Back Button */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -263,15 +263,14 @@ export default function EventDetail() {
             </Button>
           </motion.div>
 
-          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-            {/* Main Content */}
+          {/* Mobile Layout: Image first, then description, about, then registration */}
+          <div className="lg:hidden space-y-4">
+            {/* Event Image - Mobile */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="lg:col-span-2 space-y-4 sm:space-y-6"
             >
-              {/* Event Image */}
-              <div className="relative rounded-xl sm:rounded-2xl overflow-hidden aspect-video">
+              <div className="relative rounded-xl overflow-hidden aspect-video">
                 {event.image_url ? (
                   <img
                     src={event.image_url}
@@ -280,10 +279,10 @@ export default function EventDetail() {
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                    <Calendar className="w-16 h-16 sm:w-24 sm:h-24 text-primary/50" />
+                    <Calendar className="w-16 h-16 text-primary/50" />
                   </div>
                 )}
-                <div className="absolute top-2 left-2 sm:top-4 sm:left-4 flex flex-wrap gap-1 sm:gap-2">
+                <div className="absolute top-2 left-2 flex flex-wrap gap-1">
                   {event.is_featured && (
                     <Badge className="bg-primary text-primary-foreground text-xs">Featured</Badge>
                   )}
@@ -291,13 +290,279 @@ export default function EventDetail() {
                     {event.category}
                   </Badge>
                 </div>
-                <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                <div className="absolute top-2 right-2">
                   <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-xs">
                     {isMemberOnly ? (
                       <span className="flex items-center gap-1">
                         <Shield className="w-3 h-3" />
-                        <span className="hidden xs:inline">Members Only</span>
-                        <span className="xs:hidden">Members</span>
+                        Members
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <Globe className="w-3 h-3" />
+                        Public
+                      </span>
+                    )}
+                  </Badge>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Event Title & Description - Mobile */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="glass-card p-4 rounded-xl">
+                <h1 className="font-heading text-xl font-bold mb-3">
+                  {event.title}
+                </h1>
+                
+                {event.description && (
+                  <div className="prose prose-invert max-w-none">
+                    <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-sm">
+                      {event.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+
+            {/* About Section - Mobile */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="glass-card p-4 rounded-xl space-y-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Info className="w-4 h-4 text-primary" />
+                    <h2 className="font-heading text-lg font-semibold">About This Event</h2>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Start</p>
+                        <p className="font-medium text-xs truncate">{formatDate(event.start_date)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <Clock className="w-4 h-4 text-primary flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Time</p>
+                        <p className="font-medium text-xs">{formatTime(event.start_date)}</p>
+                      </div>
+                    </div>
+                    {event.location && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 col-span-2">
+                        <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs text-muted-foreground">Location</p>
+                          <p className="font-medium text-xs truncate">{event.location}</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 col-span-2">
+                      <Users className="w-4 h-4 text-primary flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">Participation</p>
+                        <p className="font-medium text-xs truncate">{getTeamTypeLabel(event.team_type)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Registration Card - Mobile */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="glass-card p-4 rounded-xl">
+                <div className="space-y-4">
+                  {event.max_attendees && !isMemberOnly && (
+                    <div className="text-center p-3 rounded-lg bg-muted/50">
+                      {isFull ? (
+                        <p className="text-destructive font-semibold text-lg">Sold Out</p>
+                      ) : (
+                        <>
+                          <p className="text-2xl font-bold text-primary">{availableSpots}</p>
+                          <p className="text-xs text-muted-foreground">spots remaining</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="text-center">
+                    {hasFee ? (
+                      <>
+                        <div className="flex items-center justify-center gap-1">
+                          <IndianRupee className="w-5 h-5 text-primary" />
+                          <p className="text-2xl font-bold">{event.registration_fee}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Registration Fee</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xl font-bold text-green-500">Free</p>
+                        <p className="text-xs text-muted-foreground">Registration</p>
+                      </>
+                    )}
+                  </div>
+
+                  {isMemberOnly && !user ? (
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      onClick={() => navigate("/auth")}
+                    >
+                      <Lock className="w-4 h-4 mr-2" />
+                      Login to Register
+                    </Button>
+                  ) : isMemberOnly && user ? (
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      onClick={() => navigate("/dashboard/events")}
+                    >
+                      Register in Dashboard
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      disabled={isFull}
+                      onClick={handleRegisterClick}
+                    >
+                      {isFull ? "Event Full" : "Register Now"}
+                    </Button>
+                  )}
+
+                  <EventReminderForm eventId={event.id} eventTitle={event.title} />
+                </div>
+
+                <Separator className="my-4" />
+
+                <SocialShareButtons 
+                  title={event.title} 
+                  description={event.description} 
+                />
+
+                {userRegistration?.check_in_code && (
+                  <>
+                    <Separator className="my-4" />
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground mb-2">Your Check-in QR Code</p>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="w-full gap-2">
+                            <QrCode className="w-4 h-4" />
+                            View QR Code
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="text-center">Event Check-in QR Code</DialogTitle>
+                          </DialogHeader>
+                          <div className="flex flex-col items-center justify-center p-6 space-y-4">
+                            <div className="bg-white p-4 rounded-lg">
+                              <QRCodeSVG 
+                                value={userRegistration.check_in_code}
+                                size={200}
+                                level="H"
+                                includeMargin
+                              />
+                            </div>
+                            <p className="text-sm text-muted-foreground text-center">
+                              Show this QR code at the event venue for quick check-in
+                            </p>
+                            <p className="text-xs font-mono bg-muted px-3 py-1 rounded">
+                              {userRegistration.check_in_code}
+                            </p>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+
+            {/* Gallery, Rules, Schedule - Mobile */}
+            {hasGallery && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <div className="glass-card p-4 rounded-xl">
+                  <EventGallery 
+                    images={event.gallery_images || []} 
+                    mainImage={event.image_url}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {event.admin_notes && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                <div className="glass-card p-4 rounded-xl">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="w-4 h-4 text-primary" />
+                    <h2 className="font-heading text-lg font-semibold">Rules & Regulations</h2>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-muted-foreground text-sm whitespace-pre-wrap">{event.admin_notes}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Desktop Layout */}
+          <div className="hidden lg:grid lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Main Content */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="lg:col-span-2 space-y-6"
+            >
+              {/* Event Image */}
+              <div className="relative rounded-2xl overflow-hidden aspect-video">
+                {event.image_url ? (
+                  <img
+                    src={event.image_url}
+                    alt={event.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                    <Calendar className="w-24 h-24 text-primary/50" />
+                  </div>
+                )}
+                <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                  {event.is_featured && (
+                    <Badge className="bg-primary text-primary-foreground text-xs">Featured</Badge>
+                  )}
+                  <Badge className={`${getCategoryColor(event.category)} text-xs`}>
+                    {event.category}
+                  </Badge>
+                </div>
+                <div className="absolute top-4 right-4">
+                  <Badge variant="outline" className="bg-background/80 backdrop-blur-sm text-xs">
+                    {isMemberOnly ? (
+                      <span className="flex items-center gap-1">
+                        <Shield className="w-3 h-3" />
+                        Members Only
                       </span>
                     ) : (
                       <span className="flex items-center gap-1">
@@ -320,14 +585,14 @@ export default function EventDetail() {
               )}
 
               {/* Event Title & Description */}
-              <div className="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl">
-                <h1 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4">
+              <div className="glass-card p-6 rounded-2xl">
+                <h1 className="font-heading text-2xl md:text-3xl font-bold mb-4">
                   {event.title}
                 </h1>
                 
                 {event.description && (
                   <div className="prose prose-invert max-w-none">
-                    <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-sm sm:text-base">
+                    <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-base">
                       {event.description}
                     </p>
                   </div>
@@ -335,64 +600,64 @@ export default function EventDetail() {
               </div>
 
               {/* Event Details Sections */}
-              <div className="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl space-y-4 sm:space-y-6">
+              <div className="glass-card p-6 rounded-2xl space-y-6">
                 {/* About Section */}
                 <div>
-                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                    <Info className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                    <h2 className="font-heading text-lg sm:text-xl font-semibold">About This Event</h2>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Info className="w-5 h-5 text-primary" />
+                    <h2 className="font-heading text-xl font-semibold">About This Event</h2>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     {/* Start Date */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                      <Calendar className="w-5 h-5 text-primary flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-xs sm:text-sm text-muted-foreground">Start Date</p>
-                        <p className="font-medium text-sm sm:text-base truncate">{formatDate(event.start_date)}</p>
+                        <p className="text-sm text-muted-foreground">Start Date</p>
+                        <p className="font-medium text-base truncate">{formatDate(event.start_date)}</p>
                       </div>
                     </div>
                     {/* Start Time */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                      <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                      <Clock className="w-5 h-5 text-primary flex-shrink-0" />
                       <div>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Start Time</p>
-                        <p className="font-medium text-sm sm:text-base">{formatTime(event.start_date)}</p>
+                        <p className="text-sm text-muted-foreground">Start Time</p>
+                        <p className="font-medium text-base">{formatTime(event.start_date)}</p>
                       </div>
                     </div>
                     {/* End Date */}
                     {event.end_date && (
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                        <CalendarClock className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                        <CalendarClock className="w-5 h-5 text-primary flex-shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-xs sm:text-sm text-muted-foreground">End Date</p>
-                          <p className="font-medium text-sm sm:text-base truncate">{formatDate(event.end_date)}</p>
+                          <p className="text-sm text-muted-foreground">End Date</p>
+                          <p className="font-medium text-base truncate">{formatDate(event.end_date)}</p>
                         </div>
                       </div>
                     )}
                     {/* End Time */}
                     {event.end_date && (
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                        <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                        <Clock className="w-5 h-5 text-primary flex-shrink-0" />
                         <div>
-                          <p className="text-xs sm:text-sm text-muted-foreground">End Time</p>
-                          <p className="font-medium text-sm sm:text-base">{formatTime(event.end_date)}</p>
+                          <p className="text-sm text-muted-foreground">End Time</p>
+                          <p className="font-medium text-base">{formatTime(event.end_date)}</p>
                         </div>
                       </div>
                     )}
                     {event.location && (
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                        <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                        <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-xs sm:text-sm text-muted-foreground">Location</p>
-                          <p className="font-medium text-sm sm:text-base truncate">{event.location}</p>
+                          <p className="text-sm text-muted-foreground">Location</p>
+                          <p className="font-medium text-base truncate">{event.location}</p>
                         </div>
                       </div>
                     )}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                      <Users className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                      <Users className="w-5 h-5 text-primary flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-xs sm:text-sm text-muted-foreground">Participation</p>
-                        <p className="font-medium text-sm sm:text-base truncate">{getTeamTypeLabel(event.team_type)}</p>
+                        <p className="text-sm text-muted-foreground">Participation</p>
+                        <p className="font-medium text-base truncate">{getTeamTypeLabel(event.team_type)}</p>
                       </div>
                     </div>
                   </div>
@@ -472,10 +737,10 @@ export default function EventDetail() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="space-y-4 order-first lg:order-last"
+              className="space-y-4"
             >
               {/* Registration Card */}
-              <div className="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl lg:sticky lg:top-24">
+              <div className="glass-card p-6 rounded-2xl lg:sticky lg:top-24">
                 <div className="space-y-4">
                   {event.max_attendees && !isMemberOnly && (
                     <div className="text-center p-4 rounded-lg bg-muted/50">

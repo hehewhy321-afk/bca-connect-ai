@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 
 // Eager load critical and frequently accessed pages for instant navigation
 import Index from "./pages/Index";
@@ -106,6 +108,8 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
+            <MobileBottomNav />
             <Routes>
               {/* Public routes - eager loaded */}
               <Route path="/" element={<Index />} />
