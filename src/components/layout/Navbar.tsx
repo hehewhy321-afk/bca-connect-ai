@@ -48,12 +48,12 @@ export function Navbar() {
       transition={{ duration: 0.5, ease: "easeOut" }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
         scrolled 
-          ? "bg-white/80 shadow-[0_8px_32px_rgba(0,0,0,0.08)] border-b border-black/5" 
+          ? "bg-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.06)] border-b border-white/30" 
           : "bg-transparent"
       }`}
       style={{
-        WebkitBackdropFilter: scrolled ? "blur(24px) saturate(180%)" : "none",
-        backdropFilter: scrolled ? "blur(24px) saturate(180%)" : "none",
+        WebkitBackdropFilter: scrolled ? "blur(20px) saturate(200%)" : "none",
+        backdropFilter: scrolled ? "blur(20px) saturate(200%)" : "none",
       }}
     >
       <div className="container mx-auto px-4">
@@ -94,7 +94,7 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center">
             <div className={`flex items-center rounded-full px-2 py-1.5 transition-all duration-500 ${
-              scrolled ? "bg-muted/60" : "bg-white/10 backdrop-blur-sm"
+              scrolled ? "bg-black/5" : "bg-white/10 backdrop-blur-sm"
             }`}>
               {navLinks.map((link) => (
                 <button
@@ -174,10 +174,10 @@ export function Navbar() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2, delay: 0.1 }}
-                className={`py-4 space-y-1 border-t mt-2 mx-2 rounded-b-2xl backdrop-blur-xl ${
+                className={`py-4 space-y-1 border-t mt-2 mx-2 rounded-2xl ${
                   scrolled 
-                    ? "border-border/50 bg-white/60" 
-                    : "border-white/10 bg-white/10"
+                    ? "border-white/30 bg-white/40 backdrop-blur-xl" 
+                    : "border-white/10 bg-white/10 backdrop-blur-xl"
                 }`}
               >
                 {navLinks.map((link, index) => {
