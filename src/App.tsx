@@ -18,7 +18,7 @@ import Forum from "./pages/Forum";
 import ForumPost from "./pages/ForumPost";
 import NewForumPost from "./pages/NewForumPost";
 import AdminPanel from "./pages/admin/AdminPanel";
-import AdminEvents from "./pages/admin/AdminEvents";
+import AdminEventsHub from "./pages/admin/AdminEventsHub";
 import EventForm from "./pages/admin/EventForm";
 import AdminResources from "./pages/admin/AdminResources";
 import ResourceForm from "./pages/admin/ResourceForm";
@@ -28,12 +28,8 @@ import AdminNotices from "./pages/admin/AdminNotices";
 import AdminContacts from "./pages/admin/AdminContacts";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminFoundingMembers from "./pages/admin/AdminFoundingMembers";
-import AdminPublicRegistrations from "./pages/admin/AdminPublicRegistrations";
-import AdminEventFeedback from "./pages/admin/AdminEventFeedback";
-import AdminInternalRegistrations from "./pages/admin/AdminInternalRegistrations";
 import AdminWebsiteSettings from "./pages/admin/AdminWebsiteSettings";
 import AdminFAQs from "./pages/admin/AdminFAQs";
-import AdminPaymentVerification from "./pages/admin/AdminPaymentVerification";
 import Notice from "./pages/Notice";
 import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
@@ -94,7 +90,7 @@ const App = () => (
             <Route path="/dashboard/forum/new" element={<ProtectedRoute><NewForumPost /></ProtectedRoute>} />
             <Route path="/dashboard/forum/:id" element={<ProtectedRoute><ForumPost /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
-            <Route path="/admin/events" element={<ProtectedRoute><AdminEvents /></ProtectedRoute>} />
+            <Route path="/admin/events" element={<ProtectedRoute><AdminEventsHub /></ProtectedRoute>} />
             <Route path="/admin/events/new" element={<ProtectedRoute><EventForm /></ProtectedRoute>} />
             <Route path="/admin/events/:id" element={<ProtectedRoute><EventForm /></ProtectedRoute>} />
             <Route path="/admin/resources" element={<ProtectedRoute><AdminResources /></ProtectedRoute>} />
@@ -106,12 +102,8 @@ const App = () => (
             <Route path="/admin/contacts" element={<ProtectedRoute><AdminContacts /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
             <Route path="/admin/founding-members" element={<ProtectedRoute><AdminFoundingMembers /></ProtectedRoute>} />
-            <Route path="/admin/public-registrations" element={<ProtectedRoute><AdminPublicRegistrations /></ProtectedRoute>} />
-            <Route path="/admin/event-feedback" element={<ProtectedRoute><AdminEventFeedback /></ProtectedRoute>} />
-            <Route path="/admin/internal-registrations" element={<ProtectedRoute><AdminInternalRegistrations /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute><AdminWebsiteSettings /></ProtectedRoute>} />
             <Route path="/admin/faqs" element={<ProtectedRoute><AdminFAQs /></ProtectedRoute>} />
-            <Route path="/admin/payment-verification" element={<ProtectedRoute><AdminPaymentVerification /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
