@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const navLinks = [
   { name: "Home", href: "/" },
   { name: "About", href: "/about" },
-  { name: "Events", href: "/dashboard/events" },
+  { name: "Events", href: "/events" },
   { name: "Notice", href: "/notice" },
   { name: "Contact Us", href: "/contact" },
 ];

@@ -15,6 +15,8 @@ import {
   LayoutDashboard,
   MessageSquare,
   UserPlus,
+  Award,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,8 +26,10 @@ import { useUserRole } from "@/hooks/useUserRole";
 const adminLinks = [
   { name: "Overview", href: "/admin", icon: Shield },
   { name: "Events", href: "/admin/events", icon: Calendar },
+  { name: "Public Registrations", href: "/admin/public-registrations", icon: ClipboardList },
   { name: "Resources", href: "/admin/resources", icon: BookOpen },
   { name: "Members", href: "/admin/members", icon: Users },
+  { name: "Founding Members", href: "/admin/founding-members", icon: Award },
   { name: "Announcements", href: "/admin/announcements", icon: Bell },
   { name: "Notices", href: "/admin/notices", icon: FileText },
   { name: "Contacts", href: "/admin/contacts", icon: MessageSquare },

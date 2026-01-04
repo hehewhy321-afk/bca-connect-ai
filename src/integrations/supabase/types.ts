@@ -355,6 +355,57 @@ export type Database = {
           },
         ]
       }
+      founding_members: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_order: number | null
+          email: string | null
+          facebook_url: string | null
+          full_name: string
+          id: string
+          is_active: boolean | null
+          linkedin_url: string | null
+          phone: string | null
+          role: string
+          twitter_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_order?: number | null
+          email?: string | null
+          facebook_url?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean | null
+          linkedin_url?: string | null
+          phone?: string | null
+          role: string
+          twitter_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_order?: number | null
+          email?: string | null
+          facebook_url?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean | null
+          linkedin_url?: string | null
+          phone?: string | null
+          role?: string
+          twitter_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -447,6 +498,44 @@ export type Database = {
           xp_points?: number | null
         }
         Relationships: []
+      }
+      public_event_registrations: {
+        Row: {
+          created_at: string
+          email: string
+          event_id: string
+          full_name: string
+          id: string
+          message: string | null
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          event_id: string
+          full_name: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          event_id?: string
+          full_name?: string
+          id?: string
+          message?: string | null
+          phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_event_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       resources: {
         Row: {
