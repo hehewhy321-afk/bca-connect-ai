@@ -29,6 +29,7 @@ import AdminContacts from "./pages/admin/AdminContacts";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminFoundingMembers from "./pages/admin/AdminFoundingMembers";
 import AdminPublicRegistrations from "./pages/admin/AdminPublicRegistrations";
+import AdminEventFeedback from "./pages/admin/AdminEventFeedback";
 import Notice from "./pages/Notice";
 import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
@@ -100,6 +101,7 @@ const App = () => (
             <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
             <Route path="/admin/founding-members" element={<ProtectedRoute><AdminFoundingMembers /></ProtectedRoute>} />
             <Route path="/admin/public-registrations" element={<ProtectedRoute><AdminPublicRegistrations /></ProtectedRoute>} />
+            <Route path="/admin/event-feedback" element={<ProtectedRoute><AdminEventFeedback /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
