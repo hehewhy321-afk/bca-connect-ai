@@ -2,3 +2,6 @@ project_id = "mqffqoirvbiynwrzwwse"
 
 [functions.ai-chat]
 verify_jwt = true
+
+[functions.send-event-reminder]
+verify_jwt = false

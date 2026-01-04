@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Calendar, MapPin, Clock, Users, Send, UserPlus, Lock, Globe, Shield, Search, Filter, X, ChevronRight } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Send, UserPlus, Lock, Globe, Shield, Search, Filter, X, ChevronRight, IndianRupee } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,8 @@ interface Event {
   team_type: string | null;
   team_size_min: number | null;
   team_size_max: number | null;
+  gallery_images: string[] | null;
+  registration_fee: number | null;
 }
 
 interface RegistrationCount {
@@ -435,6 +437,16 @@ export default function PublicEvents() {
               <Badge variant="secondary" className="text-xs">
                 <Shield className="w-3 h-3 mr-1" />
                 Members Only
+              </Badge>
+            )}
+            {event.registration_fee && event.registration_fee > 0 ? (
+              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-400 border-green-500/30">
+                <IndianRupee className="w-3 h-3 mr-0.5" />
+                {event.registration_fee}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-400 border-green-500/30">
+                Free
               </Badge>
             )}
           </div>

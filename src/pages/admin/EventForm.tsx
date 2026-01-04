@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Save, Upload, X } from "lucide-react";
+import { ArrowLeft, Save, Upload, X, Plus, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,7 @@ export default function EventForm() {
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -45,6 +46,8 @@ export default function EventForm() {
     team_type: "solo",
     team_size_min: 1,
     team_size_max: 1,
+    gallery_images: [] as string[],
+    registration_fee: "",
   });
 
   useEffect(() => {
@@ -82,6 +85,8 @@ export default function EventForm() {
         team_type: data.team_type || "solo",
         team_size_min: data.team_size_min || 1,
         team_size_max: data.team_size_max || 1,
+        gallery_images: (data as any).gallery_images || [],
+        registration_fee: (data as any).registration_fee?.toString() || "",
       });
     } catch (error) {
       console.error("Error fetching event:", error);
@@ -126,6 +131,60 @@ export default function EventForm() {
     }
   };
 
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !user) return;
+
+    setUploadingGallery(true);
+    try {
+      const uploadedUrls: string[] = [];
+      
+      for (const file of Array.from(files)) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `gallery_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("events")
+          .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from("events")
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(urlData.publicUrl);
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        gallery_images: [...prev.gallery_images, ...uploadedUrls],
+      }));
+      
+      toast({
+        title: "Images uploaded",
+        description: `${uploadedUrls.length} image(s) added to gallery.`,
+      });
+    } catch (error) {
+      console.error("Error uploading gallery images:", error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload gallery images. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
+
+  const removeGalleryImage = (indexToRemove: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      gallery_images: prev.gallery_images.filter((_, index) => index !== indexToRemove),
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -152,6 +211,10 @@ export default function EventForm() {
         team_type: formData.team_type,
         team_size_min: formData.team_size_min,
         team_size_max: formData.team_size_max,
+        gallery_images: formData.gallery_images,
+        registration_fee: formData.registration_fee
+          ? parseFloat(formData.registration_fee)
+          : null,
       };
 
       if (isEditing) {
@@ -469,6 +532,65 @@ export default function EventForm() {
               </div>
             </div>
           )}
+
+          {/* Registration Fee */}
+          <div className="space-y-2">
+            <Label htmlFor="registration_fee">Registration Fee (₹)</Label>
+            <Input
+              id="registration_fee"
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.registration_fee}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, registration_fee: e.target.value }))
+              }
+              placeholder="Leave empty for free events"
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave empty or set to 0 for free events
+            </p>
+          </div>
+
+          {/* Gallery Images */}
+          <div className="space-y-2">
+            <Label>Gallery Images</Label>
+            <div className="grid grid-cols-3 gap-3">
+              {formData.gallery_images.map((image, index) => (
+                <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
+                  <img
+                    src={image}
+                    alt={`Gallery ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeGalleryImage(index)}
+                    className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              <label className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                <ImagePlus className="w-6 h-6 text-muted-foreground mb-1" />
+                <span className="text-xs text-muted-foreground text-center">
+                  {uploadingGallery ? "Uploading..." : "Add Images"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleGalleryUpload}
+                  className="hidden"
+                  disabled={uploadingGallery}
+                />
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Upload multiple images for the event gallery
+            </p>
+          </div>
 
           {/* Submit */}
           <div className="flex items-center gap-4 pt-4 border-t border-border">

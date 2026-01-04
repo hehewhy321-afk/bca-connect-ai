@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Calendar, 
@@ -7,14 +7,13 @@ import {
   Clock, 
   Users, 
   ArrowLeft, 
-  Share2, 
-  ExternalLink,
   User,
   ListOrdered,
   Info,
   Lock,
   Globe,
-  Shield
+  Shield,
+  IndianRupee
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,9 @@ import { Footer } from "@/components/layout/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
+import { EventGallery } from "@/components/events/EventGallery";
+import { SocialShareButtons } from "@/components/events/SocialShareButtons";
+import { EventReminderForm } from "@/components/events/EventReminderForm";
 
 interface Event {
   id: string;
@@ -41,6 +43,8 @@ interface Event {
   team_type: string | null;
   team_size_min: number | null;
   team_size_max: number | null;
+  gallery_images: string[] | null;
+  registration_fee: number | null;
 }
 
 export default function EventDetail() {
@@ -68,7 +72,7 @@ export default function EventDetail() {
         .single();
 
       if (error) throw error;
-      setEvent(data);
+      setEvent(data as Event);
     } catch (error) {
       console.error("Error fetching event:", error);
       toast({
@@ -138,22 +142,6 @@ export default function EventDetail() {
     return Math.max(0, event.max_attendees - registrationCount);
   };
 
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: event?.title,
-        text: event?.description || "Check out this event!",
-        url: window.location.href,
-      });
-    } catch {
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "Link copied!",
-        description: "Event link has been copied to clipboard.",
-      });
-    }
-  };
-
   const handleRegisterClick = () => {
     if (event?.visibility === "internal") {
       if (user) {
@@ -190,6 +178,8 @@ export default function EventDetail() {
   const availableSpots = getAvailableSpots();
   const isFull = availableSpots !== null && availableSpots <= 0;
   const isMemberOnly = event.visibility === "internal";
+  const hasGallery = event.gallery_images && event.gallery_images.length > 0;
+  const hasFee = event.registration_fee && event.registration_fee > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -257,6 +247,16 @@ export default function EventDetail() {
                   </Badge>
                 </div>
               </div>
+
+              {/* Event Gallery */}
+              {hasGallery && (
+                <div className="glass-card p-6 rounded-2xl">
+                  <EventGallery 
+                    images={event.gallery_images || []} 
+                    mainImage={event.image_url}
+                  />
+                </div>
+              )}
 
               {/* Event Title & Description */}
               <div className="glass-card p-6 rounded-2xl">
@@ -395,8 +395,20 @@ export default function EventDetail() {
                   )}
 
                   <div className="text-center">
-                    <p className="text-2xl font-bold">Free</p>
-                    <p className="text-sm text-muted-foreground">Registration</p>
+                    {hasFee ? (
+                      <>
+                        <div className="flex items-center justify-center gap-1">
+                          <IndianRupee className="w-6 h-6 text-primary" />
+                          <p className="text-3xl font-bold">{event.registration_fee}</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Registration Fee</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-2xl font-bold text-green-500">Free</p>
+                        <p className="text-sm text-muted-foreground">Registration</p>
+                      </>
+                    )}
                   </div>
 
                   {isMemberOnly && !user ? (
@@ -427,15 +439,17 @@ export default function EventDetail() {
                     </Button>
                   )}
 
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleShare}
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share Event
-                  </Button>
+                  {/* Event Reminder */}
+                  <EventReminderForm eventId={event.id} eventTitle={event.title} />
                 </div>
+
+                <Separator className="my-4" />
+
+                {/* Social Share */}
+                <SocialShareButtons 
+                  title={event.title} 
+                  description={event.description} 
+                />
 
                 <Separator className="my-4" />
 
@@ -448,6 +462,15 @@ export default function EventDetail() {
                     <span className="text-muted-foreground">Status</span>
                     <Badge variant="outline" className="capitalize">{event.status}</Badge>
                   </div>
+                  {hasFee && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Fee</span>
+                      <span className="font-medium flex items-center gap-0.5">
+                        <IndianRupee className="w-3 h-3" />
+                        {event.registration_fee}
+                      </span>
+                    </div>
+                  )}
                   {event.team_type && event.team_type !== "solo" && (
                     <>
                       <div className="flex justify-between">
