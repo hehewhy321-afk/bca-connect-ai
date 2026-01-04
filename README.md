@@ -57,6 +57,12 @@ The BCA Association platform provides:
   - Payment verification (receipt preview & approval)
   - Event feedback analysis
   - CSV export for all data
+  - QR code check-in scanner
+- **AI Settings** - Configure AI provider:
+  - Switch between Lovable AI and OpenRouter
+  - Select from 10+ free models (Llama, Gemma, Mistral, etc.)
+  - Configure paid models (GPT-4o, Claude, Gemini Pro)
+  - Custom system prompts
 - **Member Management** - User roles and profiles
 - **Content Management** - FAQs, announcements, resources
 - **Website Settings** - Dynamic configuration
@@ -142,6 +148,7 @@ The database includes the following tables:
 | `chat_messages` | AI chat history |
 | `contact_submissions` | Contact form entries |
 | `website_settings` | Dynamic site configuration |
+| `ai_settings` | AI provider configuration |
 
 ### Key Database Features
 
@@ -290,19 +297,30 @@ CREATE TABLE public.event_feedback (
 
 | Function | Purpose | Auth Required |
 |----------|---------|---------------|
-| `ai-chat` | AI-powered assistant using Lovable AI | Yes |
+| `ai-chat` | AI-powered assistant (Lovable AI or OpenRouter) | Yes |
 | `send-event-reminder` | Send email reminders 24h before events | No (cron) |
 | `create-user` | Admin user creation | Yes (Admin) |
 | `setup-admin` | Initial admin setup | No |
 
 ### ai-chat Function
 
-Handles AI conversations using Lovable AI (no API key required).
+Handles AI conversations with flexible provider support.
+
+**Supported Providers:**
+- **Lovable AI** (Default) - No API key required, uses Gemini 2.5 Flash
+- **OpenRouter** - Access to 100+ models including free options
 
 ```typescript
 // Usage in frontend
-const { data } = await supabase.functions.invoke('ai-chat', {
-  body: { message: 'What events are coming up?' }
+const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-chat`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ 
+    messages: [{ role: 'user', content: 'Explain recursion in programming' }]
+  }),
 });
 ```
 
@@ -315,6 +333,80 @@ Automated email reminders using Resend API.
 ```typescript
 // Triggered automatically by cron job
 // Sends reminders 24 hours before event start
+```
+
+---
+
+## AI Configuration
+
+The platform includes an AI-powered study assistant that can be configured through the Admin Panel.
+
+### Accessing AI Settings
+
+1. Login as an admin
+2. Go to **Admin Panel → AI Settings**
+3. Configure your preferred provider
+
+### Available Providers
+
+#### Lovable AI (Default)
+- **No API key required** - works out of the box
+- Uses Google Gemini 2.5 Flash model
+- Simple and reliable for most use cases
+
+#### OpenRouter
+- Access to **100+ AI models** including free options
+- Get your API key from [openrouter.ai/keys](https://openrouter.ai/keys)
+- Perfect for budget-conscious deployments
+
+### Free Models Available (OpenRouter)
+
+| Model | Provider | Best For |
+|-------|----------|----------|
+| Llama 3.2 3B | Meta | General use, balanced |
+| Llama 3.1 8B | Meta | Longer responses |
+| Gemma 2 9B | Google | Coding questions |
+| Mistral 7B | Mistral AI | Creative writing |
+| Phi-3 Mini | Microsoft | Fast, simple queries |
+| Qwen 2 7B | Alibaba | Multilingual support |
+| OpenChat 7B | OpenChat | Conversational |
+| Zephyr 7B | HuggingFace | Technical explanations |
+
+### Paid Models Available (OpenRouter)
+
+| Model | Provider |
+|-------|----------|
+| GPT-4o / GPT-4o Mini | OpenAI |
+| Claude 3.5 Sonnet / Claude 3 Haiku | Anthropic |
+| Gemini Pro 1.5 / Gemini Flash 1.5 | Google |
+| Llama 3.1 70B | Meta |
+| Mixtral 8x7B | Mistral AI |
+
+### Custom System Prompt
+
+You can customize the AI assistant's personality and instructions:
+1. Go to Admin → AI Settings
+2. Scroll to "Custom System Prompt"
+3. Enter your custom instructions
+4. Save changes
+
+### AI Settings Database Table
+
+```sql
+CREATE TABLE public.ai_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  setting_key TEXT NOT NULL UNIQUE,
+  setting_value TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Default settings
+INSERT INTO ai_settings (setting_key, setting_value) VALUES
+  ('ai_provider', 'lovable'),
+  ('openrouter_api_key', ''),
+  ('openrouter_model', 'meta-llama/llama-3.2-3b-instruct:free'),
+  ('custom_system_prompt', '');
 ```
 
 ---
@@ -470,12 +562,15 @@ VITE_SUPABASE_PROJECT_ID=your-project-id
 - [ ] Enable email confirmation for signups
 - [ ] Set up proper email templates in Supabase
 - [ ] Configure RESEND_API_KEY for email reminders
+- [ ] Configure AI provider in Admin > AI Settings
+- [ ] Add OpenRouter API key if using free models
 - [ ] Verify all RLS policies are active
 - [ ] Set up cron job for event reminders
 - [ ] Configure custom domain
 - [ ] Update OG images and metadata
 - [ ] Test payment receipt upload flow
 - [ ] Verify admin access
+- [ ] Test QR code check-in flow
 
 ---
 
