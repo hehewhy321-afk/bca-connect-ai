@@ -83,7 +83,7 @@ export function EventsSection() {
               and network with peers.
             </p>
           </div>
-          <Button variant="outline" size="lg" className="self-start md:self-auto" onClick={() => navigate("/auth")}>
+          <Button variant="outline" size="lg" className="self-start md:self-auto" onClick={() => navigate("/events")}>
             View All Events
             <ArrowRight className="w-4 h-4" />
           </Button>
@@ -170,7 +170,7 @@ export function EventsSection() {
                       )}
                     </div>
 
-                    <Button variant="default" size="sm" className="w-full mt-4" onClick={() => navigate("/auth")}>
+                    <Button variant="default" size="sm" className="w-full mt-4" onClick={() => navigate("/events")}>
                       Register Now
                     </Button>
                   </div>
