@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, GraduationCap, ChevronRight } from "lucide-react";
+import { Menu, X, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -17,9 +18,10 @@ const navLinks = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { data: settings } = useWebsiteSettings();
+  const { data: settings, isLoading } = useWebsiteSettings();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,10 +31,21 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Preload logo image
+  useEffect(() => {
+    if (settings?.site_logo) {
+      const img = new Image();
+      img.src = settings.site_logo;
+      img.onload = () => setImageLoaded(true);
+    }
+  }, [settings?.site_logo]);
+
   const handleNavClick = (href: string) => {
     navigate(href);
     setIsOpen(false);
   };
+
+  const showSkeleton = isLoading || (settings?.site_logo && !imageLoaded);
 
   return (
     <motion.header
@@ -46,26 +59,35 @@ export function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="relative">
-              {settings?.site_logo ? (
+              {showSkeleton ? (
+                <Skeleton className="w-11 h-11 rounded-xl bg-white/20" />
+              ) : settings?.site_logo ? (
                 <img
                   src={settings.site_logo}
                   alt={settings?.site_name || "Logo"}
                   className="w-11 h-11 rounded-xl object-cover shadow-lg group-hover:shadow-glow transition-all duration-300 group-hover:scale-105"
                 />
-              ) : (
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary via-primary to-accent flex items-center justify-center shadow-lg group-hover:shadow-glow transition-all duration-300 group-hover:scale-105">
-                  <GraduationCap className="w-6 h-6 text-primary-foreground" />
-                </div>
+              ) : null}
+              {!showSkeleton && (
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-accent border-2 border-background" />
               )}
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-accent border-2 border-background" />
             </div>
             <div className="flex flex-col">
-              <span className="font-heading font-bold text-lg leading-tight text-white">
-                {settings?.site_name || "BCA Association"}
-              </span>
-              <span className="text-xs text-white/70 font-medium">
-                {settings?.site_subtitle || "MMAMC Biratnagar"}
-              </span>
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-5 w-28 bg-white/20" />
+                  <Skeleton className="h-3 w-20 mt-1 bg-white/20" />
+                </>
+              ) : (
+                <>
+                  <span className="font-heading font-bold text-lg leading-tight text-white">
+                    {settings?.site_name || "BCA Association"}
+                  </span>
+                  <span className="text-xs text-white/70 font-medium">
+                    {settings?.site_subtitle || "MMAMC Biratnagar"}
+                  </span>
+                </>
+              )}
             </div>
           </Link>
 
