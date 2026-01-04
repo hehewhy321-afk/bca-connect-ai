@@ -40,7 +40,7 @@ const AdminWebsiteSettings = () => {
   });
 
   useEffect(() => {
-    if (settingsData) {
+    if (settingsData && Array.isArray(settingsData)) {
       const mapped: SettingsMap = {};
       settingsData.forEach((s) => {
         mapped[s.setting_key] = s.setting_value || "";
