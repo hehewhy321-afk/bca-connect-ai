@@ -3,18 +3,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Bot, Key, Sparkles, ExternalLink } from "lucide-react";
+import { Loader2, Bot, Key, Sparkles, ExternalLink, Shield, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface AISettingsMap {
   ai_provider: string;
-  openrouter_api_key: string;
   openrouter_model: string;
   custom_system_prompt: string;
 }
@@ -50,7 +49,6 @@ const AdminAISettings = () => {
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<AISettingsMap>({
     ai_provider: "lovable",
-    openrouter_api_key: "",
     openrouter_model: "meta-llama/llama-3.2-3b-instruct:free",
     custom_system_prompt: "",
   });
@@ -71,13 +69,13 @@ const AdminAISettings = () => {
     if (aiSettings) {
       const settingsMap: AISettingsMap = {
         ai_provider: "lovable",
-        openrouter_api_key: "",
         openrouter_model: "meta-llama/llama-3.2-3b-instruct:free",
         custom_system_prompt: "",
       };
       
       aiSettings.forEach((setting) => {
-        if (setting.setting_key in settingsMap) {
+        // Skip openrouter_api_key - it should not be stored in database
+        if (setting.setting_key in settingsMap && setting.setting_key !== 'openrouter_api_key') {
           settingsMap[setting.setting_key as keyof AISettingsMap] = setting.setting_value || "";
         }
       });
@@ -88,6 +86,7 @@ const AdminAISettings = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      // Only save non-sensitive settings to database
       const updates = Object.entries(settings).map(([key, value]) => ({
         setting_key: key,
         setting_value: value,
@@ -112,10 +111,6 @@ const AdminAISettings = () => {
   });
 
   const handleSave = () => {
-    if (settings.ai_provider === "openrouter" && !settings.openrouter_api_key) {
-      toast.error("Please enter your OpenRouter API key");
-      return;
-    }
     saveMutation.mutate();
   };
 
@@ -213,32 +208,35 @@ const AdminAISettings = () => {
                 OpenRouter Configuration
               </CardTitle>
               <CardDescription>
-                Get your free API key from{" "}
-                <a 
-                  href="https://openrouter.ai/keys" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline inline-flex items-center gap-1"
-                >
-                  openrouter.ai/keys
-                  <ExternalLink className="h-3 w-3" />
-                </a>
+                Configure your OpenRouter model selection and API key
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="api-key">API Key</Label>
-                <Input
-                  id="api-key"
-                  type="password"
-                  placeholder="sk-or-v1-..."
-                  value={settings.openrouter_api_key}
-                  onChange={(e) => setSettings(s => ({ ...s, openrouter_api_key: e.target.value }))}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Your API key is stored securely and never exposed to clients
-                </p>
-              </div>
+              {/* Security Notice for API Key */}
+              <Alert className="border-amber-500/50 bg-amber-500/10">
+                <Shield className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-600">API Key Security</AlertTitle>
+                <AlertDescription className="text-amber-700 dark:text-amber-400">
+                  <p className="mb-2">
+                    For security reasons, OpenRouter API keys are stored as encrypted secrets, not in the database.
+                  </p>
+                  <p className="mb-2">
+                    To configure your API key, please contact your system administrator to set the <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono">OPENROUTER_API_KEY</code> secret in Lovable Cloud.
+                  </p>
+                  <p>
+                    Get your free API key from{" "}
+                    <a 
+                      href="https://openrouter.ai/keys" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline inline-flex items-center gap-1 font-medium"
+                    >
+                      openrouter.ai/keys
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </p>
+                </AlertDescription>
+              </Alert>
 
               <div className="space-y-2">
                 <Label>Model Selection</Label>

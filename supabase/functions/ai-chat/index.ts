@@ -39,7 +39,10 @@ async function getAISettings(supabaseClient: any) {
 
     const settings: Record<string, string> = {};
     data?.forEach((row: any) => {
-      settings[row.setting_key] = row.setting_value || "";
+      // Skip openrouter_api_key from database - we use secrets instead
+      if (row.setting_key !== 'openrouter_api_key') {
+        settings[row.setting_key] = row.setting_value || "";
+      }
     });
 
     return settings;
@@ -105,31 +108,62 @@ serve(async (req) => {
   }
 
   try {
+    // VALIDATE AUTHENTICATION - Prevent unauthenticated access
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("No authorization header provided");
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - please log in to use the AI assistant' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify JWT and get user
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    // Create client with user's auth token
+    const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseUserClient.auth.getUser();
+    
+    if (authError || !user) {
+      console.error("Authentication failed:", authError?.message || "No user found");
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired session - please log in again' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log("Authenticated user:", user.id);
+
     const { messages } = await req.json();
     
-    // Create Supabase client to fetch settings
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+    // Create admin client to fetch settings (read-only)
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get AI settings from database
+    // Get AI settings from database (excluding API keys)
     const settings = await getAISettings(supabaseClient);
     
     const provider = settings?.ai_provider || "lovable";
     const systemPrompt = settings?.custom_system_prompt || DEFAULT_SYSTEM_PROMPT;
     
     console.log("Using AI provider:", provider);
-    console.log("Processing chat request with", messages.length, "messages");
+    console.log("Processing chat request for user:", user.id, "with", messages.length, "messages");
 
     let response: Response;
 
     if (provider === "openrouter") {
-      const apiKey = settings?.openrouter_api_key;
+      // Get API key from Supabase secrets (not from database)
+      const apiKey = Deno.env.get("OPENROUTER_API_KEY");
       const model = settings?.openrouter_model || "meta-llama/llama-3.2-3b-instruct:free";
 
       if (!apiKey) {
         return new Response(
-          JSON.stringify({ error: "OpenRouter API key not configured. Please set it in Admin > AI Settings." }),
+          JSON.stringify({ error: "OpenRouter API key not configured. Please contact an administrator to set up the OPENROUTER_API_KEY secret." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -157,7 +191,7 @@ serve(async (req) => {
       }
       if (response.status === 401) {
         return new Response(
-          JSON.stringify({ error: "Invalid API key. Please check your OpenRouter API key in Admin > AI Settings." }),
+          JSON.stringify({ error: "Invalid AI provider API key. Please contact an administrator." }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
