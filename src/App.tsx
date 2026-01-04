@@ -39,6 +39,7 @@ const AdminFoundingMembers = lazy(() => import("./pages/admin/AdminFoundingMembe
 const AdminWebsiteSettings = lazy(() => import("./pages/admin/AdminWebsiteSettings"));
 const AdminFAQs = lazy(() => import("./pages/admin/AdminFAQs"));
 const AdminQRScanner = lazy(() => import("./pages/admin/AdminQRScanner"));
+const AdminAISettings = lazy(() => import("./pages/admin/AdminAISettings"));
 const Notice = lazy(() => import("./pages/Notice"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Contact = lazy(() => import("./pages/Contact"));
@@ -138,6 +139,7 @@ const App = () => (
               <Route path="/admin/founding-members" element={<ProtectedRoute><LazyRoute><AdminFoundingMembers /></LazyRoute></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><LazyRoute><AdminWebsiteSettings /></LazyRoute></ProtectedRoute>} />
               <Route path="/admin/faqs" element={<ProtectedRoute><LazyRoute><AdminFAQs /></LazyRoute></ProtectedRoute>} />
+              <Route path="/admin/ai-settings" element={<ProtectedRoute><LazyRoute><AdminAISettings /></LazyRoute></ProtectedRoute>} />
               
               {/* 404 */}
               <Route path="*" element={<NotFound />} />

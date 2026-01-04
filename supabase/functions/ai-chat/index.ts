@@ -1,26 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const { messages } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
-
-    console.log("Processing chat request with", messages.length, "messages");
-
-    const systemPrompt = `You are the BCA AI Study Assistant for MMAMC College, Nepal. You are knowledgeable, friendly, and helpful.
+const DEFAULT_SYSTEM_PROMPT = `You are the BCA AI Study Assistant for MMAMC College, Nepal. You are knowledgeable, friendly, and helpful.
 
 Your expertise includes:
 - BCA curriculum subjects: Programming (C, C++, Java, Python), Data Structures, Algorithms, Database Management, Web Development, Networking, Operating Systems, Software Engineering, and more
@@ -40,25 +26,122 @@ Guidelines:
 - Reference relevant resources when appropriate
 - Use Nepali context when relevant (local companies, opportunities, etc.)`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: true,
-      }),
+async function getAISettings(supabaseClient: any) {
+  try {
+    const { data, error } = await supabaseClient
+      .from("ai_settings")
+      .select("setting_key, setting_value");
+    
+    if (error) {
+      console.error("Error fetching AI settings:", error);
+      return null;
+    }
+
+    const settings: Record<string, string> = {};
+    data?.forEach((row: any) => {
+      settings[row.setting_key] = row.setting_value || "";
     });
+
+    return settings;
+  } catch (error) {
+    console.error("Error in getAISettings:", error);
+    return null;
+  }
+}
+
+async function callLovableAI(messages: any[], systemPrompt: string) {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  
+  if (!LOVABLE_API_KEY) {
+    throw new Error("LOVABLE_API_KEY is not configured");
+  }
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+      stream: true,
+    }),
+  });
+
+  return response;
+}
+
+async function callOpenRouter(messages: any[], systemPrompt: string, apiKey: string, model: string) {
+  console.log("Calling OpenRouter with model:", model);
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": Deno.env.get("SUPABASE_URL") || "https://lovable.dev",
+      "X-Title": "BCA Study Assistant",
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+      stream: true,
+    }),
+  });
+
+  return response;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { messages } = await req.json();
+    
+    // Create Supabase client to fetch settings
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+    // Get AI settings from database
+    const settings = await getAISettings(supabaseClient);
+    
+    const provider = settings?.ai_provider || "lovable";
+    const systemPrompt = settings?.custom_system_prompt || DEFAULT_SYSTEM_PROMPT;
+    
+    console.log("Using AI provider:", provider);
+    console.log("Processing chat request with", messages.length, "messages");
+
+    let response: Response;
+
+    if (provider === "openrouter") {
+      const apiKey = settings?.openrouter_api_key;
+      const model = settings?.openrouter_model || "meta-llama/llama-3.2-3b-instruct:free";
+
+      if (!apiKey) {
+        return new Response(
+          JSON.stringify({ error: "OpenRouter API key not configured. Please set it in Admin > AI Settings." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      response = await callOpenRouter(messages, systemPrompt, apiKey, model);
+    } else {
+      response = await callLovableAI(messages, systemPrompt);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("AI provider error:", response.status, errorText);
       
       if (response.status === 429) {
         return new Response(
@@ -68,8 +151,14 @@ Guidelines:
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add more credits." }),
+          JSON.stringify({ error: "AI credits exhausted. Please add more credits or switch to a free model." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 401) {
+        return new Response(
+          JSON.stringify({ error: "Invalid API key. Please check your OpenRouter API key in Admin > AI Settings." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
@@ -79,7 +168,7 @@ Guidelines:
       );
     }
 
-    console.log("Streaming response from AI gateway");
+    console.log("Streaming response from AI provider");
 
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },

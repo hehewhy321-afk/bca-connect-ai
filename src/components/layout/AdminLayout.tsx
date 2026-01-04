@@ -19,13 +19,14 @@ import {
   ClipboardList,
   Star,
   QrCode,
+  Settings,
+  HelpCircle,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
-
-import { Settings, HelpCircle } from "lucide-react";
 
 const adminLinks = [
   { name: "Overview", href: "/admin", icon: Shield },
@@ -37,6 +38,7 @@ const adminLinks = [
   { name: "Announcements", href: "/admin/announcements", icon: Bell },
   { name: "Notices", href: "/admin/notices", icon: FileText },
   { name: "FAQs", href: "/admin/faqs", icon: HelpCircle },
+  { name: "AI Settings", href: "/admin/ai-settings", icon: Bot },
   { name: "Website Settings", href: "/admin/settings", icon: Settings },
   { name: "Contacts", href: "/admin/contacts", icon: MessageSquare },
   { name: "Create User", href: "/admin/users", icon: UserPlus },
