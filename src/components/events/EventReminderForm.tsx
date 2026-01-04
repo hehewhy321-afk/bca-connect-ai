@@ -43,11 +43,20 @@ export function EventReminderForm({ eventId, eventTitle }: EventReminderFormProp
 
       if (error) throw error;
 
+      // Check if already subscribed
+      if (data?.already_subscribed) {
+        toast({
+          title: "Already subscribed",
+          description: `You're already set to receive reminders for "${eventTitle}".`,
+        });
+      } else {
+        toast({
+          title: "Reminder set!",
+          description: `We'll send you a reminder email before "${eventTitle}" starts.`,
+        });
+      }
+
       setSubscribed(true);
-      toast({
-        title: "Reminder set!",
-        description: `We'll send you a reminder email before "${eventTitle}" starts.`,
-      });
     } catch (error: any) {
       console.error("Error setting reminder:", error);
       toast({

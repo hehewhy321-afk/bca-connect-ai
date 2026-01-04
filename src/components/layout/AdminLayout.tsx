@@ -18,7 +18,6 @@ import {
   Award,
   ClipboardList,
   Star,
-  IndianRupee,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,10 +29,6 @@ import { Settings, HelpCircle } from "lucide-react";
 const adminLinks = [
   { name: "Overview", href: "/admin", icon: Shield },
   { name: "Events", href: "/admin/events", icon: Calendar },
-  { name: "Internal Registrations", href: "/admin/internal-registrations", icon: Users },
-  { name: "Public Registrations", href: "/admin/public-registrations", icon: ClipboardList },
-  { name: "Payment Verification", href: "/admin/payment-verification", icon: IndianRupee },
-  { name: "Event Feedback", href: "/admin/event-feedback", icon: Star },
   { name: "Resources", href: "/admin/resources", icon: BookOpen },
   { name: "Members", href: "/admin/members", icon: Users },
   { name: "Founding Members", href: "/admin/founding-members", icon: Award },

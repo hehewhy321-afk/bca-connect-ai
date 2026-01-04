@@ -60,31 +60,47 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if already subscribed
+    // Check if already subscribed - prevent duplicate emails (DDoS protection)
     const { data: existing } = await supabase
       .from("event_reminders")
       .select("id")
       .eq("event_id", event_id)
-      .eq("email", email)
+      .eq("email", email.toLowerCase().trim())
       .maybeSingle();
 
     if (existing) {
+      console.log(`Duplicate reminder attempt blocked for email: ${email}, event: ${event_id}`);
       return new Response(
-        JSON.stringify({ message: "Already subscribed to reminders for this event" }),
+        JSON.stringify({ 
+          message: "You're already subscribed to reminders for this event",
+          already_subscribed: true 
+        }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    // Subscribe to reminder
+    // Subscribe to reminder with normalized email
+    const normalizedEmail = email.toLowerCase().trim();
     const { error: insertError } = await supabase
       .from("event_reminders")
       .insert({
         event_id,
-        email,
+        email: normalizedEmail,
         user_id: user_id || null,
       });
 
     if (insertError) {
+      // Handle unique constraint violation gracefully
+      if (insertError.code === '23505') {
+        console.log(`Race condition duplicate prevented for: ${normalizedEmail}`);
+        return new Response(
+          JSON.stringify({ 
+            message: "You're already subscribed to reminders for this event",
+            already_subscribed: true 
+          }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
       console.error("Error inserting reminder:", insertError);
       throw insertError;
     }
