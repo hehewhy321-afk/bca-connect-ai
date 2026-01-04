@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface WebsiteSettings {
-  logo_url: string;
+  site_logo: string;
   site_name: string;
   site_subtitle: string;
   phone: string;
@@ -14,10 +14,11 @@ export interface WebsiteSettings {
   twitter_url: string;
   linkedin_url: string;
   github_url: string;
+  youtube_url: string;
 }
 
 const defaultSettings: WebsiteSettings = {
-  logo_url: "",
+  site_logo: "",
   site_name: "BCA Association",
   site_subtitle: "MMAMC Nepal",
   phone: "+977 21-123456",
@@ -29,6 +30,7 @@ const defaultSettings: WebsiteSettings = {
   twitter_url: "https://twitter.com",
   linkedin_url: "https://linkedin.com",
   github_url: "https://github.com",
+  youtube_url: "https://youtube.com",
 };
 
 export function useWebsiteSettings() {

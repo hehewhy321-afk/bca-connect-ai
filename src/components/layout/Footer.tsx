@@ -67,9 +67,9 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              {settings?.logo_url ? (
+              {settings?.site_logo ? (
                 <img
-                  src={settings.logo_url}
+                  src={settings.site_logo}
                   alt={settings?.site_name || "Logo"}
                   className="w-10 h-10 rounded-xl object-cover"
                 />
