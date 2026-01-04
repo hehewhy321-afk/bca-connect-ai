@@ -178,6 +178,8 @@ export type Database = {
           event_id: string
           id: string
           registered_at: string
+          team_members: Json | null
+          team_name: string | null
           user_id: string
         }
         Insert: {
@@ -185,6 +187,8 @@ export type Database = {
           event_id: string
           id?: string
           registered_at?: string
+          team_members?: Json | null
+          team_name?: string | null
           user_id: string
         }
         Update: {
@@ -192,6 +196,8 @@ export type Database = {
           event_id?: string
           id?: string
           registered_at?: string
+          team_members?: Json | null
+          team_name?: string | null
           user_id?: string
         }
         Relationships: [
@@ -218,8 +224,12 @@ export type Database = {
           max_attendees: number | null
           start_date: string
           status: Database["public"]["Enums"]["event_status"] | null
+          team_size_max: number | null
+          team_size_min: number | null
+          team_type: string | null
           title: string
           updated_at: string
+          visibility: string | null
         }
         Insert: {
           category: string
@@ -234,8 +244,12 @@ export type Database = {
           max_attendees?: number | null
           start_date: string
           status?: Database["public"]["Enums"]["event_status"] | null
+          team_size_max?: number | null
+          team_size_min?: number | null
+          team_type?: string | null
           title: string
           updated_at?: string
+          visibility?: string | null
         }
         Update: {
           category?: string
@@ -250,8 +264,12 @@ export type Database = {
           max_attendees?: number | null
           start_date?: string
           status?: Database["public"]["Enums"]["event_status"] | null
+          team_size_max?: number | null
+          team_size_min?: number | null
+          team_type?: string | null
           title?: string
           updated_at?: string
+          visibility?: string | null
         }
         Relationships: []
       }
@@ -546,6 +564,8 @@ export type Database = {
           id: string
           message: string | null
           phone: string | null
+          team_members: Json | null
+          team_name: string | null
         }
         Insert: {
           created_at?: string
@@ -555,6 +575,8 @@ export type Database = {
           id?: string
           message?: string | null
           phone?: string | null
+          team_members?: Json | null
+          team_name?: string | null
         }
         Update: {
           created_at?: string
@@ -564,6 +586,8 @@ export type Database = {
           id?: string
           message?: string | null
           phone?: string | null
+          team_members?: Json | null
+          team_name?: string | null
         }
         Relationships: [
           {
