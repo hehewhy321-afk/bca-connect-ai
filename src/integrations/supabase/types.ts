@@ -210,6 +210,41 @@ export type Database = {
           },
         ]
       }
+      event_reminders: {
+        Row: {
+          created_at: string
+          email: string
+          event_id: string
+          id: string
+          reminder_sent: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          event_id: string
+          id?: string
+          reminder_sent?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          event_id?: string
+          id?: string
+          reminder_sent?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_reminders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           category: string
@@ -217,11 +252,13 @@ export type Database = {
           created_by: string | null
           description: string | null
           end_date: string | null
+          gallery_images: string[] | null
           id: string
           image_url: string | null
           is_featured: boolean | null
           location: string | null
           max_attendees: number | null
+          registration_fee: number | null
           start_date: string
           status: Database["public"]["Enums"]["event_status"] | null
           team_size_max: number | null
@@ -237,11 +274,13 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           end_date?: string | null
+          gallery_images?: string[] | null
           id?: string
           image_url?: string | null
           is_featured?: boolean | null
           location?: string | null
           max_attendees?: number | null
+          registration_fee?: number | null
           start_date: string
           status?: Database["public"]["Enums"]["event_status"] | null
           team_size_max?: number | null
@@ -257,11 +296,13 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           end_date?: string | null
+          gallery_images?: string[] | null
           id?: string
           image_url?: string | null
           is_featured?: boolean | null
           location?: string | null
           max_attendees?: number | null
+          registration_fee?: number | null
           start_date?: string
           status?: Database["public"]["Enums"]["event_status"] | null
           team_size_max?: number | null
