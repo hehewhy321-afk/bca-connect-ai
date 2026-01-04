@@ -30,7 +30,7 @@ const contactInfo = [
   {
     icon: Mail,
     title: "Email",
-    details: ["bca@mmamc.edu.np", "support@mmamc.edu.np"],
+    details: ["mmamcbcaassociation@gmail.com", "mmamc.bca.association@gmail.com"],
   },
   {
     icon: Phone,
