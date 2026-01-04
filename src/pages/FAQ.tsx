@@ -45,20 +45,20 @@ export default function FAQ() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-16 px-4 bg-gradient-to-b from-primary/5 to-background">
+      <section className="pt-24 sm:pt-32 pb-10 sm:pb-16 px-4 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
-              <HelpCircle className="w-8 h-8 text-primary" />
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-primary/10 mb-4 sm:mb-6">
+              <HelpCircle className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <h1 className="font-heading text-4xl md:text-5xl font-bold text-foreground mb-4">
+            <h1 className="font-heading text-2xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4 px-2">
               Frequently Asked Questions
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl mx-auto px-2">
               Find answers to common questions about BCA Association, our resources, events, and community.
             </p>
           </motion.div>
@@ -66,7 +66,7 @@ export default function FAQ() {
       </section>
 
       {/* FAQ Content */}
-      <section className="py-16 px-4">
+      <section className="py-10 sm:py-16 px-4">
         <div className="container mx-auto max-w-4xl">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -84,13 +84,13 @@ export default function FAQ() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: categoryIndex * 0.1 }}
-                className="mb-10"
+                className="mb-6 sm:mb-10"
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <HelpCircle className="w-5 h-5 text-primary" />
+                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   </div>
-                  <h2 className="font-heading text-2xl font-semibold text-foreground">
+                  <h2 className="font-heading text-lg sm:text-2xl font-semibold text-foreground">
                     {category}
                   </h2>
                 </div>
@@ -100,12 +100,12 @@ export default function FAQ() {
                     <AccordionItem 
                       key={faq.id} 
                       value={`${category}-${faqIndex}`}
-                      className="border border-border rounded-lg mb-3 px-4 bg-card"
+                      className="border border-border rounded-lg mb-2 sm:mb-3 px-3 sm:px-4 bg-card"
                     >
-                      <AccordionTrigger className="text-left font-medium text-foreground hover:text-primary">
+                      <AccordionTrigger className="text-left font-medium text-foreground hover:text-primary text-sm sm:text-base py-3 sm:py-4">
                         {faq.question}
                       </AccordionTrigger>
-                      <AccordionContent className="text-muted-foreground">
+                      <AccordionContent className="text-muted-foreground text-sm sm:text-base pb-3 sm:pb-4">
                         {faq.answer}
                       </AccordionContent>
                     </AccordionItem>
@@ -118,7 +118,7 @@ export default function FAQ() {
       </section>
 
       {/* Still Have Questions */}
-      <section className="py-16 px-4 bg-muted/30">
+      <section className="py-10 sm:py-16 px-4 bg-muted/30">
         <div className="container mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -126,15 +126,15 @@ export default function FAQ() {
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="font-heading text-2xl md:text-3xl font-bold text-foreground mb-4">
+            <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-3 sm:mb-4">
               Still Have Questions?
             </h2>
-            <p className="text-muted-foreground mb-6">
+            <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base px-2">
               Can't find what you're looking for? Feel free to reach out to us.
             </p>
             <a
               href="/contact"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors text-sm sm:text-base"
             >
               Contact Us
             </a>

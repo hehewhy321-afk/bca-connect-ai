@@ -262,26 +262,28 @@ export default function Dashboard() {
                 {upcomingEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Calendar className="w-6 h-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-foreground truncate">
-                        {event.title}
-                      </h3>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {formatDate(event.start_date)}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
-                          {event.category}
-                        </span>
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-foreground truncate text-sm sm:text-base">
+                          {event.title}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-1">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                            {formatDate(event.start_date)}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
+                            {event.category}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto mt-2 sm:mt-0">
                       Register
                     </Button>
                   </div>
