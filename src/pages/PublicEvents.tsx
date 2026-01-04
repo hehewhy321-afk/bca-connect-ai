@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Clock, Users, Send, UserPlus, Lock, Globe, Shield } from "lucide-react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { Calendar, MapPin, Clock, Users, Send, UserPlus, Lock, Globe, Shield, Search, Filter, X, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Event {
   id: string;
@@ -42,8 +49,24 @@ interface RegistrationCount {
   [eventId: string]: number;
 }
 
+const EVENT_CATEGORIES = ["All", "Workshop", "Seminar", "Hackathon", "Meetup", "Competition"];
+const DATE_FILTERS = [
+  { value: "all", label: "All Dates" },
+  { value: "today", label: "Today" },
+  { value: "this_week", label: "This Week" },
+  { value: "this_month", label: "This Month" },
+];
+const TYPE_FILTERS = [
+  { value: "all", label: "All Types" },
+  { value: "solo", label: "Individual" },
+  { value: "duo", label: "Duo" },
+  { value: "squad", label: "Squad" },
+  { value: "any", label: "Team" },
+];
+
 export default function PublicEvents() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [publicEvents, setPublicEvents] = useState<Event[]>([]);
   const [memberEvents, setMemberEvents] = useState<Event[]>([]);
@@ -54,6 +77,12 @@ export default function PublicEvents() {
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -62,6 +91,17 @@ export default function PublicEvents() {
     team_name: "",
     team_members: [] as { name: string; email: string }[],
   });
+
+  // Handle registration from URL param
+  useEffect(() => {
+    const registerEventId = searchParams.get("register");
+    if (registerEventId && !loading) {
+      const event = [...publicEvents, ...memberEvents].find(e => e.id === registerEventId);
+      if (event && event.visibility === "public") {
+        handleRegister(event);
+      }
+    }
+  }, [searchParams, loading, publicEvents, memberEvents]);
 
   useEffect(() => {
     fetchEvents();
@@ -117,6 +157,60 @@ export default function PublicEvents() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Filter events based on search and filters
+  const filterEvents = (events: Event[]) => {
+    return events.filter((event) => {
+      // Search filter
+      const matchesSearch = searchQuery === "" || 
+        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.location?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Category filter
+      const matchesCategory = categoryFilter === "All" || 
+        event.category.toLowerCase() === categoryFilter.toLowerCase();
+
+      // Date filter
+      let matchesDate = true;
+      if (dateFilter !== "all") {
+        const eventDate = new Date(event.start_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (dateFilter === "today") {
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          matchesDate = eventDate >= today && eventDate < tomorrow;
+        } else if (dateFilter === "this_week") {
+          const weekEnd = new Date(today);
+          weekEnd.setDate(weekEnd.getDate() + 7);
+          matchesDate = eventDate >= today && eventDate <= weekEnd;
+        } else if (dateFilter === "this_month") {
+          const monthEnd = new Date(today);
+          monthEnd.setMonth(monthEnd.getMonth() + 1);
+          matchesDate = eventDate >= today && eventDate <= monthEnd;
+        }
+      }
+
+      // Type filter
+      const matchesType = typeFilter === "all" || event.team_type === typeFilter;
+
+      return matchesSearch && matchesCategory && matchesDate && matchesType;
+    });
+  };
+
+  const filteredPublicEvents = useMemo(() => filterEvents(publicEvents), [publicEvents, searchQuery, categoryFilter, dateFilter, typeFilter]);
+  const filteredMemberEvents = useMemo(() => filterEvents(memberEvents), [memberEvents, searchQuery, categoryFilter, dateFilter, typeFilter]);
+
+  const hasActiveFilters = searchQuery !== "" || categoryFilter !== "All" || dateFilter !== "all" || typeFilter !== "all";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setCategoryFilter("All");
+    setDateFilter("all");
+    setTypeFilter("all");
   };
 
   const fetchRegistrationCounts = async (eventIds?: string[]) => {
@@ -297,8 +391,8 @@ export default function PublicEvents() {
         transition={{ delay: index * 0.1 }}
         className="glass-card rounded-2xl overflow-hidden group hover:border-primary/50 transition-all duration-300"
       >
-        {/* Event Image */}
-        <div className="relative h-48 overflow-hidden">
+        {/* Event Image - Clickable for detail */}
+        <Link to={`/events/${event.id}`} className="block relative h-48 overflow-hidden">
           {event.image_url ? (
             <img
               src={event.image_url}
@@ -318,13 +412,15 @@ export default function PublicEvents() {
           <span className={`absolute top-3 right-3 px-3 py-1 text-xs font-medium rounded-full border ${getCategoryColor(event.category)}`}>
             {event.category}
           </span>
-        </div>
+        </Link>
 
         {/* Event Details */}
         <div className="p-5">
-          <h3 className="font-heading font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-            {event.title}
-          </h3>
+          <Link to={`/events/${event.id}`}>
+            <h3 className="font-heading font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+              {event.title}
+            </h3>
+          </Link>
           {event.description && (
             <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
               {event.description}
@@ -375,44 +471,55 @@ export default function PublicEvents() {
             )}
           </div>
 
-          {isMemberOnly && !user ? (
+          <div className="flex gap-2">
+            {isMemberOnly && !user ? (
+              <Button
+                className="flex-1"
+                onClick={() => navigate("/auth")}
+              >
+                <Lock className="w-4 h-4 mr-2" />
+                Login to Register
+              </Button>
+            ) : isMemberOnly && user ? (
+              <Button
+                className="flex-1"
+                onClick={() => navigate("/dashboard/events")}
+              >
+                View in Dashboard
+              </Button>
+            ) : (
+              <Button
+                className="flex-1"
+                onClick={() => handleRegister(event)}
+                disabled={isFull}
+                variant={isFull ? "outline" : "default"}
+              >
+                {isFull ? (
+                  <span className="flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    Sold Out
+                  </span>
+                ) : (
+                  "Register Now"
+                )}
+              </Button>
+            )}
             <Button
-              className="w-full"
-              onClick={() => navigate("/auth")}
+              variant="outline"
+              size="icon"
+              asChild
             >
-              <Lock className="w-4 h-4 mr-2" />
-              Login to Register
+              <Link to={`/events/${event.id}`}>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
             </Button>
-          ) : isMemberOnly && user ? (
-            <Button
-              className="w-full"
-              onClick={() => navigate("/dashboard/events")}
-            >
-              View in Dashboard
-            </Button>
-          ) : (
-            <Button
-              className="w-full"
-              onClick={() => handleRegister(event)}
-              disabled={isFull}
-              variant={isFull ? "outline" : "default"}
-            >
-              {isFull ? (
-                <span className="flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  Sold Out
-                </span>
-              ) : (
-                "Register Now"
-              )}
-            </Button>
-          )}
+          </div>
         </div>
       </motion.div>
     );
   };
 
-  const totalEvents = publicEvents.length + memberEvents.length;
+  const totalEvents = filteredPublicEvents.length + filteredMemberEvents.length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -424,7 +531,7 @@ export default function PublicEvents() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="text-center mb-8"
           >
             <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">
               <span className="text-gradient-primary">Upcoming</span> Events
@@ -434,12 +541,131 @@ export default function PublicEvents() {
             </p>
           </motion.div>
 
+          {/* Search and Filters */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="glass-card p-4 rounded-2xl mb-8"
+          >
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search events..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap gap-3">
+                {/* Category Filter */}
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EVENT_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Date Filter */}
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Date" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DATE_FILTERS.map((filter) => (
+                      <SelectItem key={filter.value} value={filter.value}>
+                        {filter.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Type Filter */}
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TYPE_FILTERS.map((filter) => (
+                      <SelectItem key={filter.value} value={filter.value}>
+                        {filter.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Clear Filters */}
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={clearFilters}
+                    className="shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border/50">
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Filter className="w-3 h-3" />
+                  Active filters:
+                </span>
+                {searchQuery && (
+                  <Badge variant="secondary" className="gap-1">
+                    Search: "{searchQuery}"
+                    <X className="w-3 h-3 cursor-pointer" onClick={() => setSearchQuery("")} />
+                  </Badge>
+                )}
+                {categoryFilter !== "All" && (
+                  <Badge variant="secondary" className="gap-1">
+                    {categoryFilter}
+                    <X className="w-3 h-3 cursor-pointer" onClick={() => setCategoryFilter("All")} />
+                  </Badge>
+                )}
+                {dateFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1">
+                    {DATE_FILTERS.find(f => f.value === dateFilter)?.label}
+                    <X className="w-3 h-3 cursor-pointer" onClick={() => setDateFilter("all")} />
+                  </Badge>
+                )}
+                {typeFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1">
+                    {TYPE_FILTERS.find(f => f.value === typeFilter)?.label}
+                    <X className="w-3 h-3 cursor-pointer" onClick={() => setTypeFilter("all")} />
+                  </Badge>
+                )}
+              </div>
+            )}
+          </motion.div>
+
           {/* Events Tabs */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="glass-card rounded-2xl h-80 animate-pulse" />
               ))}
+            </div>
+          ) : totalEvents === 0 && hasActiveFilters ? (
+            <div className="text-center py-16 glass-card rounded-2xl">
+              <Search className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">No Events Found</h2>
+              <p className="text-muted-foreground mb-4">Try adjusting your search or filters</p>
+              <Button variant="outline" onClick={clearFilters}>Clear Filters</Button>
             </div>
           ) : totalEvents === 0 ? (
             <div className="text-center py-16 glass-card rounded-2xl">
@@ -452,34 +678,38 @@ export default function PublicEvents() {
               <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
                 <TabsTrigger value="public" className="flex items-center gap-2">
                   <Globe className="w-4 h-4" />
-                  Public ({publicEvents.length})
+                  Public ({filteredPublicEvents.length})
                 </TabsTrigger>
                 <TabsTrigger value="members" className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
-                  Members ({memberEvents.length})
+                  Members ({filteredMemberEvents.length})
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="public">
-                {publicEvents.length === 0 ? (
+                {filteredPublicEvents.length === 0 ? (
                   <div className="text-center py-16 glass-card rounded-2xl">
                     <Globe className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">No Public Events</h2>
-                    <p className="text-muted-foreground">Check back later for public events!</p>
+                    <h2 className="text-xl font-semibold mb-2">No Public Events Found</h2>
+                    <p className="text-muted-foreground">
+                      {hasActiveFilters ? "Try adjusting your filters" : "Check back later for public events!"}
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {publicEvents.map((event, index) => renderEventCard(event, index, false))}
+                    {filteredPublicEvents.map((event, index) => renderEventCard(event, index, false))}
                   </div>
                 )}
               </TabsContent>
 
               <TabsContent value="members">
-                {memberEvents.length === 0 ? (
+                {filteredMemberEvents.length === 0 ? (
                   <div className="text-center py-16 glass-card rounded-2xl">
                     <Shield className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold mb-2">No Member Events</h2>
-                    <p className="text-muted-foreground">Check back later for member-exclusive events!</p>
+                    <h2 className="text-xl font-semibold mb-2">No Member Events Found</h2>
+                    <p className="text-muted-foreground">
+                      {hasActiveFilters ? "Try adjusting your filters" : "Check back later for member-exclusive events!"}
+                    </p>
                   </div>
                 ) : (
                   <>
@@ -498,7 +728,7 @@ export default function PublicEvents() {
                       </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {memberEvents.map((event, index) => renderEventCard(event, index, true))}
+                      {filteredMemberEvents.map((event, index) => renderEventCard(event, index, true))}
                     </div>
                   </>
                 )}
