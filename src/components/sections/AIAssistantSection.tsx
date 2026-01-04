@@ -1,19 +1,11 @@
 import { motion } from "framer-motion";
-import { Bot, Send, Sparkles, Code, FileText, Lightbulb } from "lucide-react";
+import { Bot, Send, Sparkles, Code, FileText, Lightbulb, LogIn, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
-const sampleMessages = [
-  {
-    type: "user",
-    content: "Explain the difference between TCP and UDP protocols",
-  },
-  {
-    type: "assistant",
-    content:
-      "Great question! TCP (Transmission Control Protocol) is connection-oriented and ensures reliable, ordered delivery of data. UDP (User Datagram Protocol) is connectionless, faster but doesn't guarantee delivery. TCP is used for web browsing, email; UDP for streaming, gaming.",
-  },
-];
+const GUEST_CHAT_LIMIT = 2;
 
 const capabilities = [
   {
@@ -33,8 +25,139 @@ const capabilities = [
   },
 ];
 
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export function AIAssistantSection() {
   const [inputValue, setInputValue] = useState("");
+  const [showChat, setShowChat] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [chatCount, setChatCount] = useState(0);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Load chat count from localStorage
+    const storedCount = localStorage.getItem("guestChatCount");
+    if (storedCount) {
+      setChatCount(parseInt(storedCount, 10));
+    }
+  }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading) return;
+
+    // Check if limit reached
+    if (chatCount >= GUEST_CHAT_LIMIT) {
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    const userMessage: Message = { role: "user", content: inputValue.trim() };
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue("");
+    setIsLoading(true);
+
+    // Update chat count
+    const newCount = chatCount + 1;
+    setChatCount(newCount);
+    localStorage.setItem("guestChatCount", newCount.toString());
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat-guest`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ messages: [...messages, userMessage] }),
+        }
+      );
+
+      if (response.status === 403) {
+        setShowLoginPrompt(true);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to get response");
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No response body");
+
+      const decoder = new TextDecoder();
+      let assistantContent = "";
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ") && line !== "data: [DONE]") {
+            try {
+              const json = JSON.parse(line.slice(6));
+              const content = json.choices?.[0]?.delta?.content;
+              if (content) {
+                assistantContent += content;
+                setMessages((prev) => {
+                  const newMessages = [...prev];
+                  newMessages[newMessages.length - 1] = {
+                    role: "assistant",
+                    content: assistantContent,
+                  };
+                  return newMessages;
+                });
+              }
+            } catch {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+
+      // Show login prompt after response if limit reached
+      if (newCount >= GUEST_CHAT_LIMIT) {
+        setTimeout(() => setShowLoginPrompt(true), 1500);
+      }
+    } catch (error) {
+      console.error("Chat error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to get response",
+        variant: "destructive",
+      });
+      setMessages((prev) => prev.slice(0, -1)); // Remove empty assistant message
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const remainingChats = Math.max(0, GUEST_CHAT_LIMIT - chatCount);
 
   return (
     <section
@@ -92,13 +215,13 @@ export function AIAssistantSection() {
               ))}
             </div>
 
-            <Button variant="gradient" size="lg">
+            <Button variant="gradient" size="lg" onClick={() => setShowChat(true)}>
               Try AI Assistant
               <Bot className="w-5 h-5" />
             </Button>
           </motion.div>
 
-          {/* Right - Chat Preview */}
+          {/* Right - Chat Interface */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -117,7 +240,9 @@ export function AIAssistantSection() {
                     BCA AI Assistant
                   </h4>
                   <p className="text-xs text-primary-foreground/70">
-                    Always online • Powered by Gemini
+                    {showChat
+                      ? `${remainingChats} free ${remainingChats === 1 ? "chat" : "chats"} remaining`
+                      : "Always online • Powered by Gemini"}
                   </p>
                 </div>
                 <div className="ml-auto flex gap-1">
@@ -126,29 +251,99 @@ export function AIAssistantSection() {
               </div>
 
               {/* Chat Messages */}
-              <div className="p-4 space-y-4 min-h-[300px]">
-                {sampleMessages.map((msg, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.3, delay: 0.5 + index * 0.2 }}
-                    className={`flex ${
-                      msg.type === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-[80%] p-3 rounded-2xl text-sm ${
-                        msg.type === "user"
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-muted text-foreground rounded-bl-md"
-                      }`}
+              <div className="p-4 space-y-4 min-h-[300px] max-h-[400px] overflow-y-auto">
+                {!showChat ? (
+                  // Demo messages when chat is not active
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.3, delay: 0.5 }}
+                      className="flex justify-end"
                     >
-                      {msg.content}
+                      <div className="max-w-[80%] p-3 rounded-2xl text-sm bg-primary text-primary-foreground rounded-br-md">
+                        Explain the difference between TCP and UDP protocols
+                      </div>
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.3, delay: 0.7 }}
+                      className="flex justify-start"
+                    >
+                      <div className="max-w-[80%] p-3 rounded-2xl text-sm bg-muted text-foreground rounded-bl-md">
+                        Great question! TCP (Transmission Control Protocol) is
+                        connection-oriented and ensures reliable, ordered delivery of
+                        data. UDP (User Datagram Protocol) is connectionless, faster
+                        but doesn't guarantee delivery. TCP is used for web browsing,
+                        email; UDP for streaming, gaming.
+                      </div>
+                    </motion.div>
+                  </>
+                ) : messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                    <Bot className="w-12 h-12 text-muted-foreground/50 mb-3" />
+                    <p className="text-muted-foreground text-sm">
+                      Ask me anything about BCA curriculum!
+                    </p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      You have {remainingChats} free {remainingChats === 1 ? "chat" : "chats"}
+                    </p>
+                  </div>
+                ) : (
+                  messages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[80%] p-3 rounded-2xl text-sm whitespace-pre-wrap ${
+                          msg.role === "user"
+                            ? "bg-primary text-primary-foreground rounded-br-md"
+                            : "bg-muted text-foreground rounded-bl-md"
+                        }`}
+                      >
+                        {msg.content || (
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
+                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
+                          </span>
+                        )}
+                      </div>
                     </div>
+                  ))
+                )}
+                <div ref={messagesEndRef} />
+
+                {/* Login Prompt Overlay */}
+                {showLoginPrompt && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center"
+                  >
+                    <button
+                      onClick={() => setShowLoginPrompt(false)}
+                      className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                    <LogIn className="w-12 h-12 text-primary mb-4" />
+                    <h3 className="font-heading font-bold text-lg text-foreground mb-2">
+                      Free Trial Ended
+                    </h3>
+                    <p className="text-muted-foreground text-sm mb-4">
+                      You've used your {GUEST_CHAT_LIMIT} free chats. Sign in for unlimited access to our AI assistant.
+                    </p>
+                    <Button variant="gradient" onClick={() => navigate("/auth")}>
+                      Sign In to Continue
+                      <LogIn className="w-4 h-4" />
+                    </Button>
                   </motion.div>
-                ))}
+                )}
               </div>
 
               {/* Chat Input */}
@@ -158,10 +353,24 @@ export function AIAssistantSection() {
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Ask anything about BCA..."
-                    className="flex-1 px-4 py-3 rounded-xl bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    onKeyDown={handleKeyPress}
+                    placeholder={
+                      showChat
+                        ? remainingChats > 0
+                          ? "Ask anything about BCA..."
+                          : "Sign in for more chats..."
+                        : "Click 'Try AI Assistant' to start..."
+                    }
+                    disabled={!showChat || remainingChats === 0}
+                    className="flex-1 px-4 py-3 rounded-xl bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                   />
-                  <Button variant="default" size="icon" className="rounded-xl">
+                  <Button
+                    variant="default"
+                    size="icon"
+                    className="rounded-xl"
+                    onClick={showChat ? handleSendMessage : () => setShowChat(true)}
+                    disabled={isLoading || (showChat && remainingChats === 0)}
+                  >
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>
