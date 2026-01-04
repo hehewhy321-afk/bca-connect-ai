@@ -38,6 +38,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminFoundingMembers = lazy(() => import("./pages/admin/AdminFoundingMembers"));
 const AdminWebsiteSettings = lazy(() => import("./pages/admin/AdminWebsiteSettings"));
 const AdminFAQs = lazy(() => import("./pages/admin/AdminFAQs"));
+const AdminQRScanner = lazy(() => import("./pages/admin/AdminQRScanner"));
 const Notice = lazy(() => import("./pages/Notice"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const Contact = lazy(() => import("./pages/Contact"));
@@ -46,6 +47,7 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const About = lazy(() => import("./pages/About"));
 const PublicEvents = lazy(() => import("./pages/PublicEvents"));
 const EventDetail = lazy(() => import("./pages/EventDetail"));
+const Install = lazy(() => import("./pages/Install"));
 
 // Configure QueryClient with production-ready defaults
 const queryClient = new QueryClient({
@@ -105,6 +107,7 @@ const App = () => (
               <Route path="/about" element={<LazyRoute><About /></LazyRoute>} />
               <Route path="/events" element={<LazyRoute><PublicEvents /></LazyRoute>} />
               <Route path="/events/:id" element={<LazyRoute><EventDetail /></LazyRoute>} />
+              <Route path="/install" element={<LazyRoute><Install /></LazyRoute>} />
               
               {/* Dashboard routes */}
               <Route path="/dashboard" element={<ProtectedRoute><LazyRoute><Dashboard /></LazyRoute></ProtectedRoute>} />
@@ -123,6 +126,7 @@ const App = () => (
               <Route path="/admin/events" element={<ProtectedRoute><LazyRoute><AdminEventsHub /></LazyRoute></ProtectedRoute>} />
               <Route path="/admin/events/new" element={<ProtectedRoute><LazyRoute><EventForm /></LazyRoute></ProtectedRoute>} />
               <Route path="/admin/events/:id" element={<ProtectedRoute><LazyRoute><EventForm /></LazyRoute></ProtectedRoute>} />
+              <Route path="/admin/qr-scanner" element={<ProtectedRoute><LazyRoute><AdminQRScanner /></LazyRoute></ProtectedRoute>} />
               <Route path="/admin/resources" element={<ProtectedRoute><LazyRoute><AdminResources /></LazyRoute></ProtectedRoute>} />
               <Route path="/admin/resources/new" element={<ProtectedRoute><LazyRoute><ResourceForm /></LazyRoute></ProtectedRoute>} />
               <Route path="/admin/resources/:id" element={<ProtectedRoute><LazyRoute><ResourceForm /></LazyRoute></ProtectedRoute>} />
