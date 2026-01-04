@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, Users, Clock, Search, Filter, ExternalLink } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, Search, Filter, ExternalLink, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { EventFeedbackDialog } from "@/components/events/EventFeedbackDialog";
 
 interface Event {
   id: string;
@@ -29,9 +30,12 @@ interface Registration {
 export default function Events() {
   const [events, setEvents] = useState<Event[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [feedbackGiven, setFeedbackGiven] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [selectedEventForFeedback, setSelectedEventForFeedback] = useState<Event | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -39,7 +43,10 @@ export default function Events() {
 
   useEffect(() => {
     fetchEvents();
-    if (user) fetchRegistrations();
+    if (user) {
+      fetchRegistrations();
+      fetchFeedbackGiven();
+    }
   }, [user]);
 
   const fetchEvents = async () => {
@@ -71,6 +78,30 @@ export default function Events() {
     } catch (error) {
       console.error("Error fetching registrations:", error);
     }
+  };
+
+  const fetchFeedbackGiven = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from("event_feedback")
+        .select("event_id")
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      setFeedbackGiven((data || []).map((f) => f.event_id));
+    } catch (error) {
+      console.error("Error fetching feedback:", error);
+    }
+  };
+
+  const hasFeedback = (eventId: string) => {
+    return feedbackGiven.includes(eventId);
+  };
+
+  const handleFeedback = (event: Event) => {
+    setSelectedEventForFeedback(event);
+    setFeedbackDialogOpen(true);
   };
 
   const handleRegister = async (eventId: string) => {
@@ -321,11 +352,34 @@ export default function Events() {
                         </Button>
                       )
                     )}
+                    
+                    {event.status === "completed" && isRegistered(event.id) && (
+                      <Button
+                        variant={hasFeedback(event.id) ? "outline" : "default"}
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleFeedback(event)}
+                      >
+                        <Star className="w-4 h-4 mr-2" />
+                        {hasFeedback(event.id) ? "Update Feedback" : "Give Feedback"}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
+        )}
+
+        {/* Feedback Dialog */}
+        {selectedEventForFeedback && (
+          <EventFeedbackDialog
+            open={feedbackDialogOpen}
+            onOpenChange={setFeedbackDialogOpen}
+            eventId={selectedEventForFeedback.id}
+            eventTitle={selectedEventForFeedback.title}
+            onSuccess={fetchFeedbackGiven}
+          />
         )}
       </div>
     </DashboardLayout>

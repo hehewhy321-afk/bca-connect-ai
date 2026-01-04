@@ -134,6 +134,44 @@ export type Database = {
         }
         Relationships: []
       }
+      event_feedback: {
+        Row: {
+          created_at: string
+          event_id: string
+          feedback: string | null
+          id: string
+          is_anonymous: boolean | null
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          feedback?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          rating: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          feedback?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_feedback_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_registrations: {
         Row: {
           attended: boolean | null

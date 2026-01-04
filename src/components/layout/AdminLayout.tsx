@@ -17,6 +17,7 @@ import {
   UserPlus,
   Award,
   ClipboardList,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,6 +28,7 @@ const adminLinks = [
   { name: "Overview", href: "/admin", icon: Shield },
   { name: "Events", href: "/admin/events", icon: Calendar },
   { name: "Public Registrations", href: "/admin/public-registrations", icon: ClipboardList },
+  { name: "Event Feedback", href: "/admin/event-feedback", icon: Star },
   { name: "Resources", href: "/admin/resources", icon: BookOpen },
   { name: "Members", href: "/admin/members", icon: Users },
   { name: "Founding Members", href: "/admin/founding-members", icon: Award },
