@@ -183,7 +183,37 @@ export function Footer() {
             <Link to="/terms" className="hover:text-primary transition-colors">
               Terms
             </Link>
-            <span>Made with ❤️ in Nepal</span>
+            <span className="flex items-center gap-1">
+              Made with ❤️ by{" "}
+              <a 
+                href="https://www.instagram.com/me_saifali/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-primary transition-colors font-medium"
+              >
+                Saif Ali
+              </a>
+              <span className="flex items-center gap-1 ml-1">
+                <a 
+                  href="https://github.com/mesaifali" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                  aria-label="Developer GitHub"
+                >
+                  <Github className="w-4 h-4" />
+                </a>
+                <a 
+                  href="https://www.instagram.com/me_saifali/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                  aria-label="Developer Instagram"
+                >
+                  <Instagram className="w-4 h-4" />
+                </a>
+              </span>
+            </span>
           </div>
         </div>
       </div>
