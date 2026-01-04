@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Calendar, MapPin, Clock, Users, Send, UserPlus, Lock, Globe, Shield, Search, Filter, X, ChevronRight, IndianRupee } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Send, UserPlus, Lock, Globe, Shield, Search, Filter, X, ChevronRight, IndianRupee, Upload, FileImage } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,7 +92,9 @@ export default function PublicEvents() {
     message: "",
     team_name: "",
     team_members: [] as { name: string; email: string }[],
+    payment_receipt_url: "",
   });
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
   // Handle registration from URL param
   useEffect(() => {
@@ -294,21 +296,76 @@ export default function PublicEvents() {
       message: "",
       team_name: "",
       team_members: Array(teamSize).fill({ name: "", email: "" }),
+      payment_receipt_url: "",
     });
+  };
+
+  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingReceipt(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `receipt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      const filePath = `public/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("payment-receipts")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("payment-receipts")
+        .getPublicUrl(filePath);
+
+      setFormData((prev) => ({ ...prev, payment_receipt_url: urlData.publicUrl }));
+      toast({
+        title: "Receipt uploaded",
+        description: "Your payment receipt has been uploaded successfully.",
+      });
+    } catch (error: any) {
+      console.error("Error uploading receipt:", error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload receipt. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingReceipt(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEvent) return;
 
+    // Check if paid event requires receipt
+    const hasFee = selectedEvent.registration_fee && selectedEvent.registration_fee > 0;
+    if (hasFee && !formData.payment_receipt_url) {
+      toast({
+        title: "Payment receipt required",
+        description: "Please upload your payment receipt to complete registration.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
+      // Generate unique check-in code
+      const checkInCode = `EVT-${selectedEvent.id.substring(0, 4).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+
       const payload: any = {
         event_id: selectedEvent.id,
         full_name: formData.full_name,
         email: formData.email,
         phone: formData.phone || null,
         message: formData.message || null,
+        payment_receipt_url: formData.payment_receipt_url || null,
+        payment_status: hasFee ? "pending" : "approved",
+        check_in_code: checkInCode,
       };
 
       // Add team info if applicable
@@ -856,6 +913,65 @@ export default function PublicEvents() {
               </div>
             )}
 
+            {/* Payment Receipt Upload for Paid Events */}
+            {selectedEvent?.registration_fee && selectedEvent.registration_fee > 0 && (
+              <div className="space-y-3 pt-4 border-t">
+                <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <IndianRupee className="w-5 h-5 text-primary" />
+                    <span className="font-semibold">Registration Fee: ₹{selectedEvent.registration_fee}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Please make the payment and upload the receipt below. Your registration will be confirmed after payment verification.
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Payment Receipt *</label>
+                  {formData.payment_receipt_url ? (
+                    <div className="relative rounded-lg border border-border overflow-hidden">
+                      <img 
+                        src={formData.payment_receipt_url} 
+                        alt="Payment Receipt" 
+                        className="w-full h-40 object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={() => setFormData({ ...formData, payment_receipt_url: "" })}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                      {uploadingReceipt ? (
+                        <>
+                          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
+                          <span className="text-sm text-muted-foreground">Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                          <span className="text-sm text-muted-foreground">Click to upload payment receipt</span>
+                          <span className="text-xs text-muted-foreground mt-1">JPG, PNG or PDF</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={handleReceiptUpload}
+                        className="hidden"
+                        disabled={uploadingReceipt}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium mb-1.5">Message (Optional)</label>
               <Textarea
@@ -866,7 +982,7 @@ export default function PublicEvents() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={submitting}>
+            <Button type="submit" className="w-full" disabled={submitting || uploadingReceipt}>
               {submitting ? (
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />

@@ -33,6 +33,7 @@ import AdminEventFeedback from "./pages/admin/AdminEventFeedback";
 import AdminInternalRegistrations from "./pages/admin/AdminInternalRegistrations";
 import AdminWebsiteSettings from "./pages/admin/AdminWebsiteSettings";
 import AdminFAQs from "./pages/admin/AdminFAQs";
+import AdminPaymentVerification from "./pages/admin/AdminPaymentVerification";
 import Notice from "./pages/Notice";
 import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
@@ -110,6 +111,7 @@ const App = () => (
             <Route path="/admin/internal-registrations" element={<ProtectedRoute><AdminInternalRegistrations /></ProtectedRoute>} />
             <Route path="/admin/settings" element={<ProtectedRoute><AdminWebsiteSettings /></ProtectedRoute>} />
             <Route path="/admin/faqs" element={<ProtectedRoute><AdminFAQs /></ProtectedRoute>} />
+            <Route path="/admin/payment-verification" element={<ProtectedRoute><AdminPaymentVerification /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

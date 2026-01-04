@@ -48,6 +48,7 @@ export default function EventForm() {
     team_size_max: 1,
     gallery_images: [] as string[],
     registration_fee: "",
+    admin_notes: "",
   });
 
   useEffect(() => {
@@ -87,6 +88,7 @@ export default function EventForm() {
         team_size_max: data.team_size_max || 1,
         gallery_images: (data as any).gallery_images || [],
         registration_fee: (data as any).registration_fee?.toString() || "",
+        admin_notes: (data as any).admin_notes || "",
       });
     } catch (error) {
       console.error("Error fetching event:", error);
@@ -215,6 +217,7 @@ export default function EventForm() {
         registration_fee: formData.registration_fee
           ? parseFloat(formData.registration_fee)
           : null,
+        admin_notes: formData.admin_notes || null,
       };
 
       if (isEditing) {
@@ -549,6 +552,23 @@ export default function EventForm() {
             />
             <p className="text-xs text-muted-foreground">
               Leave empty or set to 0 for free events
+            </p>
+          </div>
+
+          {/* Admin Notes / Rules & Regulations */}
+          <div className="space-y-2">
+            <Label htmlFor="admin_notes">Rules & Regulations</Label>
+            <Textarea
+              id="admin_notes"
+              value={formData.admin_notes}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, admin_notes: e.target.value }))
+              }
+              placeholder="Enter any rules, regulations, or important notes for participants..."
+              rows={5}
+            />
+            <p className="text-xs text-muted-foreground">
+              These notes will be displayed on the event detail page under "Rules & Regulations"
             </p>
           </div>
 
