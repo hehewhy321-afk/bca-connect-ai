@@ -1,8 +1,24 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function CTASection() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleJoinClick = () => {
+    if (user) {
+      navigate("/dashboard");
+    } else {
+      navigate("/auth");
+    }
+  };
+
+  const handleLearnMoreClick = () => {
+    navigate("/about");
+  };
   return (
     <section className="py-20 md:py-32 bg-background">
       <div className="container mx-auto px-4">
@@ -65,11 +81,20 @@ export function CTASection() {
               transition={{ duration: 0.5, delay: 0.4 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
-              <Button variant="hero" size="xl" className="group">
+              <Button 
+                variant="hero" 
+                size="xl" 
+                className="group" 
+                onClick={handleJoinClick}
+              >
                 Join BCA Association
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="glass" size="xl">
+              <Button 
+                variant="glass" 
+                size="xl"
+                onClick={handleLearnMoreClick}
+              >
                 Learn More
               </Button>
             </motion.div>
