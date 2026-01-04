@@ -39,10 +39,7 @@ async function getAISettings(supabaseClient: any) {
 
     const settings: Record<string, string> = {};
     data?.forEach((row: any) => {
-      // Skip openrouter_api_key from database - we use secrets instead
-      if (row.setting_key !== 'openrouter_api_key') {
-        settings[row.setting_key] = row.setting_value || "";
-      }
+      settings[row.setting_key] = row.setting_value || "";
     });
 
     return settings;
@@ -141,11 +138,11 @@ serve(async (req) => {
 
     const { messages } = await req.json();
     
-    // Create admin client to fetch settings (read-only)
+    // Create admin client to fetch settings
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get AI settings from database (excluding API keys)
+    // Get AI settings from database
     const settings = await getAISettings(supabaseClient);
     
     const provider = settings?.ai_provider || "lovable";
@@ -157,13 +154,13 @@ serve(async (req) => {
     let response: Response;
 
     if (provider === "openrouter") {
-      // Get API key from Supabase secrets (not from database)
-      const apiKey = Deno.env.get("OPENROUTER_API_KEY");
+      // Get API key from database settings
+      const apiKey = settings?.openrouter_api_key;
       const model = settings?.openrouter_model || "meta-llama/llama-3.2-3b-instruct:free";
 
       if (!apiKey) {
         return new Response(
-          JSON.stringify({ error: "OpenRouter API key not configured. Please contact an administrator to set up the OPENROUTER_API_KEY secret." }),
+          JSON.stringify({ error: "OpenRouter API key not configured. Please set it in Admin > AI Settings." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -191,7 +188,7 @@ serve(async (req) => {
       }
       if (response.status === 401) {
         return new Response(
-          JSON.stringify({ error: "Invalid AI provider API key. Please contact an administrator." }),
+          JSON.stringify({ error: "Invalid OpenRouter API key. Please check your API key in Admin > AI Settings." }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
