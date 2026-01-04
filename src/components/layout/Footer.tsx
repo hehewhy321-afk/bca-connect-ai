@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { GraduationCap, Mail, Phone, MapPin, Facebook, Instagram, Twitter, Linkedin, Github } from "lucide-react";
+import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
 
 const footerLinks = {
   quickLinks: [
@@ -24,17 +25,18 @@ const footerLinks = {
   ],
 };
 
-const socialLinks = [
-  { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
-  { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
-  { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
-  { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
-  { icon: Github, href: "https://github.com", label: "GitHub" },
-];
-
 export function Footer() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { data: settings } = useWebsiteSettings();
+
+  const socialLinks = [
+    { icon: Facebook, href: settings?.facebook_url || "https://facebook.com", label: "Facebook" },
+    { icon: Instagram, href: settings?.instagram_url || "https://instagram.com", label: "Instagram" },
+    { icon: Twitter, href: settings?.twitter_url || "https://twitter.com", label: "Twitter" },
+    { icon: Linkedin, href: settings?.linkedin_url || "https://linkedin.com", label: "LinkedIn" },
+    { icon: Github, href: settings?.github_url || "https://github.com", label: "GitHub" },
+  ];
 
   const handleNavClick = (href: string) => {
     // Check if it's a hash link for the home page
@@ -65,14 +67,24 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-primary-foreground" />
-              </div>
+              {settings?.logo_url ? (
+                <img
+                  src={settings.logo_url}
+                  alt={settings?.site_name || "Logo"}
+                  className="w-10 h-10 rounded-xl object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <GraduationCap className="w-6 h-6 text-primary-foreground" />
+                </div>
+              )}
               <div className="flex flex-col">
                 <span className="font-heading font-bold text-lg leading-tight text-foreground">
-                  BCA Association
+                  {settings?.site_name || "BCA Association"}
                 </span>
-                <span className="text-xs text-muted-foreground">MMAMC Nepal</span>
+                <span className="text-xs text-muted-foreground">
+                  {settings?.site_subtitle || "MMAMC Nepal"}
+                </span>
               </div>
             </Link>
             <p className="text-muted-foreground mb-6 max-w-sm">
@@ -84,15 +96,21 @@ export function Footer() {
             <div className="space-y-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-3">
                 <MapPin className="w-4 h-4 text-primary" />
-                <span>MMAMC College, Biratnagar, Nepal</span>
+                <span>{settings?.address || "MMAMC College, Biratnagar, Nepal"}</span>
               </div>
-              <a href="mailto:bca@mmamc.edu.np" className="flex items-center gap-3 hover:text-primary transition-colors">
+              <a
+                href={`mailto:${settings?.email_primary || "bca@mmamc.edu.np"}`}
+                className="flex items-center gap-3 hover:text-primary transition-colors"
+              >
                 <Mail className="w-4 h-4 text-primary" />
-                <span>bca@mmamc.edu.np</span>
+                <span>{settings?.email_primary || "bca@mmamc.edu.np"}</span>
               </a>
-              <a href="tel:+97721123456" className="flex items-center gap-3 hover:text-primary transition-colors">
+              <a
+                href={`tel:${settings?.phone || "+97721123456"}`}
+                className="flex items-center gap-3 hover:text-primary transition-colors"
+              >
                 <Phone className="w-4 h-4 text-primary" />
-                <span>+977 21-123456</span>
+                <span>{settings?.phone || "+977 21-123456"}</span>
               </a>
             </div>
 
@@ -174,7 +192,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2026 BCA Association, MMAMC College. All rights reserved.
+            © {new Date().getFullYear()} {settings?.site_name || "BCA Association"}, MMAMC College. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link to="/privacy" className="hover:text-primary transition-colors">
