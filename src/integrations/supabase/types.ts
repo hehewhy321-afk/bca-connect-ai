@@ -175,8 +175,11 @@ export type Database = {
       event_registrations: {
         Row: {
           attended: boolean | null
+          check_in_code: string | null
           event_id: string
           id: string
+          payment_receipt_url: string | null
+          payment_status: string | null
           registered_at: string
           team_members: Json | null
           team_name: string | null
@@ -184,8 +187,11 @@ export type Database = {
         }
         Insert: {
           attended?: boolean | null
+          check_in_code?: string | null
           event_id: string
           id?: string
+          payment_receipt_url?: string | null
+          payment_status?: string | null
           registered_at?: string
           team_members?: Json | null
           team_name?: string | null
@@ -193,8 +199,11 @@ export type Database = {
         }
         Update: {
           attended?: boolean | null
+          check_in_code?: string | null
           event_id?: string
           id?: string
+          payment_receipt_url?: string | null
+          payment_status?: string | null
           registered_at?: string
           team_members?: Json | null
           team_name?: string | null
@@ -247,6 +256,7 @@ export type Database = {
       }
       events: {
         Row: {
+          admin_notes: string | null
           category: string
           created_at: string
           created_by: string | null
@@ -269,6 +279,7 @@ export type Database = {
           visibility: string | null
         }
         Insert: {
+          admin_notes?: string | null
           category: string
           created_at?: string
           created_by?: string | null
@@ -291,6 +302,7 @@ export type Database = {
           visibility?: string | null
         }
         Update: {
+          admin_notes?: string | null
           category?: string
           created_at?: string
           created_by?: string | null
@@ -631,34 +643,43 @@ export type Database = {
       }
       public_event_registrations: {
         Row: {
+          check_in_code: string | null
           created_at: string
           email: string
           event_id: string
           full_name: string
           id: string
           message: string | null
+          payment_receipt_url: string | null
+          payment_status: string | null
           phone: string | null
           team_members: Json | null
           team_name: string | null
         }
         Insert: {
+          check_in_code?: string | null
           created_at?: string
           email: string
           event_id: string
           full_name: string
           id?: string
           message?: string | null
+          payment_receipt_url?: string | null
+          payment_status?: string | null
           phone?: string | null
           team_members?: Json | null
           team_name?: string | null
         }
         Update: {
+          check_in_code?: string | null
           created_at?: string
           email?: string
           event_id?: string
           full_name?: string
           id?: string
           message?: string | null
+          payment_receipt_url?: string | null
+          payment_status?: string | null
           phone?: string | null
           team_members?: Json | null
           team_name?: string | null
