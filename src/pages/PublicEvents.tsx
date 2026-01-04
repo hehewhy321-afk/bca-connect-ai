@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, Clock, Users, Send, UserPlus, Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Calendar, MapPin, Clock, Users, Send, UserPlus, Lock, Globe, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,8 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +43,10 @@ interface RegistrationCount {
 }
 
 export default function PublicEvents() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [publicEvents, setPublicEvents] = useState<Event[]>([]);
+  const [memberEvents, setMemberEvents] = useState<Event[]>([]);
   const [registrationCounts, setRegistrationCounts] = useState<RegistrationCount>({});
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -79,19 +85,32 @@ export default function PublicEvents() {
 
   const fetchEvents = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch public events
+      const { data: publicData, error: publicError } = await supabase
         .from("events")
         .select("*")
         .in("status", ["upcoming", "ongoing"])
         .eq("visibility", "public")
         .order("start_date", { ascending: true });
 
-      if (error) throw error;
-      setEvents(data || []);
+      if (publicError) throw publicError;
+      setPublicEvents(publicData || []);
+
+      // Fetch member-only events (internal visibility)
+      const { data: memberData, error: memberError } = await supabase
+        .from("events")
+        .select("*")
+        .in("status", ["upcoming", "ongoing"])
+        .eq("visibility", "internal")
+        .order("start_date", { ascending: true });
+
+      if (memberError) throw memberError;
+      setMemberEvents(memberData || []);
       
-      // Fetch registration counts
-      if (data && data.length > 0) {
-        await fetchRegistrationCounts(data.map(e => e.id));
+      // Fetch registration counts for public events
+      const allEvents = [...(publicData || []), ...(memberData || [])];
+      if (allEvents.length > 0) {
+        await fetchRegistrationCounts(allEvents.map(e => e.id));
       }
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -102,7 +121,7 @@ export default function PublicEvents() {
 
   const fetchRegistrationCounts = async (eventIds?: string[]) => {
     try {
-      const ids = eventIds || events.map(e => e.id);
+      const ids = eventIds || [...publicEvents, ...memberEvents].map(e => e.id);
       if (ids.length === 0) return;
 
       const { data, error } = await supabase
@@ -266,6 +285,135 @@ export default function PublicEvents() {
     return colors[category.toLowerCase()] || "bg-primary/20 text-primary border-primary/30";
   };
 
+  const renderEventCard = (event: Event, index: number, isMemberOnly: boolean = false) => {
+    const availableSpots = getAvailableSpots(event);
+    const isFull = availableSpots !== null && availableSpots <= 0;
+
+    return (
+      <motion.div
+        key={event.id}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.1 }}
+        className="glass-card rounded-2xl overflow-hidden group hover:border-primary/50 transition-all duration-300"
+      >
+        {/* Event Image */}
+        <div className="relative h-48 overflow-hidden">
+          {event.image_url ? (
+            <img
+              src={event.image_url}
+              alt={event.title}
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+              <Calendar className="w-12 h-12 text-primary/50" />
+            </div>
+          )}
+          {event.is_featured && (
+            <span className="absolute top-3 left-3 px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-full">
+              Featured
+            </span>
+          )}
+          <span className={`absolute top-3 right-3 px-3 py-1 text-xs font-medium rounded-full border ${getCategoryColor(event.category)}`}>
+            {event.category}
+          </span>
+        </div>
+
+        {/* Event Details */}
+        <div className="p-5">
+          <h3 className="font-heading font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+            {event.title}
+          </h3>
+          {event.description && (
+            <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+              {event.description}
+            </p>
+          )}
+
+          <div className="flex flex-wrap gap-2 mb-3">
+            <Badge variant="outline" className="text-xs">
+              {getTeamTypeLabel(event.team_type)}
+            </Badge>
+            {isMemberOnly && (
+              <Badge variant="secondary" className="text-xs">
+                <Shield className="w-3 h-3 mr-1" />
+                Members Only
+              </Badge>
+            )}
+          </div>
+
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="w-4 h-4 text-primary" />
+              <span>{formatDate(event.start_date)}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="w-4 h-4 text-primary" />
+              <span>{formatTime(event.start_date)}</span>
+            </div>
+            {event.location && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MapPin className="w-4 h-4 text-primary" />
+                <span className="truncate">{event.location}</span>
+              </div>
+            )}
+            {event.max_attendees && !isMemberOnly && (
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="w-4 h-4 text-primary" />
+                <span className={availableSpots !== null && availableSpots <= 5 ? "text-orange-500 font-medium" : "text-muted-foreground"}>
+                  {isFull ? (
+                    <span className="text-destructive font-medium">Sold Out</span>
+                  ) : (
+                    <>
+                      {availableSpots} spots left
+                      <span className="text-muted-foreground"> of {event.max_attendees}</span>
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {isMemberOnly && !user ? (
+            <Button
+              className="w-full"
+              onClick={() => navigate("/auth")}
+            >
+              <Lock className="w-4 h-4 mr-2" />
+              Login to Register
+            </Button>
+          ) : isMemberOnly && user ? (
+            <Button
+              className="w-full"
+              onClick={() => navigate("/dashboard/events")}
+            >
+              View in Dashboard
+            </Button>
+          ) : (
+            <Button
+              className="w-full"
+              onClick={() => handleRegister(event)}
+              disabled={isFull}
+              variant={isFull ? "outline" : "default"}
+            >
+              {isFull ? (
+                <span className="flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  Sold Out
+                </span>
+              ) : (
+                "Register Now"
+              )}
+            </Button>
+          )}
+        </div>
+      </motion.div>
+    );
+  };
+
+  const totalEvents = publicEvents.length + memberEvents.length;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -286,125 +434,76 @@ export default function PublicEvents() {
             </p>
           </motion.div>
 
-          {/* Events Grid */}
+          {/* Events Tabs */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="glass-card rounded-2xl h-80 animate-pulse" />
               ))}
             </div>
-          ) : events.length === 0 ? (
+          ) : totalEvents === 0 ? (
             <div className="text-center py-16 glass-card rounded-2xl">
               <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">No Upcoming Events</h2>
               <p className="text-muted-foreground">Check back later for new events!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {events.map((event, index) => {
-                const availableSpots = getAvailableSpots(event);
-                const isFull = availableSpots !== null && availableSpots <= 0;
+            <Tabs defaultValue="public" className="w-full">
+              <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+                <TabsTrigger value="public" className="flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  Public ({publicEvents.length})
+                </TabsTrigger>
+                <TabsTrigger value="members" className="flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Members ({memberEvents.length})
+                </TabsTrigger>
+              </TabsList>
 
-                return (
-                  <motion.div
-                    key={event.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="glass-card rounded-2xl overflow-hidden group hover:border-primary/50 transition-all duration-300"
-                  >
-                    {/* Event Image */}
-                    <div className="relative h-48 overflow-hidden">
-                      {event.image_url ? (
-                        <img
-                          src={event.image_url}
-                          alt={event.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                          <Calendar className="w-12 h-12 text-primary/50" />
-                        </div>
-                      )}
-                      {event.is_featured && (
-                        <span className="absolute top-3 left-3 px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-full">
-                          Featured
-                        </span>
-                      )}
-                      <span className={`absolute top-3 right-3 px-3 py-1 text-xs font-medium rounded-full border ${getCategoryColor(event.category)}`}>
-                        {event.category}
-                      </span>
-                    </div>
+              <TabsContent value="public">
+                {publicEvents.length === 0 ? (
+                  <div className="text-center py-16 glass-card rounded-2xl">
+                    <Globe className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold mb-2">No Public Events</h2>
+                    <p className="text-muted-foreground">Check back later for public events!</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {publicEvents.map((event, index) => renderEventCard(event, index, false))}
+                  </div>
+                )}
+              </TabsContent>
 
-                    {/* Event Details */}
-                    <div className="p-5">
-                      <h3 className="font-heading font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                        {event.title}
-                      </h3>
-                      {event.description && (
-                        <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                          {event.description}
-                        </p>
-                      )}
-
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        <Badge variant="outline" className="text-xs">
-                          {getTeamTypeLabel(event.team_type)}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="w-4 h-4 text-primary" />
-                          <span>{formatDate(event.start_date)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="w-4 h-4 text-primary" />
-                          <span>{formatTime(event.start_date)}</span>
-                        </div>
-                        {event.location && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="w-4 h-4 text-primary" />
-                            <span className="truncate">{event.location}</span>
+              <TabsContent value="members">
+                {memberEvents.length === 0 ? (
+                  <div className="text-center py-16 glass-card rounded-2xl">
+                    <Shield className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold mb-2">No Member Events</h2>
+                    <p className="text-muted-foreground">Check back later for member-exclusive events!</p>
+                  </div>
+                ) : (
+                  <>
+                    {!user && (
+                      <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <Shield className="w-6 h-6 text-primary" />
+                          <div>
+                            <h3 className="font-semibold text-foreground">Member-Only Events</h3>
+                            <p className="text-sm text-muted-foreground">Sign up to register for these exclusive events</p>
                           </div>
-                        )}
-                        {event.max_attendees && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Users className="w-4 h-4 text-primary" />
-                            <span className={availableSpots !== null && availableSpots <= 5 ? "text-orange-500 font-medium" : "text-muted-foreground"}>
-                              {isFull ? (
-                                <span className="text-destructive font-medium">Sold Out</span>
-                              ) : (
-                                <>
-                                  {availableSpots} spots left
-                                  <span className="text-muted-foreground"> of {event.max_attendees}</span>
-                                </>
-                              )}
-                            </span>
-                          </div>
-                        )}
+                        </div>
+                        <Button onClick={() => navigate("/auth")}>
+                          Join Now
+                        </Button>
                       </div>
-
-                      <Button
-                        className="w-full"
-                        onClick={() => handleRegister(event)}
-                        disabled={isFull}
-                        variant={isFull ? "outline" : "default"}
-                      >
-                        {isFull ? (
-                          <span className="flex items-center gap-2">
-                            <Lock className="w-4 h-4" />
-                            Sold Out
-                          </span>
-                        ) : (
-                          "Register Now"
-                        )}
-                      </Button>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {memberEvents.map((event, index) => renderEventCard(event, index, true))}
                     </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+                  </>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
         </div>
       </main>
