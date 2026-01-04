@@ -22,6 +22,8 @@ import {
   ClipboardList,
   CreditCard,
   BarChart3,
+  Download,
+  FileImage,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -326,6 +328,88 @@ export default function AdminEventsHub() {
     }
   };
 
+  // CSV Export functions
+  const downloadCSV = (data: string, filename: string) => {
+    const blob = new Blob([data], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    toast({ title: "Exported successfully", description: `${filename} has been downloaded.` });
+  };
+
+  const escapeCSV = (value: string | null | undefined) => {
+    if (value == null) return "";
+    const str = String(value);
+    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const exportInternalRegistrations = () => {
+    const headers = ["Name", "Email", "Phone", "Event", "Event Date", "Team Name", "Payment Status", "Attended", "Registered At"];
+    const rows = filteredInternalRegs.map(r => [
+      escapeCSV(r.profiles?.full_name),
+      escapeCSV(r.profiles?.email),
+      escapeCSV(r.profiles?.phone),
+      escapeCSV(r.events?.title),
+      escapeCSV(r.events?.start_date ? formatDate(r.events.start_date) : ""),
+      escapeCSV(r.team_name),
+      escapeCSV(r.payment_status || "N/A"),
+      r.attended ? "Yes" : "No",
+      escapeCSV(formatDateTime(r.registered_at)),
+    ].join(","));
+    downloadCSV([headers.join(","), ...rows].join("\n"), `member-registrations-${new Date().toISOString().split("T")[0]}.csv`);
+  };
+
+  const exportPublicRegistrations = () => {
+    const headers = ["Name", "Email", "Phone", "Event", "Event Date", "Team Name", "Payment Status", "Message", "Registered At"];
+    const rows = filteredPublicRegs.map(r => [
+      escapeCSV(r.full_name),
+      escapeCSV(r.email),
+      escapeCSV(r.phone),
+      escapeCSV(r.events?.title),
+      escapeCSV(r.events?.start_date ? formatDate(r.events.start_date) : ""),
+      escapeCSV(r.team_name),
+      escapeCSV(r.payment_status || "N/A"),
+      escapeCSV(r.message),
+      escapeCSV(formatDateTime(r.created_at)),
+    ].join(","));
+    downloadCSV([headers.join(","), ...rows].join("\n"), `public-registrations-${new Date().toISOString().split("T")[0]}.csv`);
+  };
+
+  const exportPayments = () => {
+    const headers = ["Name", "Email", "Type", "Event", "Fee", "Payment Status", "Receipt URL"];
+    const rows = paidRegistrations.map(r => {
+      const name = r.type === "public" ? r.full_name : r.profiles?.full_name;
+      const email = r.type === "public" ? r.email : r.profiles?.email;
+      return [
+        escapeCSV(name),
+        escapeCSV(email),
+        r.type === "public" ? "Public" : "Member",
+        escapeCSV(r.events?.title),
+        `₹${r.events?.registration_fee || 0}`,
+        escapeCSV(r.payment_status || "pending"),
+        escapeCSV(r.payment_receipt_url),
+      ].join(",");
+    });
+    downloadCSV([headers.join(","), ...rows].join("\n"), `payments-${new Date().toISOString().split("T")[0]}.csv`);
+  };
+
+  const exportFeedback = () => {
+    const headers = ["Event", "Rating", "Feedback", "Anonymous", "Date"];
+    const rows = filteredFeedbacks.map(f => [
+      escapeCSV(f.events?.title),
+      f.rating.toString(),
+      escapeCSV(f.feedback),
+      f.is_anonymous ? "Yes" : "No",
+      escapeCSV(formatDateTime(f.created_at)),
+    ].join(","));
+    downloadCSV([headers.join(","), ...rows].join("\n"), `feedback-${new Date().toISOString().split("T")[0]}.csv`);
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -477,6 +561,31 @@ export default function AdminEventsHub() {
                   {[5,4,3,2,1].map(r => <SelectItem key={r} value={r.toString()}>{r} Star{r > 1 && "s"}</SelectItem>)}
                 </SelectContent>
               </Select>
+            )}
+            {/* Export Buttons */}
+            {activeTab === "internal" && filteredInternalRegs.length > 0 && (
+              <Button variant="outline" onClick={exportInternalRegistrations}>
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+            )}
+            {activeTab === "public" && filteredPublicRegs.length > 0 && (
+              <Button variant="outline" onClick={exportPublicRegistrations}>
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+            )}
+            {activeTab === "payments" && paidRegistrations.length > 0 && (
+              <Button variant="outline" onClick={exportPayments}>
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+            )}
+            {activeTab === "feedback" && filteredFeedbacks.length > 0 && (
+              <Button variant="outline" onClick={exportFeedback}>
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
             )}
           </div>
 
