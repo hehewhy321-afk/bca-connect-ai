@@ -115,9 +115,14 @@ export default function Events() {
     }
 
     try {
+      // Generate unique check-in code
+      const checkInCode = `EVT-${eventId.substring(0, 4).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+      
       const { error } = await supabase.from("event_registrations").insert({
         event_id: eventId,
         user_id: user.id,
+        check_in_code: checkInCode,
+        payment_status: "approved", // Internal registrations are auto-approved
       });
 
       if (error) throw error;

@@ -9,6 +9,7 @@ import {
   FileText,
   Plus,
   ChevronRight,
+  IndianRupee,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -216,6 +217,14 @@ export default function AdminPanel() {
             >
               <Users className="w-4 h-4" />
               View Members
+            </Button>
+            <Button
+              onClick={() => navigate("/admin/payment-verification")}
+              variant="outline"
+              className="justify-start gap-2"
+            >
+              <IndianRupee className="w-4 h-4" />
+              Payment Verification
             </Button>
           </div>
         </div>

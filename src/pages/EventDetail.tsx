@@ -13,8 +13,12 @@ import {
   Lock,
   Globe,
   Shield,
-  IndianRupee
+  IndianRupee,
+  CalendarClock,
+  FileText,
+  QrCode
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +30,13 @@ import { Separator } from "@/components/ui/separator";
 import { EventGallery } from "@/components/events/EventGallery";
 import { SocialShareButtons } from "@/components/events/SocialShareButtons";
 import { EventReminderForm } from "@/components/events/EventReminderForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Event {
   id: string;
@@ -45,6 +56,7 @@ interface Event {
   team_size_max: number | null;
   gallery_images: string[] | null;
   registration_fee: number | null;
+  admin_notes: string | null;
 }
 
 export default function EventDetail() {
@@ -55,6 +67,48 @@ export default function EventDetail() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [registrationCount, setRegistrationCount] = useState(0);
+  const [userRegistration, setUserRegistration] = useState<any>(null);
+
+  const fetchUserRegistration = async () => {
+    if (!user || !id) return;
+    
+    try {
+      // Check internal registrations first
+      const { data: internalReg } = await supabase
+        .from("event_registrations")
+        .select("*")
+        .eq("event_id", id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (internalReg) {
+        setUserRegistration(internalReg);
+        return;
+      }
+      
+      // Check public registrations by email
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (profile?.email) {
+        const { data: publicReg } = await supabase
+          .from("public_event_registrations")
+          .select("*")
+          .eq("event_id", id)
+          .eq("email", profile.email)
+          .maybeSingle();
+        
+        if (publicReg) {
+          setUserRegistration(publicReg);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user registration:", error);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -62,6 +116,12 @@ export default function EventDetail() {
       fetchRegistrationCount();
     }
   }, [id]);
+
+  useEffect(() => {
+    if (user && id) {
+      fetchUserRegistration();
+    }
+  }, [user, id]);
 
   const fetchEvent = async () => {
     try {
@@ -282,23 +342,42 @@ export default function EventDetail() {
                     <h2 className="font-heading text-xl font-semibold">About This Event</h2>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
+                    {/* Start Date */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                       <Calendar className="w-5 h-5 text-primary" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Date</p>
+                        <p className="text-sm text-muted-foreground">Start Date</p>
                         <p className="font-medium">{formatDate(event.start_date)}</p>
                       </div>
                     </div>
+                    {/* Start Time */}
                     <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                       <Clock className="w-5 h-5 text-primary" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Time</p>
-                        <p className="font-medium">
-                          {formatTime(event.start_date)}
-                          {event.end_date && ` - ${formatTime(event.end_date)}`}
-                        </p>
+                        <p className="text-sm text-muted-foreground">Start Time</p>
+                        <p className="font-medium">{formatTime(event.start_date)}</p>
                       </div>
                     </div>
+                    {/* End Date */}
+                    {event.end_date && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                        <CalendarClock className="w-5 h-5 text-primary" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">End Date</p>
+                          <p className="font-medium">{formatDate(event.end_date)}</p>
+                        </div>
+                      </div>
+                    )}
+                    {/* End Time */}
+                    {event.end_date && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                        <Clock className="w-5 h-5 text-primary" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">End Time</p>
+                          <p className="font-medium">{formatTime(event.end_date)}</p>
+                        </div>
+                      </div>
+                    )}
                     {event.location && (
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                         <MapPin className="w-5 h-5 text-primary" />
@@ -317,6 +396,22 @@ export default function EventDetail() {
                     </div>
                   </div>
                 </div>
+
+                {/* Rules & Regulations (Admin Notes) */}
+                {event.admin_notes && (
+                  <>
+                    <Separator />
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <FileText className="w-5 h-5 text-primary" />
+                        <h2 className="font-heading text-xl font-semibold">Rules & Regulations</h2>
+                      </div>
+                      <div className="p-4 rounded-lg bg-muted/50">
+                        <p className="text-muted-foreground whitespace-pre-wrap">{event.admin_notes}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <Separator />
 
@@ -484,6 +579,45 @@ export default function EventDetail() {
                     </>
                   )}
                 </div>
+
+                {/* QR Code for registered users */}
+                {userRegistration?.check_in_code && (
+                  <>
+                    <Separator className="my-4" />
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground mb-2">Your Check-in QR Code</p>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="w-full gap-2">
+                            <QrCode className="w-4 h-4" />
+                            View QR Code
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle className="text-center">Event Check-in QR Code</DialogTitle>
+                          </DialogHeader>
+                          <div className="flex flex-col items-center justify-center p-6 space-y-4">
+                            <div className="bg-white p-4 rounded-lg">
+                              <QRCodeSVG 
+                                value={userRegistration.check_in_code}
+                                size={200}
+                                level="H"
+                                includeMargin
+                              />
+                            </div>
+                            <p className="text-sm text-muted-foreground text-center">
+                              Show this QR code at the event venue for quick check-in
+                            </p>
+                            <p className="text-xs font-mono bg-muted px-3 py-1 rounded">
+                              {userRegistration.check_in_code}
+                            </p>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </>
+                )}
               </div>
             </motion.div>
           </div>
