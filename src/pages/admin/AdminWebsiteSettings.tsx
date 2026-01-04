@@ -102,7 +102,7 @@ const AdminWebsiteSettings = () => {
 
       const { error: uploadError } = await supabase.storage
         .from("website-assets")
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file, { upsert: true, cacheControl: "31536000", contentType: file.type });
 
       if (uploadError) throw uploadError;
 
