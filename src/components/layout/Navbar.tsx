@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navLinks = [
-  { name: "Home", href: "#home" },
-  { name: "About", href: "#about" },
-  { name: "Events", href: "#events" },
+  { name: "Home", href: "/" },
+  { name: "About", href: "/about" },
+  { name: "Events", href: "/dashboard/events" },
   { name: "Notice", href: "/notice" },
-  { name: "Community", href: "#community" },
+  { name: "Contact Us", href: "/contact" },
 ];
 
 export function Navbar() {
@@ -28,14 +28,7 @@ export function Navbar() {
   }, []);
 
   const handleNavClick = (href: string) => {
-    if (href.startsWith("#")) {
-      const element = document.querySelector(href);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
-      }
-    } else {
-      navigate(href);
-    }
+    navigate(href);
     setIsOpen(false);
   };
 
