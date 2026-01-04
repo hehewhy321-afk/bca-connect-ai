@@ -5,7 +5,6 @@ import { Menu, X, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const navLinks = [
   { name: "Home", href: "/" },
@@ -18,10 +17,10 @@ const navLinks = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [logoLoaded, setLogoLoaded] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { data: settings, isLoading } = useWebsiteSettings();
+  const { data: settings } = useWebsiteSettings();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,21 +30,14 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Preload logo image
   useEffect(() => {
-    if (settings?.site_logo) {
-      const img = new Image();
-      img.src = settings.site_logo;
-      img.onload = () => setImageLoaded(true);
-    }
+    setLogoLoaded(false);
   }, [settings?.site_logo]);
 
   const handleNavClick = (href: string) => {
     navigate(href);
     setIsOpen(false);
   };
-
-  const showSkeleton = isLoading || (settings?.site_logo && !imageLoaded);
 
   return (
     <motion.header
@@ -59,35 +51,29 @@ export function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="relative">
-              {showSkeleton ? (
-                <Skeleton className="w-11 h-11 rounded-xl bg-white/20" />
-              ) : settings?.site_logo ? (
-                <img
-                  src={settings.site_logo}
-                  alt={settings?.site_name || "Logo"}
-                  className="w-11 h-11 rounded-xl object-cover shadow-lg group-hover:shadow-glow transition-all duration-300 group-hover:scale-105"
-                />
-              ) : null}
-              {!showSkeleton && (
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-accent border-2 border-background" />
-              )}
+              <div className="w-11 h-11 rounded-xl bg-white/10 ring-1 ring-white/15 overflow-hidden shadow-lg group-hover:shadow-glow transition-all duration-300 group-hover:scale-105">
+                {settings?.site_logo ? (
+                  <img
+                    src={settings.site_logo}
+                    alt={settings?.site_name || "Logo"}
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
+                    onLoad={() => setLogoLoaded(true)}
+                    onError={() => setLogoLoaded(true)}
+                    className={`w-11 h-11 object-cover transition-opacity duration-200 ${logoLoaded ? "opacity-100" : "opacity-0"}`}
+                  />
+                ) : null}
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-accent border-2 border-background" />
             </div>
             <div className="flex flex-col">
-              {isLoading ? (
-                <>
-                  <Skeleton className="h-5 w-28 bg-white/20" />
-                  <Skeleton className="h-3 w-20 mt-1 bg-white/20" />
-                </>
-              ) : (
-                <>
-                  <span className="font-heading font-bold text-lg leading-tight text-white">
-                    {settings?.site_name || "BCA Association"}
-                  </span>
-                  <span className="text-xs text-white/70 font-medium">
-                    {settings?.site_subtitle || "MMAMC Biratnagar"}
-                  </span>
-                </>
-              )}
+              <span className="font-heading font-bold text-lg leading-tight text-white">
+                {settings?.site_name || "BCA Association"}
+              </span>
+              <span className="text-xs text-white/70 font-medium">
+                {settings?.site_subtitle || "MMAMC Biratnagar"}
+              </span>
             </div>
           </Link>
 
