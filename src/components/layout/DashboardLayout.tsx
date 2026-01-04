@@ -1,93 +1,99 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  GraduationCap,
-  LayoutDashboard,
-  Calendar,
-  BookOpen,
-  Users,
-  Bot,
-  Trophy,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  ChevronDown,
-  MessageSquare,
-  Shield,
-} from "lucide-react";
+import { GraduationCap, LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, ChevronDown, MessageSquare, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 import { useUserRole } from "@/hooks/useUserRole";
-
 interface SidebarLink {
   name: string;
   href: string;
   icon: typeof LayoutDashboard;
   adminOnly?: boolean;
 }
-
-const sidebarLinks: SidebarLink[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Events", href: "/dashboard/events", icon: Calendar },
-  { name: "Resources", href: "/dashboard/resources", icon: BookOpen },
-  { name: "AI Assistant", href: "/dashboard/ai-assistant", icon: Bot },
-  { name: "Forum", href: "/dashboard/forum", icon: MessageSquare },
-  { name: "Community", href: "/dashboard/community", icon: Users },
-  { name: "Achievements", href: "/dashboard/achievements", icon: Trophy },
-  { name: "Admin Panel", href: "/admin", icon: Shield, adminOnly: true },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
-];
-
+const sidebarLinks: SidebarLink[] = [{
+  name: "Dashboard",
+  href: "/dashboard",
+  icon: LayoutDashboard
+}, {
+  name: "Events",
+  href: "/dashboard/events",
+  icon: Calendar
+}, {
+  name: "Resources",
+  href: "/dashboard/resources",
+  icon: BookOpen
+}, {
+  name: "AI Assistant",
+  href: "/dashboard/ai-assistant",
+  icon: Bot
+}, {
+  name: "Forum",
+  href: "/dashboard/forum",
+  icon: MessageSquare
+}, {
+  name: "Community",
+  href: "/dashboard/community",
+  icon: Users
+}, {
+  name: "Achievements",
+  href: "/dashboard/achievements",
+  icon: Trophy
+}, {
+  name: "Admin Panel",
+  href: "/admin",
+  icon: Shield,
+  adminOnly: true
+}, {
+  name: "Settings",
+  href: "/dashboard/settings",
+  icon: Settings
+}];
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
-
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({
+  children
+}: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const { toast } = useToast();
-  const { isAdmin, isModerator } = useUserRole();
-
-  const filteredLinks = sidebarLinks.filter(
-    (link) => !link.adminOnly || isAdmin || isModerator
-  );
-
+  const {
+    user,
+    signOut
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
+  const {
+    isAdmin,
+    isModerator
+  } = useUserRole();
+  const filteredLinks = sidebarLinks.filter(link => !link.adminOnly || isAdmin || isModerator);
   const handleSignOut = async () => {
     await signOut();
     toast({
       title: "Signed out",
-      description: "You have been signed out successfully.",
+      description: "You have been signed out successfully."
     });
     navigate("/");
   };
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-foreground/50 z-40 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+        {sidebarOpen && <motion.div initial={{
+        opacity: 0
+      }} animate={{
+        opacity: 1
+      }} exit={{
+        opacity: 0
+      }} className="fixed inset-0 bg-foreground/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
       </AnimatePresence>
 
       {/* Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border transform transition-transform duration-300 lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
+      <aside className={`fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         {/* Logo */}
         <div className="p-4 border-b border-border">
           <Link to="/" className="flex items-center gap-2">
@@ -98,40 +104,25 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <span className="font-heading font-bold text-lg text-foreground">
                 BCA Association
               </span>
-              <span className="text-xs text-muted-foreground">MMAMC Nepal</span>
+              <span className="text-xs text-muted-foreground">MMAMC Biratnagar</span>
             </div>
           </Link>
         </div>
 
         {/* Nav Links */}
         <nav className="p-4 space-y-1">
-          {filteredLinks.map((link) => {
-            const isActive = location.pathname === link.href || location.pathname.startsWith(link.href + "/");
-            return (
-              <Link
-                key={link.name}
-                to={link.href}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
+          {filteredLinks.map(link => {
+          const isActive = location.pathname === link.href || location.pathname.startsWith(link.href + "/");
+          return <Link key={link.name} to={link.href} onClick={() => setSidebarOpen(false)} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
                 <link.icon className="w-5 h-5" />
                 {link.name}
-              </Link>
-            );
-          })}
+              </Link>;
+        })}
         </nav>
 
         {/* Sign Out */}
         <div className="absolute bottom-4 left-4 right-4">
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
-            onClick={handleSignOut}
-          >
+          <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive" onClick={handleSignOut}>
             <LogOut className="w-5 h-5" />
             Sign Out
           </Button>
@@ -144,21 +135,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl border-b border-border">
           <div className="flex items-center justify-between px-4 h-16">
             {/* Mobile Menu Button */}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors"
-            >
-              {sidebarOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
-              )}
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors">
+              {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
 
             {/* Page Title */}
             <h1 className="font-heading font-semibold text-lg text-foreground hidden lg:block">
-              {sidebarLinks.find((l) => l.href === location.pathname)?.name ||
-                "Dashboard"}
+              {sidebarLinks.find(l => l.href === location.pathname)?.name || "Dashboard"}
             </h1>
 
             {/* Right Side */}
@@ -185,6 +168,5 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Page Content */}
         <main className="p-4 md:p-6 lg:p-8">{children}</main>
       </div>
-    </div>
-  );
+    </div>;
 }
