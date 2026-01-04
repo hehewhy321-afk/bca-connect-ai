@@ -6,7 +6,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-
+import { supabase } from "@/integrations/supabase/client";
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -59,13 +59,20 @@ export default function AIAssistant() {
     setIsLoading(true);
 
     try {
+      // Get the current session to use the user's JWT token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error("Please log in to use the AI assistant");
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({
             messages: [...messages, userMessage].map((m) => ({
