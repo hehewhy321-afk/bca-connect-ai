@@ -46,7 +46,7 @@ export function Navbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out overflow-hidden ${
         scrolled 
           ? "bg-primary/35 shadow-[0_8px_32px_rgba(0,0,0,0.15)] border-b border-white/10" 
           : "bg-transparent"
@@ -56,6 +56,20 @@ export function Navbar() {
         backdropFilter: scrolled ? "blur(16px) saturate(180%)" : "none",
       }}
     >
+      {/* Shimmer effect */}
+      {scrolled && (
+        <div 
+          className="absolute inset-0 -z-10 overflow-hidden"
+          aria-hidden="true"
+        >
+          <div 
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+            style={{
+              animation: "shimmer 3s ease-in-out infinite",
+            }}
+          />
+        </div>
+      )}
       <div className="container mx-auto px-4">
         <nav className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
