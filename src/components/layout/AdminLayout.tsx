@@ -24,6 +24,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useUserRole } from "@/hooks/useUserRole";
 
+import { Settings, HelpCircle } from "lucide-react";
+
 const adminLinks = [
   { name: "Overview", href: "/admin", icon: Shield },
   { name: "Events", href: "/admin/events", icon: Calendar },
@@ -35,6 +37,8 @@ const adminLinks = [
   { name: "Founding Members", href: "/admin/founding-members", icon: Award },
   { name: "Announcements", href: "/admin/announcements", icon: Bell },
   { name: "Notices", href: "/admin/notices", icon: FileText },
+  { name: "FAQs", href: "/admin/faqs", icon: HelpCircle },
+  { name: "Website Settings", href: "/admin/settings", icon: Settings },
   { name: "Contacts", href: "/admin/contacts", icon: MessageSquare },
   { name: "Create User", href: "/admin/users", icon: UserPlus },
 ];

@@ -1,4 +1,6 @@
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import {
@@ -7,102 +9,37 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { HelpCircle, GraduationCap, Users, Calendar, BookOpen, MessageSquare } from "lucide-react";
+import { HelpCircle, Loader2 } from "lucide-react";
 
-const faqCategories = [
-  {
-    title: "General",
-    icon: HelpCircle,
-    faqs: [
-      {
-        question: "What is BCA Association MMAMC?",
-        answer: "BCA Association MMAMC is a student-led organization at Madan Mohan Adhikari Memorial College, Nepal. We aim to bridge the gap between academic learning and industry requirements by providing resources, events, and networking opportunities for BCA students.",
-      },
-      {
-        question: "Who can join the BCA Association?",
-        answer: "All current BCA students and alumni of MMAMC College are welcome to join. We also welcome students from related IT programs who are interested in contributing to our community.",
-      },
-      {
-        question: "How do I become a member?",
-        answer: "Simply create an account on our platform using your email. Once registered, you'll have access to all member benefits including resources, events, and the community forum.",
-      },
-    ],
-  },
-  {
-    title: "Academics",
-    icon: GraduationCap,
-    faqs: [
-      {
-        question: "What study materials are available?",
-        answer: "We provide comprehensive study materials including lecture notes, past exam papers, project repositories, and interview preparation guides organized by semester and subject.",
-      },
-      {
-        question: "How can I access past papers?",
-        answer: "Past papers are available in the Resources section. Simply navigate to Resources, filter by 'Past Papers', and select your desired semester and subject.",
-      },
-      {
-        question: "Can I contribute study materials?",
-        answer: "Yes! We encourage members to contribute quality study materials. You can upload your notes, projects, or any educational content through your dashboard.",
-      },
-    ],
-  },
-  {
-    title: "Events",
-    icon: Calendar,
-    faqs: [
-      {
-        question: "How do I register for events?",
-        answer: "Log in to your account, navigate to the Events section, find the event you're interested in, and click the 'Register' button. You'll receive a confirmation email with event details.",
-      },
-      {
-        question: "Are events free for members?",
-        answer: "Most of our events are free for registered members. Some special workshops or seminars may have a nominal fee which will be clearly mentioned in the event details.",
-      },
-      {
-        question: "Can I suggest event topics?",
-        answer: "Absolutely! We value member input. You can suggest event topics through our forum or by contacting us directly. We regularly organize events based on member interests.",
-      },
-    ],
-  },
-  {
-    title: "Community",
-    icon: Users,
-    faqs: [
-      {
-        question: "How does the forum work?",
-        answer: "Our forum is a space for members to discuss topics, ask questions, and share knowledge. You can create posts, comment on others' posts, and upvote helpful content.",
-      },
-      {
-        question: "What are XP points and levels?",
-        answer: "XP (Experience Points) are earned through various activities like attending events, contributing resources, and participating in the forum. As you accumulate XP, you level up and unlock achievements.",
-      },
-      {
-        question: "How can I connect with alumni?",
-        answer: "Our platform features alumni profiles in the Community section. You can view their profiles, see their career paths, and connect with them for mentorship and networking.",
-      },
-    ],
-  },
-  {
-    title: "Technical Support",
-    icon: MessageSquare,
-    faqs: [
-      {
-        question: "I forgot my password. How can I reset it?",
-        answer: "Click on the 'Forgot Password' link on the login page. Enter your registered email address, and we'll send you a password reset link.",
-      },
-      {
-        question: "How do I update my profile?",
-        answer: "Go to Dashboard > Settings to update your profile information including your bio, skills, social links, and profile picture.",
-      },
-      {
-        question: "Who do I contact for technical issues?",
-        answer: "For technical issues, you can reach out through our Contact Us page or email us directly at bca@mmamc.edu.np. Our support team typically responds within 24 hours.",
-      },
-    ],
-  },
-];
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+  category: string;
+  display_order: number;
+}
 
 export default function FAQ() {
+  const { data: faqs, isLoading } = useQuery({
+    queryKey: ["public-faqs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("faqs")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data as FAQ[];
+    },
+  });
+
+  // Group FAQs by category
+  const groupedFaqs = faqs?.reduce((acc, faq) => {
+    if (!acc[faq.category]) acc[faq.category] = [];
+    acc[faq.category].push(faq);
+    return acc;
+  }, {} as Record<string, FAQ[]>);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -131,41 +68,52 @@ export default function FAQ() {
       {/* FAQ Content */}
       <section className="py-16 px-4">
         <div className="container mx-auto max-w-4xl">
-          {faqCategories.map((category, categoryIndex) => (
-            <motion.div
-              key={category.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: categoryIndex * 0.1 }}
-              className="mb-10"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <category.icon className="w-5 h-5 text-primary" />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : !faqs || faqs.length === 0 ? (
+            <div className="text-center py-12">
+              <HelpCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No FAQs available at the moment.</p>
+            </div>
+          ) : (
+            Object.entries(groupedFaqs || {}).map(([category, categoryFaqs], categoryIndex) => (
+              <motion.div
+                key={category}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: categoryIndex * 0.1 }}
+                className="mb-10"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <HelpCircle className="w-5 h-5 text-primary" />
+                  </div>
+                  <h2 className="font-heading text-2xl font-semibold text-foreground">
+                    {category}
+                  </h2>
                 </div>
-                <h2 className="font-heading text-2xl font-semibold text-foreground">
-                  {category.title}
-                </h2>
-              </div>
-              
-              <Accordion type="single" collapsible className="w-full">
-                {category.faqs.map((faq, faqIndex) => (
-                  <AccordionItem 
-                    key={faqIndex} 
-                    value={`${category.title}-${faqIndex}`}
-                    className="border border-border rounded-lg mb-3 px-4 bg-card"
-                  >
-                    <AccordionTrigger className="text-left font-medium text-foreground hover:text-primary">
-                      {faq.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground">
-                      {faq.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </motion.div>
-          ))}
+                
+                <Accordion type="single" collapsible className="w-full">
+                  {categoryFaqs.map((faq, faqIndex) => (
+                    <AccordionItem 
+                      key={faq.id} 
+                      value={`${category}-${faqIndex}`}
+                      className="border border-border rounded-lg mb-3 px-4 bg-card"
+                    >
+                      <AccordionTrigger className="text-left font-medium text-foreground hover:text-primary">
+                        {faq.question}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-muted-foreground">
+                        {faq.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </motion.div>
+            ))
+          )}
         </div>
       </section>
 
