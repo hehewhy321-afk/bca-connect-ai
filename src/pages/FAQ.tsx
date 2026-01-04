@@ -66,7 +66,7 @@ export default function FAQ() {
       </section>
 
       {/* FAQ Content */}
-      <section className="py-10 sm:py-16 px-4">
+      <section className="py-10 sm:py-16 px-3 sm:px-4 pb-24 md:pb-16">
         <div className="container mx-auto max-w-4xl">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -95,12 +95,12 @@ export default function FAQ() {
                   </h2>
                 </div>
                 
-                <Accordion type="single" collapsible className="w-full">
+                <Accordion type="single" collapsible className="w-full space-y-2">
                   {categoryFaqs.map((faq, faqIndex) => (
                     <AccordionItem 
                       key={faq.id} 
                       value={`${category}-${faqIndex}`}
-                      className="border border-border rounded-lg mb-2 sm:mb-3 px-3 sm:px-4 bg-card"
+                      className="border border-border rounded-lg px-3 sm:px-4 bg-card"
                     >
                       <AccordionTrigger className="text-left font-medium text-foreground hover:text-primary text-sm sm:text-base py-3 sm:py-4">
                         {faq.question}

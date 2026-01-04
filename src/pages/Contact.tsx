@@ -130,9 +130,9 @@ export default function Contact() {
       </section>
 
       {/* Contact Content */}
-      <section className="py-10 sm:py-16 px-4">
+      <section className="py-10 sm:py-16 px-3 sm:px-4 pb-24 md:pb-16">
         <div className="container mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
             {/* Contact Form */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -233,21 +233,21 @@ export default function Contact() {
               transition={{ duration: 0.6 }}
               className="space-y-4 sm:space-y-6"
             >
-              <h2 className="font-heading text-xl sm:text-2xl font-semibold text-foreground mb-4 sm:mb-6">
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold text-foreground">
                 Get in Touch
               </h2>
 
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
                 {contactInfo.map((info, index) => (
                   <motion.div
                     key={info.title}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className="bg-card border border-border rounded-lg sm:rounded-xl p-3 sm:p-6"
+                    className="bg-card border border-border rounded-lg sm:rounded-xl p-4 sm:p-6"
                   >
-                    <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-2 sm:mb-4">
-                      <info.icon className="w-4 h-4 sm:w-6 sm:h-6 text-primary" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
+                      <info.icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                     </div>
                     <h3 className="font-semibold text-foreground mb-1 sm:mb-2 text-sm sm:text-base">{info.title}</h3>
                     {info.details.map((detail, i) => (
@@ -271,9 +271,9 @@ export default function Contact() {
                       key={social.label}
                       href={social.href}
                       aria-label={social.label}
-                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
                     >
-                      <social.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <social.icon className="w-5 h-5 sm:w-5 sm:h-5" />
                     </a>
                   ))}
                 </div>
