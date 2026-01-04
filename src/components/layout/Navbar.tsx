@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronRight } from "lucide-react";
+import { Menu, X, ChevronRight, Home, Users, Calendar, Bell, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
 
 const navLinks = [
-  { name: "Home", href: "/" },
-  { name: "About", href: "/about" },
-  { name: "Events", href: "/events" },
-  { name: "Notice", href: "/notice" },
-  { name: "Contact Us", href: "/contact" },
+  { name: "Home", href: "/", icon: Home },
+  { name: "About", href: "/about", icon: Users },
+  { name: "Events", href: "/events", icon: Calendar },
+  { name: "Notice", href: "/notice", icon: Bell },
+  { name: "Contact Us", href: "/contact", icon: Mail },
 ];
 
 export function Navbar() {
@@ -37,6 +37,8 @@ export function Navbar() {
   const handleNavClick = (href: string) => {
     navigate(href);
     setIsOpen(false);
+    // Smooth scroll to top after navigation
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -128,38 +130,50 @@ export function Navbar() {
         </nav>
 
         {/* Mobile Menu */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {isOpen && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, height: 0, y: -10 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -10 }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
               className="lg:hidden overflow-hidden"
             >
-              <div className="py-4 space-y-1 border-t border-white/10 bg-white/10 backdrop-blur-xl rounded-b-2xl mt-2 mx-2">
-                {navLinks.map((link, index) => (
-                  <motion.button
-                    key={link.name}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => handleNavClick(link.href)}
-                    className="block w-full text-left px-4 py-3 text-base font-medium text-white hover:text-white hover:bg-white/15 rounded-xl transition-all duration-200"
-                  >
-                    {link.name}
-                  </motion.button>
-                ))}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, delay: 0.1 }}
+                className="py-4 space-y-1 border-t border-white/10 bg-white/10 backdrop-blur-xl rounded-b-2xl mt-2 mx-2"
+              >
+                {navLinks.map((link, index) => {
+                  const IconComponent = link.icon;
+                  return (
+                    <motion.button
+                      key={link.name}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ delay: index * 0.05, duration: 0.2 }}
+                      onClick={() => handleNavClick(link.href)}
+                      className="flex items-center gap-3 w-full text-left px-4 py-3 text-base font-medium text-white hover:text-white hover:bg-white/15 rounded-xl transition-all duration-200"
+                    >
+                      <IconComponent className="w-5 h-5 text-white/70" />
+                      {link.name}
+                    </motion.button>
+                  );
+                })}
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ delay: 0.25, duration: 0.2 }}
                   className="pt-4 border-t border-white/10 mt-4 px-4"
                 >
                   {user ? (
                     <Button
                       className="w-full bg-white text-primary hover:bg-white/90 shadow-lg"
-                      onClick={() => navigate("/dashboard")}
+                      onClick={() => handleNavClick("/dashboard")}
                     >
                       Dashboard
                       <ChevronRight className="w-4 h-4 ml-1" />
@@ -167,14 +181,14 @@ export function Navbar() {
                   ) : (
                     <Button
                       className="w-full bg-white text-primary hover:bg-white/90 shadow-lg"
-                      onClick={() => navigate("/auth")}
+                      onClick={() => handleNavClick("/auth")}
                     >
                       Join Now
                       <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   )}
                 </motion.div>
-              </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
