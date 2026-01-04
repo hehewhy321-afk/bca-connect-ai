@@ -46,9 +46,9 @@ export function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="relative">
-              {settings?.logo_url ? (
+              {settings?.site_logo ? (
                 <img
-                  src={settings.logo_url}
+                  src={settings.site_logo}
                   alt={settings?.site_name || "Logo"}
                   className="w-11 h-11 rounded-xl object-cover shadow-lg group-hover:shadow-glow transition-all duration-300 group-hover:scale-105"
                 />
