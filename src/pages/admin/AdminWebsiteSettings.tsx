@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Settings, Globe, Phone, Mail, Facebook, Twitter, Instagram, Linkedin, Youtube, Loader2, Save } from "lucide-react";
+import { Settings, Globe, Phone, Mail, Facebook, Twitter, Instagram, Linkedin, Youtube, Loader2, Save, Upload, X, Image } from "lucide-react";
 
 interface SettingsMap {
   [key: string]: string;
@@ -15,6 +15,8 @@ interface SettingsMap {
 
 const AdminWebsiteSettings = () => {
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [settings, setSettings] = useState<SettingsMap>({
     site_name: "",
     site_logo: "",
@@ -76,6 +78,54 @@ const AdminWebsiteSettings = () => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File size must be less than 2MB");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `logo-${Date.now()}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("website-assets")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("website-assets")
+        .getPublicUrl(filePath);
+
+      handleChange("site_logo", publicUrl);
+      toast.success("Logo uploaded successfully!");
+    } catch (error: any) {
+      toast.error("Failed to upload logo: " + error.message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    handleChange("site_logo", "");
+  };
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -124,23 +174,82 @@ const AdminWebsiteSettings = () => {
                   placeholder="BCA Association"
                 />
               </div>
+              
+              {/* Logo Upload Section */}
               <div className="space-y-2">
-                <Label htmlFor="site_logo">Logo URL</Label>
+                <Label>Site Logo</Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+                
+                {settings.site_logo ? (
+                  <div className="relative p-4 bg-muted rounded-lg">
+                    <img
+                      src={settings.site_logo}
+                      alt="Logo Preview"
+                      className="max-h-20 object-contain mx-auto"
+                    />
+                    <div className="flex gap-2 mt-3 justify-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                      >
+                        {isUploading ? (
+                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4 mr-1" />
+                        )}
+                        Change
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleRemoveLogo}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => !isUploading && fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-10 w-10 mx-auto text-muted-foreground animate-spin" />
+                    ) : (
+                      <Image className="h-10 w-10 mx-auto text-muted-foreground" />
+                    )}
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {isUploading ? "Uploading..." : "Click to upload logo"}
+                    </p>
+                    <p className="text-xs text-muted-foreground/70">
+                      PNG, JPG up to 2MB
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Optional URL input for external logos */}
+              <div className="space-y-2">
+                <Label htmlFor="site_logo" className="text-sm text-muted-foreground">
+                  Or enter logo URL directly
+                </Label>
                 <Input
                   id="site_logo"
                   value={settings.site_logo}
                   onChange={(e) => handleChange("site_logo", e.target.value)}
                   placeholder="https://example.com/logo.png"
                 />
-                {settings.site_logo && (
-                  <div className="mt-2 p-4 bg-muted rounded-lg">
-                    <img
-                      src={settings.site_logo}
-                      alt="Logo Preview"
-                      className="max-h-16 object-contain"
-                    />
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
