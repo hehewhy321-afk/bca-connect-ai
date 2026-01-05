@@ -24,6 +24,9 @@ interface Profile {
   github_url: string | null;
   linkedin_url: string | null;
   is_alumni: boolean | null;
+  graduation_year: number | null;
+  current_company: string | null;
+  job_title: string | null;
 }
 
 export default function Settings() {
@@ -47,6 +50,9 @@ export default function Settings() {
     github_url: "",
     linkedin_url: "",
     is_alumni: false,
+    graduation_year: "",
+    current_company: "",
+    job_title: "",
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -146,6 +152,9 @@ export default function Settings() {
             github_url: data.github_url || "",
             linkedin_url: data.linkedin_url || "",
             is_alumni: data.is_alumni || false,
+            graduation_year: data.graduation_year?.toString() || "",
+            current_company: data.current_company || "",
+            job_title: data.job_title || "",
           });
           initializedRef.current = true;
         }
@@ -244,6 +253,9 @@ export default function Settings() {
           github_url: formData.github_url || null,
           linkedin_url: formData.linkedin_url || null,
           is_alumni: formData.is_alumni,
+          graduation_year: formData.is_alumni && formData.graduation_year ? parseInt(formData.graduation_year) : null,
+          current_company: formData.is_alumni ? formData.current_company || null : null,
+          job_title: formData.is_alumni ? formData.job_title || null : null,
         })
         .eq("user_id", user.id);
 
@@ -392,6 +404,58 @@ export default function Settings() {
                 }
               />
             </div>
+
+            {/* Alumni-specific fields */}
+            {formData.is_alumni && (
+              <div className="space-y-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <h3 className="font-medium text-foreground flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-primary" />
+                  Alumni Information
+                </h3>
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="graduation_year">Graduation Year</Label>
+                    <select
+                      id="graduation_year"
+                      value={formData.graduation_year}
+                      onChange={(e) =>
+                        setFormData({ ...formData, graduation_year: e.target.value })
+                      }
+                      className="w-full px-4 py-2 rounded-lg bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="">Select year</option>
+                      {Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="job_title">Job Title</Label>
+                    <Input
+                      id="job_title"
+                      value={formData.job_title}
+                      onChange={(e) =>
+                        setFormData({ ...formData, job_title: e.target.value })
+                      }
+                      placeholder="e.g., Software Engineer"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="current_company">Current Company</Label>
+                    <Input
+                      id="current_company"
+                      value={formData.current_company}
+                      onChange={(e) =>
+                        setFormData({ ...formData, current_company: e.target.value })
+                      }
+                      placeholder="e.g., Google"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
