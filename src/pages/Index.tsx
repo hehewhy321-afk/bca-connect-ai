@@ -4,6 +4,7 @@ import { AboutSection } from "@/components/sections/AboutSection";
 import { FeaturesSection } from "@/components/sections/FeaturesSection";
 import { AIAssistantSection } from "@/components/sections/AIAssistantSection";
 import { EventsSection } from "@/components/sections/EventsSection";
+import { FeaturedAlumniSection } from "@/components/sections/FeaturedAlumniSection";
 import { FoundingMembersSection } from "@/components/sections/FoundingMembersSection";
 import { CommunitySection } from "@/components/sections/CommunitySection";
 import { CTASection } from "@/components/sections/CTASection";
@@ -19,6 +20,7 @@ const Index = () => {
         <FeaturesSection />
         <AIAssistantSection />
         <EventsSection />
+        <FeaturedAlumniSection />
         <FoundingMembersSection />
         <CommunitySection />
         <CTASection />

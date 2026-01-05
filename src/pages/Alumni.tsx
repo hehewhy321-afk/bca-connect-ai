@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   GraduationCap,
@@ -9,11 +9,23 @@ import {
   Github,
   Linkedin,
   Users,
+  Filter,
+  X,
+  MapPin,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 interface Alumni {
   id: string;
@@ -33,10 +45,24 @@ interface Alumni {
   level: number;
 }
 
+interface Filters {
+  graduationYear: string;
+  company: string;
+  industry: string;
+  location: string;
+}
+
 export default function AlumniPage() {
   const [alumni, setAlumni] = useState<Alumni[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<Filters>({
+    graduationYear: "all",
+    company: "all",
+    industry: "all",
+    location: "all",
+  });
 
   useEffect(() => {
     fetchAlumni();
@@ -59,13 +85,87 @@ export default function AlumniPage() {
     }
   };
 
-  const filteredAlumni = alumni.filter(
-    (member) =>
-      member.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.current_company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.job_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.batch?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Extract unique values for filters
+  const filterOptions = useMemo(() => {
+    const years = [...new Set(alumni.filter(a => a.graduation_year).map(a => a.graduation_year!))].sort((a, b) => b - a);
+    const companies = [...new Set(alumni.filter(a => a.current_company).map(a => a.current_company!))].sort();
+    
+    // Extract industries from job titles (simplified approach)
+    const industries = [...new Set(alumni.filter(a => a.job_title).map(a => {
+      const title = a.job_title!.toLowerCase();
+      if (title.includes("engineer") || title.includes("developer") || title.includes("programmer")) return "Engineering";
+      if (title.includes("design")) return "Design";
+      if (title.includes("product")) return "Product";
+      if (title.includes("data") || title.includes("analyst")) return "Data & Analytics";
+      if (title.includes("manager") || title.includes("lead")) return "Management";
+      if (title.includes("marketing")) return "Marketing";
+      if (title.includes("sales")) return "Sales";
+      return "Other";
+    }))].sort();
+
+    // Extract locations from batch (simplified - in real app you'd have a location field)
+    const locations = [...new Set(alumni.filter(a => a.batch).map(a => a.batch!))].sort();
+
+    return { years, companies, industries, locations };
+  }, [alumni]);
+
+  const filteredAlumni = useMemo(() => {
+    return alumni.filter((member) => {
+      // Search filter
+      const matchesSearch = 
+        member.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        member.current_company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        member.job_title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        member.batch?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      if (!matchesSearch) return false;
+
+      // Graduation year filter
+      if (filters.graduationYear !== "all" && member.graduation_year?.toString() !== filters.graduationYear) {
+        return false;
+      }
+
+      // Company filter
+      if (filters.company !== "all" && member.current_company !== filters.company) {
+        return false;
+      }
+
+      // Industry filter (based on job title)
+      if (filters.industry !== "all" && member.job_title) {
+        const title = member.job_title.toLowerCase();
+        let industry = "Other";
+        if (title.includes("engineer") || title.includes("developer") || title.includes("programmer")) industry = "Engineering";
+        else if (title.includes("design")) industry = "Design";
+        else if (title.includes("product")) industry = "Product";
+        else if (title.includes("data") || title.includes("analyst")) industry = "Data & Analytics";
+        else if (title.includes("manager") || title.includes("lead")) industry = "Management";
+        else if (title.includes("marketing")) industry = "Marketing";
+        else if (title.includes("sales")) industry = "Sales";
+        
+        if (industry !== filters.industry) return false;
+      } else if (filters.industry !== "all" && !member.job_title) {
+        return false;
+      }
+
+      // Location filter (using batch as proxy)
+      if (filters.location !== "all" && member.batch !== filters.location) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [alumni, searchQuery, filters]);
+
+  const activeFiltersCount = Object.values(filters).filter(v => v !== "all").length;
+
+  const clearFilters = () => {
+    setFilters({
+      graduationYear: "all",
+      company: "all",
+      industry: "all",
+      location: "all",
+    });
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -84,7 +184,7 @@ export default function AlumniPage() {
           <div className="flex items-center gap-3 mb-2">
             <GraduationCap className="w-8 h-8 text-primary" />
             <h1 className="font-heading text-2xl font-bold text-foreground">
-              Alumni Network
+              Alumni Directory
             </h1>
           </div>
           <p className="text-muted-foreground">
@@ -104,35 +204,188 @@ export default function AlumniPage() {
           <div className="bg-card rounded-xl border border-border p-4 text-center">
             <Building2 className="w-6 h-6 text-secondary mx-auto mb-2" />
             <p className="font-heading text-2xl font-bold text-secondary">
-              {new Set(alumni.filter(a => a.current_company).map(a => a.current_company)).size}
+              {filterOptions.companies.length}
             </p>
             <p className="text-sm text-muted-foreground">Companies</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4 text-center">
             <Briefcase className="w-6 h-6 text-accent mx-auto mb-2" />
             <p className="font-heading text-2xl font-bold text-accent">
-              {alumni.filter(a => a.job_title).length}
+              {filterOptions.industries.length}
             </p>
-            <p className="text-sm text-muted-foreground">Working</p>
+            <p className="text-sm text-muted-foreground">Industries</p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4 text-center">
             <Calendar className="w-6 h-6 text-primary mx-auto mb-2" />
             <p className="font-heading text-2xl font-bold text-primary">
-              {new Set(alumni.filter(a => a.graduation_year).map(a => a.graduation_year)).size}
+              {filterOptions.years.length}
             </p>
             <p className="text-sm text-muted-foreground">Grad Years</p>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            placeholder="Search alumni by name, company, or role..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search and Filters */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                placeholder="Search alumni by name, company, or role..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button
+              variant={showFilters ? "secondary" : "outline"}
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2"
+            >
+              <Filter className="w-4 h-4" />
+              Filters
+              {activeFiltersCount > 0 && (
+                <Badge variant="default" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {activeFiltersCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-card rounded-xl border border-border p-4"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-medium text-foreground flex items-center gap-2">
+                  <Filter className="w-4 h-4" />
+                  Advanced Filters
+                </h3>
+                {activeFiltersCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-4 h-4 mr-1" />
+                    Clear all
+                  </Button>
+                )}
+              </div>
+              
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Graduation Year */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    Graduation Year
+                  </label>
+                  <Select value={filters.graduationYear} onValueChange={(v) => setFilters(prev => ({ ...prev, graduationYear: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Years" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Years</SelectItem>
+                      {filterOptions.years.map(year => (
+                        <SelectItem key={year} value={year.toString()}>Class of {year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Company */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <Building2 className="w-3 h-3" />
+                    Company
+                  </label>
+                  <Select value={filters.company} onValueChange={(v) => setFilters(prev => ({ ...prev, company: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Companies" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Companies</SelectItem>
+                      {filterOptions.companies.map(company => (
+                        <SelectItem key={company} value={company}>{company}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Industry */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <Briefcase className="w-3 h-3" />
+                    Industry
+                  </label>
+                  <Select value={filters.industry} onValueChange={(v) => setFilters(prev => ({ ...prev, industry: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Industries" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Industries</SelectItem>
+                      {filterOptions.industries.map(industry => (
+                        <SelectItem key={industry} value={industry}>{industry}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Location/Batch */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    Batch
+                  </label>
+                  <Select value={filters.location} onValueChange={(v) => setFilters(prev => ({ ...prev, location: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Batches" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Batches</SelectItem>
+                      {filterOptions.locations.map(location => (
+                        <SelectItem key={location} value={location}>{location}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Active Filters Display */}
+              {activeFiltersCount > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
+                  {filters.graduationYear !== "all" && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      Class of {filters.graduationYear}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => setFilters(prev => ({ ...prev, graduationYear: "all" }))} />
+                    </Badge>
+                  )}
+                  {filters.company !== "all" && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      {filters.company}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => setFilters(prev => ({ ...prev, company: "all" }))} />
+                    </Badge>
+                  )}
+                  {filters.industry !== "all" && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      {filters.industry}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => setFilters(prev => ({ ...prev, industry: "all" }))} />
+                    </Badge>
+                  )}
+                  {filters.location !== "all" && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      {filters.location}
+                      <X className="w-3 h-3 cursor-pointer" onClick={() => setFilters(prev => ({ ...prev, location: "all" }))} />
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </div>
+
+        {/* Results Count */}
+        <div className="text-sm text-muted-foreground">
+          Showing {filteredAlumni.length} of {alumni.length} alumni
         </div>
 
         {/* Alumni Grid */}
@@ -151,9 +404,14 @@ export default function AlumniPage() {
             <h3 className="font-heading text-lg font-medium text-foreground mb-2">
               No alumni found
             </h3>
-            <p className="text-muted-foreground text-sm">
-              {searchQuery ? "Try a different search term" : "Alumni profiles will appear here"}
+            <p className="text-muted-foreground text-sm mb-4">
+              {searchQuery || activeFiltersCount > 0 ? "Try adjusting your search or filters" : "Alumni profiles will appear here"}
             </p>
+            {activeFiltersCount > 0 && (
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                Clear all filters
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
