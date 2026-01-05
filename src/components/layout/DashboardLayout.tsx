@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, ChevronDown, MessageSquare, Shield } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, ChevronDown, MessageSquare, Shield, GraduationCap } from "lucide-react";
 import logoImg from "@/assets/logo.jpg";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +38,10 @@ const sidebarLinks: SidebarLink[] = [{
   name: "Community",
   href: "/dashboard/community",
   icon: Users
+}, {
+  name: "Alumni",
+  href: "/dashboard/alumni",
+  icon: GraduationCap
 }, {
   name: "Achievements",
   href: "/dashboard/achievements",
