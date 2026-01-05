@@ -34,6 +34,7 @@ export default function Settings() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const initializedRef = useRef(false);
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
@@ -111,7 +112,9 @@ export default function Settings() {
   };
 
   useEffect(() => {
-    fetchProfile();
+    if (user && !initializedRef.current) {
+      fetchProfile();
+    }
   }, [user]);
 
   const fetchProfile = async () => {
@@ -128,16 +131,20 @@ export default function Settings() {
 
       if (data) {
         setProfile(data);
-        setFormData({
-          full_name: data.full_name || "",
-          phone: data.phone || "",
-          batch: data.batch || "",
-          semester: data.semester?.toString() || "",
-          bio: data.bio || "",
-          skills: data.skills?.join(", ") || "",
-          github_url: data.github_url || "",
-          linkedin_url: data.linkedin_url || "",
-        });
+        // Only initialize form data once to prevent overwriting user edits
+        if (!initializedRef.current) {
+          setFormData({
+            full_name: data.full_name || "",
+            phone: data.phone || "",
+            batch: data.batch || "",
+            semester: data.semester?.toString() || "",
+            bio: data.bio || "",
+            skills: data.skills?.join(", ") || "",
+            github_url: data.github_url || "",
+            linkedin_url: data.linkedin_url || "",
+          });
+          initializedRef.current = true;
+        }
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
