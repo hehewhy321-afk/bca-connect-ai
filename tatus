@@ -1,0 +1,152 @@
+[33m2d8edc4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m add animations
+[33m77d231b[m Merge branch 'main' of https://github.com/hehewhy321-afk/bca-connect-ai
+[33m86629a3[m improve UI styling
+[33meb4d1b6[m Delete public/favicon.ico
+[33m06daf6b[m Add alumni homepage features
+[33m7632ba5[m Changes
+[33ma36766f[m Add alumni page and admin toggle
+[33m376e604[m Changes
+[33m844a587[m Add alumni toggle in settings
+[33m34b3df5[m Changes
+[33m6df2b25[m Show semester and bio in community
+[33mfb2e09b[m Changes
+[33m27420ac[m Preserve form data on tab switch
+[33m0f9b68a[m Changes
+[33mfceb7d6[m Fix admin create-user edge auth
+[33m32aac40[m Changes
+[33m4eba3af[m Update README.md
+[33m0511fe1[m Add navigation handling to CTA buttons
+[33m132a850[m update navbar
+[33m97c1329[m Update site info
+[33m99332d4[m Add navbar shimmer effect
+[33ma1134a0[m Changes
+[33mcd1e01d[m Make navbar more transparent
+[33mdca9f6f[m Changes
+[33m88d9371[m Improve navbar glass effect
+[33me3f2d0c[m Changes
+[33m1247394[m Improve navbar glass效果
+[33m7569494[m Changes
+[33mfb84080[m Switch navbar to white on scroll
+[33mb229490[m Changes
+[33m51414c1[m Enhance header scroll glass
+[33m9a201a4[m Changes
+[33mccf585b[m Add sticky header on scroll
+[33m846f486[m Changes
+[33m3a695a6[m Enhance mobile navbar visuals
+[33m796bcec[m Changes
+[33m864f6d5[m Simplify mobile menu card
+[33me0e5cad[m Changes
+[33mafb27c9[m Remove mobile bottom nav
+[33m7824a82[m Changes
+[33mea62435[m Fix mobile scroll to top on load
+[33mded8f29[m Changes
+[33mdbc1e98[m Fix mobile layout issues
+[33mca767d0[m Changes
+[33md40be8a[m Improve mobile UI fixups
+[33m142e702[m Changes
+[33m1ede60a[m Create setup-database.sql
+[33m7af1bef[m Changes
+[33m210ce9e[m Add guest AI chat limit
+[33mf9f519f[m Changes
+[33m00d4f7c[m Adjust auth flow for signup
+[33m073783e[m Changes
+[33m3561bd5[m Use real logo in AdminLayout
+[33mc3a8b29[m Changes
+[33m4d9165d[m Replace dashboard logo
+[33m490f046[m Changes
+[33mdae248d[m Visual edit in Lovable
+[33m1057adb[m Revert OpenRouter storage
+[33m5f20617[m Changes
+[33mc5b11f4[m Disable gateway JWT for AI chat
+[33m2a8ddd6[m Changes
+[33me11041c[m Fix openrouter keys security
+[33m9ba6330[m Changes
+[33m8d2eb61[m Secure payment receipts access
+[33m0cd06eb[m Changes
+[33m338b872[m Update AI config docs
+[33mcb79844[m Changes
+[33maa7ad70[m Improve dashboard navigation speed
+[33m5069e0b[m Changes
+[33mefb0844[m Integrate OpenRouter AI option
+[33mf14474c[m Changes
+[33m0e590ce[m Add PWA support and QR scanner
+[33m7ffda57[m Changes
+[33mca8d45d[m Consolidate to production hub
+[33m7c2ad02[m Changes
+[33m5e10974[m Improve admin exports and receipt preview
+[33m6fcb75f[m Changes
+[33m3d26882[m Consolidate admin events hub
+[33mc73b2e1[m Changes
+[33m00e782f[m Enhance event system
+[33mb60c30f[m Changes
+[33m6210679[m Add paid event payments workflow
+[33m795f383[m Changes
+[33m0081b7e[m Enhance event features
+[33m32e037c[m Changes
+[33m486a032[m Add event gallery and reminders
+[33m49ecfc3[m Changes
+[33m4b8634a[m Add search and filter for events
+[33m2bb0cec[m Changes
+[33mf499639[m Rework events flow
+[33mfc92f74[m Changes
+[33ma7b62a9[m Improve navbar logo load speed
+[33mb4dc362[m Changes
+[33me27b1e2[m Fix navbar logo loading time
+[33mb54fdf3[m Changes
+[33ma96ef57[m Update contact email
+[33m3f076db[m Changes
+[33m8904643[m Sync contact and settings
+[33mb1ada41[m Changes
+[33m237e59a[m Add logo upload feature admin
+[33m2d191a4[m Changes
+[33m117d9c9[m Fix logo fetch and favicon
+[33ma331520[m Changes
+[33m214b610[m Fix settings array check
+[33mf7f298f[m Changes
+[33mcce0659[m Dynamic site settings for nav/footer
+[33mc1bde20[m Changes
+[33m84a4f76[m Add developer credits to footer
+[33mbba7572[m Changes
+[33m1335bea[m Visual edit in Lovable
+[33mb51d520[m Add website settings and FAQs admin
+[33m6a828b1[m Changes
+[33m4a08af9[m Add admin internal registrations
+[33m471cde2[m Changes
+[33m8c44e42[m Integrate admin event feedback
+[33mb461515[m Changes
+[33m5a3cdf6[m Add public events page
+[33mc6e13c3[m Changes
+[33m77fe56e[m Fix navbar routing links
+[33m530fe9d[m Changes
+[33m4e68951[m Add admin user creation
+[33m9618937[m Changes
+[33m91c0cd8[m Visual edit in Lovable
+[33m0bd01cb[m Enhance glass visuals
+[33m47a6859[m Changes
+[33mf54cd3b[m Convert default theme to dark
+[33m7283473[m Changes
+[33m1b5435d[m Add admin contacts view
+[33m415ee49[m Changes
+[33md8f669c[m Save contact submissions to DB
+[33m81e10ff[m Changes
+[33me205f40[m Add Google Maps to Contact
+[33mdec3007[m Changes
+[33m411fd9f[m Integrate pages and routing
+[33ma1a4960[m Changes
+[33m73ee83a[m Switch to AdminLayout in forms
+[33mf567c54[m Changes
+[33m79df7c0[m Add notice page
+[33mbd8d362[m Changes
+[33m29e7928[m Add announcements admin page
+[33m44adaee[m Changes
+[33mb2079f3[m Enhance admin and UI routes
+[33m352d934[m Changes
+[33m3b402dd[m Continue admin panel and infra
+[33mf9c8ce9[m Changes
+[33mad3b34e[m Enhance admin/forum system
+[33m22b6aa7[m Changes
+[33m76af8a5[m Connect to Lovable Cloud
+[33m9400e23[m Changes
+[33m53295d3[m Build landing scaffolding
+[33mc1fd8fe[m Changes
+[33mbebc3a2[m template: new_style_vite_react_shadcn_ts
