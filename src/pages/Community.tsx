@@ -204,6 +204,20 @@ export default function Community() {
                   </div>
                 </div>
 
+                {/* Semester Info */}
+                {!member.is_alumni && member.semester && (
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Semester {member.semester}
+                  </p>
+                )}
+
+                {/* Bio */}
+                {member.bio && (
+                  <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                    {member.bio}
+                  </p>
+                )}
+
                 {/* Level & XP */}
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">
