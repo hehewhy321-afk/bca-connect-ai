@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronRight, Home, Users, Calendar, Bell, Mail } from "lucide-react";
+import { 
+  ChevronRight, 
+  Home, 
+  Users, 
+  Calendar, 
+  Bell, 
+  Mail, 
+  X, 
+  Menu 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
@@ -18,21 +27,25 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [logoLoaded, setLogoLoaded] = useState(false);
+  
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: settings } = useWebsiteSettings();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => { document.body.style.overflow = "unset"; };
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  useEffect(() => {
-    setLogoLoaded(false);
-  }, [settings?.site_logo]);
 
   const handleNavClick = (href: string) => {
     navigate(href);
@@ -40,176 +53,194 @@ export function Navbar() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  return (
-    <motion.header
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
-        scrolled 
-          ? "bg-white/8 backdrop-blur-md border-b border-white/10 shadow-sm" 
-          : "bg-transparent border-b border-transparent"
-      }`}
-    >
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-        <nav className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo Section */}
-          <Link to="/" className="flex items-center gap-2 sm:gap-3 group flex-shrink-0">
-            <div className="relative">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-lg bg-gradient-to-br from-white/15 to-white/5 overflow-hidden transition-all duration-300 group-hover:from-white/25 group-hover:to-white/10 group-hover:scale-105 border border-white/10">
-                {settings?.site_logo ? (
-                  <img
-                    src={settings.site_logo}
-                    alt={settings?.site_name || "Logo"}
-                    loading="eager"
-                    decoding="async"
-                    fetchPriority="high"
-                    onLoad={() => setLogoLoaded(true)}
-                    onError={() => setLogoLoaded(true)}
-                    className={`w-full h-full object-cover transition-opacity duration-200 ${logoLoaded ? "opacity-100" : "opacity-0"}`}
-                  />
-                ) : null}
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-accent border-2 border-background" />
-            </div>
-            
-            {/* Brand Text - Hidden on mobile, visible from sm */}
-            <div className="hidden sm:flex flex-col">
-              <span className="font-heading font-bold text-sm sm:text-base md:text-lg leading-tight text-white transition-colors duration-300">
-                {settings?.site_name || "BCA Association"}
-              </span>
-              <span className="text-xs font-medium text-white/60 transition-colors duration-300">
-                {settings?.site_subtitle || "MMAMC"}
-              </span>
-            </div>
-          </Link>
+  const menuVariants = {
+    closed: { x: 100, transition: { type: "spring" as const, stiffness: 400, damping: 40 } },
+    opened: { 
+      x: 0, 
+      transition: { 
+        type: "spring" as const, stiffness: 400, damping: 40,
+        staggerChildren: 0.08, 
+        delayChildren: 0.2 
+      } 
+    }
+  };
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:block">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/8 border border-white/15 rounded-full backdrop-blur-sm hover:bg-white/12 transition-all duration-300">
+  const itemVariants = {
+    closed: { opacity: 0, x: 30 },
+    opened: { opacity: 1, x: 0 }
+  };
+
+  return (
+    <>
+      <motion.header
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
+          scrolled || isOpen
+            ? "bg-black/40 backdrop-blur-2xl border-b border-white/10 py-2 shadow-2xl"
+            : "bg-transparent py-4"
+        }`}
+      >
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+          <nav className="flex items-center justify-between h-16">
+            
+            {/* --- Logo & Site Name Section --- */}
+            <Link to="/" className="flex items-center gap-2 sm:gap-3 group" onClick={() => window.scrollTo(0, 0)}>
+              <motion.div whileHover={{ scale: 1.1, rotate: 5 }} whileTap={{ scale: 0.9 }}>
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 p-[1px] shadow-lg shadow-blue-500/20">
+                  <div className="w-full h-full rounded-xl bg-black flex items-center justify-center overflow-hidden">
+                    {settings?.site_logo ? (
+                      <img
+                        src={settings.site_logo}
+                        alt="Logo"
+                        onLoad={() => setLogoLoaded(true)}
+                        className={`w-full h-full object-cover transition-opacity duration-500 ${logoLoaded ? "opacity-100" : "opacity-0"}`}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black">B</div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+              
+              <div className="flex flex-col justify-center">
+                <h1 className="font-bold text-sm sm:text-base md:text-lg lg:text-xl text-white tracking-tight leading-none transition-colors group-hover:text-blue-400">
+                  {settings?.site_name || "BCA Association"}
+                </h1>
+                <p className="text-[9px] sm:text-[10px] md:text-xs text-white/50 font-semibold tracking-[0.15em] mt-1 leading-none uppercase">
+                  {settings?.site_subtitle || "MMAMC"}
+                </p>
+              </div>
+            </Link>
+
+            {/* --- Desktop Nav Links --- */}
+            <div className="hidden lg:flex items-center gap-1 bg-white/5 backdrop-blur-md rounded-2xl p-1 border border-white/10">
               {navLinks.map((link) => (
-                <motion.button
+                <button
                   key={link.name}
                   onClick={() => handleNavClick(link.href)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  className="px-4 py-2 text-sm font-medium text-white/80 hover:text-white rounded-full bg-transparent hover:bg-white/20 transition-all duration-300 relative group overflow-hidden"
+                  className="relative px-5 py-2.5 text-sm font-bold text-white/60 hover:text-white hover:bg-white/10 transition-all duration-300 rounded-xl"
                 >
-                  {/* Liquid background effect */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0 }}
-                    whileHover={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 rounded-full -z-10"
-                  />
                   <span className="relative z-10">{link.name}</span>
-                </motion.button>
+                </button>
               ))}
             </div>
-          </div>
 
-          {/* Desktop CTA Button */}
-          <div className="hidden lg:flex items-center flex-shrink-0">
-            {user ? (
-              <Button
-                onClick={() => navigate("/dashboard")}
-                className="group gap-2 px-5 md:px-6 h-10 bg-white text-primary hover:bg-white/90 font-medium shadow-md hover:shadow-lg transition-all duration-300"
-              >
-                Dashboard
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
-              </Button>
-            ) : (
-              <Button
-                onClick={() => navigate("/auth")}
-                className="group gap-2 px-5 md:px-6 h-10 bg-white text-primary hover:bg-white/90 font-medium shadow-md hover:shadow-lg transition-all duration-300"
-              >
-                Join Now
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
-              </Button>
-            )}
-          </div>
+            {/* --- Desktop Right Actions --- */}
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:block">
+                <Button
+                  onClick={() => navigate(user ? "/dashboard" : "/auth")}
+                  className="relative overflow-hidden group bg-white text-black hover:bg-white/90 font-medium px-6 rounded-xl transition-all shadow-xl shadow-white/5"
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    {user ? "Dashboard" : "Join Now"}
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                  <motion.div 
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"
+                  />
+                </Button>
+              </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden p-2 rounded-lg hover:bg-white/10 transition-colors border border-white/10 flex-shrink-0"
-            aria-label="Toggle menu"
-          >
-            {isOpen ? (
-              <X className="w-5 h-5 text-white" />
-            ) : (
-              <Menu className="w-5 h-5 text-white" />
-            )}
-          </button>
-        </nav>
+              {!isOpen && (
+                <button
+                  onClick={() => setIsOpen(true)}
+                  className="lg:hidden p-3 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 active:scale-95 transition-all"
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+              )}
+            </div>
+          </nav>
+        </div>
+      </motion.header>
 
-        {/* Mobile Menu */}
-        <AnimatePresence mode="wait">
-          {isOpen && (
+      {/* --- Mobile Menu --- */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
             <motion.div
-              initial={{ opacity: 0, height: 0, y: -10 }}
-              animate={{ opacity: 1, height: "auto", y: 0 }}
-              exit={{ opacity: 0, height: 0, y: -10 }}
-              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="lg:hidden overflow-hidden pb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[60] lg:hidden"
+            />
+
+            <motion.div
+              variants={menuVariants}
+              initial="closed"
+              animate="opened"
+              exit="closed"
+              className="fixed right-0 top-0 h-full w-[85%] max-w-sm bg-zinc-950 border-l border-white/10 shadow-2xl z-[70] lg:hidden flex flex-col"
             >
-              <motion.div 
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
-                transition={{ duration: 0.2, delay: 0.05 }}
-                className="space-y-2 pt-4"
-              >
-                {navLinks.map((link, index) => {
-                  const IconComponent = link.icon;
+              {/* Top Header in Menu */}
+              <div className="p-8 pt-12 relative">
+                <motion.button
+                  whileHover={{ rotate: 90, scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setIsOpen(false)}
+                  className="absolute top-8 right-8 p-3 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/20"
+                >
+                  <X className="w-6 h-6" />
+                </motion.button>
+
+                <div className="mt-12">
+                  <motion.p variants={itemVariants} className="text-blue-500 font-black tracking-[0.4em] uppercase text-[10px]">
+                    Navigation
+                  </motion.p>
+                  <motion.h2 variants={itemVariants} className="text-4xl xs:text-5xl font-bold text-white mt-2 tracking-tighter">
+                    Explore <span className="text-zinc-700">Us.</span>
+                  </motion.h2>
+                </div>
+              </div>
+
+              {/* Mobile Menu Links */}
+              <div className="flex-1 px-4 py-2 space-y-1">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
                   return (
                     <motion.button
                       key={link.name}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ delay: index * 0.04, duration: 0.2 }}
+                      variants={itemVariants}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleNavClick(link.href)}
-                      className="flex items-center gap-3 w-full text-left px-4 py-2.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
+                      className="flex items-center gap-4 w-full px-6 py-5 rounded-2xl transition-all text-zinc-400 hover:text-white hover:bg-white/5"
                     >
-                      <IconComponent className="w-4 h-4 text-white/60" />
-                      {link.name}
+                      <div className="p-2 rounded-lg bg-zinc-900 group-hover:bg-zinc-800">
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <span className="font-bold text-xl">{link.name}</span>
                     </motion.button>
                   );
                 })}
-                
-                {/* Mobile CTA */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  transition={{ delay: 0.25, duration: 0.2 }}
-                  className="pt-3 border-t border-white/10 mt-3"
+              </div>
+
+              {/* Bottom Section in Menu */}
+              <motion.div variants={itemVariants} className="p-8 border-t border-white/5 bg-black/20">
+                <Button
+                  onClick={() => handleNavClick(user ? "/dashboard" : "/auth")}
+                  className="relative overflow-hidden group w-full h-16 bg-white text-black hover:bg-white/90 font-medium px-6 rounded-2xl transition-all shadow-xl shadow-white/5"
                 >
-                  {user ? (
-                    <Button
-                      className="w-full gap-2 h-10 bg-white text-primary hover:bg-white/90 font-medium shadow-md"
-                      onClick={() => handleNavClick("/dashboard")}
-                    >
-                      Dashboard
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  ) : (
-                    <Button
-                      className="w-full gap-2 h-10 bg-white text-primary hover:bg-white/90 font-medium shadow-md"
-                      onClick={() => handleNavClick("/auth")}
-                    >
-                      Join Now
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  )}
-                </motion.div>
+                  <span className="relative z-10 flex items-center justify-center gap-2 text-lg">
+                    {user ? "Go to Dashboard" : "Join Now"}
+                    <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                  {/* Shiny sweep animation */}
+                  <motion.div 
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"
+                  />
+                </Button>
+                
+                <p className="text-center text-zinc-600 text-[10px] mt-6 tracking-widest uppercase font-bold">
+                  © {new Date().getFullYear()} {settings?.site_name || "BCA Association"}
+                </p>
               </motion.div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.header>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

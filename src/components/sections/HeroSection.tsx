@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles, Users, Calendar, BookOpen } from "lucide-react";
+import { ArrowRight, Sparkles, Users, Calendar, BookOpen, Code, Cpu, Terminal, Database, Laptop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -53,6 +53,54 @@ export function HeroSection() {
       
       {/* Pattern Overlay */}
       <div className="absolute inset-0 bg-hero-pattern opacity-30" />
+
+      {/* --- Floating Background Icons --- */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Code Icon - Top Left */}
+        <motion.div
+          animate={{ y: [0, -30, 0], rotate: [0, 10, 0], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[15%] left-[5%] text-white"
+        >
+          <Code size={120} strokeWidth={0.5} />
+        </motion.div>
+
+        {/* Cpu Icon - Top Right */}
+        <motion.div
+          animate={{ y: [0, 30, 0], rotate: [0, -10, 0], opacity: [0.1, 0.15, 0.1] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+          className="absolute top-[20%] right-[8%] text-white"
+        >
+          <Cpu size={100} strokeWidth={0.5} />
+        </motion.div>
+
+        {/* Terminal Icon - Bottom Left */}
+        <motion.div
+          animate={{ x: [0, 20, 0], opacity: [0.05, 0.15, 0.05] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-[25%] left-[10%] text-white"
+        >
+          <Terminal size={80} strokeWidth={0.5} />
+        </motion.div>
+
+        {/* Database Icon - Bottom Right */}
+        <motion.div
+          animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-[15%] right-[12%] text-white"
+        >
+          <Database size={90} strokeWidth={0.5} />
+        </motion.div>
+
+        {/* Laptop Icon - Middle Left */}
+        <motion.div
+          animate={{ rotate: [0, 360] }}
+          transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[45%] left-[-2%] text-white opacity-10"
+        >
+          <Laptop size={140} strokeWidth={0.5} />
+        </motion.div>
+      </div>
       
       {/* Animated Blobs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-secondary/30 rounded-full blur-3xl animate-float" />
@@ -130,13 +178,14 @@ export function HeroSection() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
-                className="glass rounded-2xl p-4 text-center"
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                className="glass rounded-2xl p-4 text-center border border-white/10 shadow-lg"
               >
                 <stat.icon className="w-6 h-6 text-secondary mx-auto mb-2" />
                 <div className="font-heading text-2xl font-bold text-primary-foreground">
                   {stat.value}
                 </div>
-                <div className="text-xs text-primary-foreground/70">
+                <div className="text-xs text-primary-foreground/70 uppercase tracking-wider font-semibold">
                   {stat.label}
                 </div>
               </motion.div>
