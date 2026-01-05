@@ -22,6 +22,7 @@ import Settings from "./pages/Settings";
 const AIAssistant = lazy(() => import("./pages/AIAssistant"));
 const Achievements = lazy(() => import("./pages/Achievements"));
 const Community = lazy(() => import("./pages/Community"));
+const Alumni = lazy(() => import("./pages/Alumni"));
 const Forum = lazy(() => import("./pages/Forum"));
 const ForumPost = lazy(() => import("./pages/ForumPost"));
 const NewForumPost = lazy(() => import("./pages/NewForumPost"));
@@ -131,6 +132,7 @@ const App = () => (
               <Route path="/dashboard/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
               <Route path="/dashboard/achievements" element={<ProtectedRoute><LazyRoute><Achievements /></LazyRoute></ProtectedRoute>} />
               <Route path="/dashboard/community" element={<ProtectedRoute><LazyRoute><Community /></LazyRoute></ProtectedRoute>} />
+              <Route path="/dashboard/alumni" element={<ProtectedRoute><LazyRoute><Alumni /></LazyRoute></ProtectedRoute>} />
               <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/dashboard/forum" element={<ProtectedRoute><LazyRoute><Forum /></LazyRoute></ProtectedRoute>} />
               <Route path="/dashboard/forum/new" element={<ProtectedRoute><LazyRoute><NewForumPost /></LazyRoute></ProtectedRoute>} />

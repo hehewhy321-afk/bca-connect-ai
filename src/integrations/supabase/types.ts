@@ -611,11 +611,14 @@ export type Database = {
           batch: string | null
           bio: string | null
           created_at: string
+          current_company: string | null
           email: string
           full_name: string
           github_url: string | null
+          graduation_year: number | null
           id: string
           is_alumni: boolean | null
+          job_title: string | null
           level: number | null
           linkedin_url: string | null
           phone: string | null
@@ -630,11 +633,14 @@ export type Database = {
           batch?: string | null
           bio?: string | null
           created_at?: string
+          current_company?: string | null
           email: string
           full_name: string
           github_url?: string | null
+          graduation_year?: number | null
           id?: string
           is_alumni?: boolean | null
+          job_title?: string | null
           level?: number | null
           linkedin_url?: string | null
           phone?: string | null
@@ -649,11 +655,14 @@ export type Database = {
           batch?: string | null
           bio?: string | null
           created_at?: string
+          current_company?: string | null
           email?: string
           full_name?: string
           github_url?: string | null
+          graduation_year?: number | null
           id?: string
           is_alumni?: boolean | null
+          job_title?: string | null
           level?: number | null
           linkedin_url?: string | null
           phone?: string | null

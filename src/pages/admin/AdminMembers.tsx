@@ -10,7 +10,9 @@ import {
   Shield,
   UserCheck,
   UserX,
+  GraduationCap,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -110,6 +112,36 @@ export default function AdminMembers() {
       toast({
         title: "Error",
         description: "Failed to update user role.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAlumniToggle = async (userId: string, isAlumni: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ 
+          is_alumni: isAlumni,
+          semester: isAlumni ? null : undefined 
+        })
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      setMembers((prev) =>
+        prev.map((m) => (m.user_id === userId ? { ...m, is_alumni: isAlumni } : m))
+      );
+
+      toast({
+        title: "Alumni status updated",
+        description: `User has been ${isAlumni ? "marked as" : "removed from"} alumni.`,
+      });
+    } catch (error) {
+      console.error("Error updating alumni status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update alumni status.",
         variant: "destructive",
       });
     }
@@ -269,6 +301,17 @@ export default function AdminMembers() {
                       <div className="text-xs text-muted-foreground">
                         {member.xp_points} XP
                       </div>
+                    </div>
+
+                    {/* Alumni Toggle */}
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                      <Switch
+                        checked={member.is_alumni}
+                        onCheckedChange={(checked) =>
+                          handleAlumniToggle(member.user_id, checked)
+                        }
+                      />
                     </div>
 
                     <select

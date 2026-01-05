@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, Save, Github, Linkedin, Camera, Loader2, Lock, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Phone, Save, Github, Linkedin, Camera, Loader2, Lock, Eye, EyeOff, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 
 interface Profile {
   id: string;
@@ -22,6 +23,10 @@ interface Profile {
   skills: string[] | null;
   github_url: string | null;
   linkedin_url: string | null;
+  is_alumni: boolean | null;
+  graduation_year: number | null;
+  current_company: string | null;
+  job_title: string | null;
 }
 
 export default function Settings() {
@@ -34,6 +39,7 @@ export default function Settings() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const initializedRef = useRef(false);
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
@@ -43,6 +49,10 @@ export default function Settings() {
     skills: "",
     github_url: "",
     linkedin_url: "",
+    is_alumni: false,
+    graduation_year: "",
+    current_company: "",
+    job_title: "",
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -111,7 +121,9 @@ export default function Settings() {
   };
 
   useEffect(() => {
-    fetchProfile();
+    if (user && !initializedRef.current) {
+      fetchProfile();
+    }
   }, [user]);
 
   const fetchProfile = async () => {
@@ -128,16 +140,24 @@ export default function Settings() {
 
       if (data) {
         setProfile(data);
-        setFormData({
-          full_name: data.full_name || "",
-          phone: data.phone || "",
-          batch: data.batch || "",
-          semester: data.semester?.toString() || "",
-          bio: data.bio || "",
-          skills: data.skills?.join(", ") || "",
-          github_url: data.github_url || "",
-          linkedin_url: data.linkedin_url || "",
-        });
+        // Only initialize form data once to prevent overwriting user edits
+        if (!initializedRef.current) {
+          setFormData({
+            full_name: data.full_name || "",
+            phone: data.phone || "",
+            batch: data.batch || "",
+            semester: data.semester?.toString() || "",
+            bio: data.bio || "",
+            skills: data.skills?.join(", ") || "",
+            github_url: data.github_url || "",
+            linkedin_url: data.linkedin_url || "",
+            is_alumni: data.is_alumni || false,
+            graduation_year: data.graduation_year?.toString() || "",
+            current_company: data.current_company || "",
+            job_title: data.job_title || "",
+          });
+          initializedRef.current = true;
+        }
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -225,13 +245,17 @@ export default function Settings() {
           full_name: formData.full_name,
           phone: formData.phone || null,
           batch: formData.batch || null,
-          semester: formData.semester ? parseInt(formData.semester) : null,
+          semester: formData.is_alumni ? null : (formData.semester ? parseInt(formData.semester) : null),
           bio: formData.bio || null,
           skills: formData.skills
             ? formData.skills.split(",").map((s) => s.trim()).filter(Boolean)
             : null,
           github_url: formData.github_url || null,
           linkedin_url: formData.linkedin_url || null,
+          is_alumni: formData.is_alumni,
+          graduation_year: formData.is_alumni && formData.graduation_year ? parseInt(formData.graduation_year) : null,
+          current_company: formData.is_alumni ? formData.current_company || null : null,
+          job_title: formData.is_alumni ? formData.job_title || null : null,
         })
         .eq("user_id", user.id);
 
@@ -359,6 +383,80 @@ export default function Settings() {
               </div>
             </div>
 
+            {/* Alumni Toggle */}
+            <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-border">
+              <div className="flex items-center gap-3">
+                <GraduationCap className="w-5 h-5 text-primary" />
+                <div>
+                  <Label htmlFor="is_alumni" className="font-medium cursor-pointer">
+                    I am an Alumni
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Mark yourself as alumni if you have graduated
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="is_alumni"
+                checked={formData.is_alumni}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, is_alumni: checked, semester: checked ? "" : formData.semester })
+                }
+              />
+            </div>
+
+            {/* Alumni-specific fields */}
+            {formData.is_alumni && (
+              <div className="space-y-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <h3 className="font-medium text-foreground flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-primary" />
+                  Alumni Information
+                </h3>
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="graduation_year">Graduation Year</Label>
+                    <select
+                      id="graduation_year"
+                      value={formData.graduation_year}
+                      onChange={(e) =>
+                        setFormData({ ...formData, graduation_year: e.target.value })
+                      }
+                      className="w-full px-4 py-2 rounded-lg bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option value="">Select year</option>
+                      {Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="job_title">Job Title</Label>
+                    <Input
+                      id="job_title"
+                      value={formData.job_title}
+                      onChange={(e) =>
+                        setFormData({ ...formData, job_title: e.target.value })
+                      }
+                      placeholder="e.g., Software Engineer"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="current_company">Current Company</Label>
+                    <Input
+                      id="current_company"
+                      value={formData.current_company}
+                      onChange={(e) =>
+                        setFormData({ ...formData, current_company: e.target.value })
+                      }
+                      placeholder="e.g., Google"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="batch">Batch</Label>
@@ -371,24 +469,26 @@ export default function Settings() {
                   placeholder="e.g., 2023-2027"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="semester">Current Semester</Label>
-                <select
-                  id="semester"
-                  value={formData.semester}
-                  onChange={(e) =>
-                    setFormData({ ...formData, semester: e.target.value })
-                  }
-                  className="w-full px-4 py-2 rounded-lg bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="">Select semester</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                    <option key={sem} value={sem}>
-                      Semester {sem}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {!formData.is_alumni && (
+                <div className="space-y-2">
+                  <Label htmlFor="semester">Current Semester</Label>
+                  <select
+                    id="semester"
+                    value={formData.semester}
+                    onChange={(e) =>
+                      setFormData({ ...formData, semester: e.target.value })
+                    }
+                    className="w-full px-4 py-2 rounded-lg bg-background border border-input text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">Select semester</option>
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                      <option key={sem} value={sem}>
+                        Semester {sem}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
