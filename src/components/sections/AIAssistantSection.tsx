@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion"; // AnimatePresence थपियो
 import { Bot, Send, Sparkles, Code, FileText, Lightbulb, LogIn, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
@@ -42,7 +42,6 @@ export function AIAssistantSection() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load chat count from localStorage
     const storedCount = localStorage.getItem("guestChatCount");
     if (storedCount) {
       setChatCount(parseInt(storedCount, 10));
@@ -56,7 +55,6 @@ export function AIAssistantSection() {
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
-    // Check if limit reached
     if (chatCount >= GUEST_CHAT_LIMIT) {
       setShowLoginPrompt(true);
       return;
@@ -67,7 +65,6 @@ export function AIAssistantSection() {
     setInputValue("");
     setIsLoading(true);
 
-    // Update chat count
     const newCount = chatCount + 1;
     setChatCount(newCount);
     localStorage.setItem("guestChatCount", newCount.toString());
@@ -133,7 +130,6 @@ export function AIAssistantSection() {
         }
       }
 
-      // Show login prompt after response if limit reached
       if (newCount >= GUEST_CHAT_LIMIT) {
         setTimeout(() => setShowLoginPrompt(true), 1500);
       }
@@ -144,7 +140,7 @@ export function AIAssistantSection() {
         description: error instanceof Error ? error.message : "Failed to get response",
         variant: "destructive",
       });
-      setMessages((prev) => prev.slice(0, -1)); // Remove empty assistant message
+      setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
@@ -159,74 +155,100 @@ export function AIAssistantSection() {
 
   const remainingChats = Math.max(0, GUEST_CHAT_LIMIT - chatCount);
 
+  // Animation Variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
     <section
       id="ai-assistant"
       className="py-20 md:py-32 bg-gradient-to-br from-muted/50 to-background relative overflow-hidden"
     >
-      {/* Background Decoration */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent/5 rounded-full blur-3xl" />
+      {/* Background Decoration with Floating Animation */}
+      <motion.div 
+        animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
+        transition={{ duration: 8, repeat: Infinity }}
+        className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" 
+      />
+      <motion.div 
+        animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+        transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+        className="absolute bottom-0 left-0 w-80 h-80 bg-accent/5 rounded-full blur-3xl" 
+      />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Content */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial="hidden"
+            whileInView="visible"
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            variants={containerVariants}
           >
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-4">
+            <motion.span 
+              variants={itemVariants}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-4"
+            >
               <Sparkles className="w-4 h-4" />
               AI-Powered
-            </span>
-            <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+            </motion.span>
+            <motion.h2 variants={itemVariants} className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
               Your Personal{" "}
               <span className="gradient-text-orange">Study Companion</span>
-            </h2>
-            <p className="text-muted-foreground text-lg mb-8">
+            </motion.h2>
+            <motion.p variants={itemVariants} className="text-muted-foreground text-lg mb-8">
               Meet your 24/7 AI study assistant. Get instant help with BCA
-              curriculum, debug code, understand complex concepts, and prepare
-              for exams with personalized guidance.
-            </p>
+              curriculum, debug code, and prepare for exams.
+            </motion.p>
 
             {/* Capabilities */}
             <div className="space-y-4 mb-8">
-              {capabilities.map((cap, index) => (
+              {capabilities.map((cap) => (
                 <motion.div
                   key={cap.title}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                  className="flex items-start gap-4"
+                  variants={itemVariants}
+                  whileHover={{ x: 5 }}
+                  className="flex items-start gap-4 p-3 rounded-xl hover:bg-card/50 transition-colors"
                 >
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <cap.icon className="w-5 h-5 text-primary" />
                   </div>
                   <div>
                     <h4 className="font-medium text-foreground">{cap.title}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {cap.description}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{cap.description}</p>
                   </div>
                 </motion.div>
               ))}
             </div>
 
-            <Button variant="gradient" size="lg" onClick={() => setShowChat(true)}>
-              Try AI Assistant
-              <Bot className="w-5 h-5" />
-            </Button>
+            <motion.div variants={itemVariants} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button 
+                variant="gradient" 
+                size="lg" 
+                onClick={() => setShowChat(true)}
+              >
+                Try AI Assistant
+                <Bot className="w-5 h-5" />
+              </Button>
+            </motion.div>
           </motion.div>
 
           {/* Right - Chat Interface */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            transition={{ duration: 0.5 }}
             className="relative"
           >
             <div className="bg-card rounded-3xl shadow-2xl border border-border overflow-hidden">
@@ -236,150 +258,128 @@ export function AIAssistantSection() {
                   <Bot className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <h4 className="font-medium text-primary-foreground">
-                    BCA AI Assistant
-                  </h4>
+                  <h4 className="font-medium text-primary-foreground">BCA AI Assistant</h4>
                   <p className="text-xs text-primary-foreground/70">
-                    {showChat
-                      ? `${remainingChats} free ${remainingChats === 1 ? "chat" : "chats"} remaining`
-                      : "Always online • Powered by Gemini"}
+                    {showChat ? `${remainingChats} free chats remaining` : "Always online"}
                   </p>
-                </div>
-                <div className="ml-auto flex gap-1">
-                  <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                 </div>
               </div>
 
               {/* Chat Messages */}
               <div className="p-4 space-y-4 min-h-[300px] max-h-[400px] overflow-y-auto">
-                {!showChat ? (
-                  // Demo messages when chat is not active
-                  <>
+                <AnimatePresence mode="popLayout">
+                  {!showChat ? (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.3, delay: 0.5 }}
-                      className="flex justify-end"
+                      key="demo"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="space-y-4"
                     >
-                      <div className="max-w-[80%] p-3 rounded-2xl text-sm bg-primary text-primary-foreground rounded-br-md">
-                        Explain the difference between TCP and UDP protocols
+                      <div className="flex justify-end">
+                        <div className="max-w-[80%] p-3 rounded-2xl text-sm bg-primary text-primary-foreground rounded-br-md">
+                          Explain the difference between TCP and UDP protocols
+                        </div>
+                      </div>
+                      <div className="flex justify-start">
+                        <div className="max-w-[80%] p-3 rounded-2xl text-sm bg-muted text-foreground rounded-bl-md">
+                          TCP is reliable and connection-oriented, while UDP is faster but connectionless.
+                        </div>
                       </div>
                     </motion.div>
-                    <motion.div
+                  ) : messages.length === 0 ? (
+                    <motion.div 
+                      key="empty"
                       initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.3, delay: 0.7 }}
-                      className="flex justify-start"
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex flex-col items-center justify-center h-full text-center py-8"
                     >
-                      <div className="max-w-[80%] p-3 rounded-2xl text-sm bg-muted text-foreground rounded-bl-md">
-                        Great question! TCP (Transmission Control Protocol) is
-                        connection-oriented and ensures reliable, ordered delivery of
-                        data. UDP (User Datagram Protocol) is connectionless, faster
-                        but doesn't guarantee delivery. TCP is used for web browsing,
-                        email; UDP for streaming, gaming.
-                      </div>
+                      <Bot className="w-12 h-12 text-muted-foreground/50 mb-3" />
+                      <p className="text-muted-foreground text-sm">Ask me anything about BCA!</p>
                     </motion.div>
-                  </>
-                ) : messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center py-8">
-                    <Bot className="w-12 h-12 text-muted-foreground/50 mb-3" />
-                    <p className="text-muted-foreground text-sm">
-                      Ask me anything about BCA curriculum!
-                    </p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">
-                      You have {remainingChats} free {remainingChats === 1 ? "chat" : "chats"}
-                    </p>
-                  </div>
-                ) : (
-                  messages.map((msg, index) => (
-                    <div
-                      key={index}
-                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[80%] p-3 rounded-2xl text-sm whitespace-pre-wrap ${
-                          msg.role === "user"
-                            ? "bg-primary text-primary-foreground rounded-br-md"
-                            : "bg-muted text-foreground rounded-bl-md"
-                        }`}
+                  ) : (
+                    messages.map((msg, index) => (
+                      <motion.div
+                        key={index}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                       >
-                        {msg.content || (
-                          <span className="flex items-center gap-2">
-                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.1s]" />
-                            <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:0.2s]" />
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
+                        <div
+                          className={`max-w-[80%] p-3 rounded-2xl text-sm whitespace-pre-wrap ${
+                            msg.role === "user"
+                              ? "bg-primary text-primary-foreground rounded-br-md shadow-md"
+                              : "bg-muted text-foreground rounded-bl-md border border-border"
+                          }`}
+                        >
+                          {msg.content || (
+                            <span className="flex items-center gap-1.5 py-1">
+                              <motion.span animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 0.6 }} className="w-1.5 h-1.5 bg-primary rounded-full" />
+                              <motion.span animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-1.5 h-1.5 bg-primary rounded-full" />
+                              <motion.span animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-1.5 h-1.5 bg-primary rounded-full" />
+                            </span>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                </AnimatePresence>
                 <div ref={messagesEndRef} />
 
                 {/* Login Prompt Overlay */}
-                {showLoginPrompt && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center"
-                  >
-                    <button
-                      onClick={() => setShowLoginPrompt(false)}
-                      className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+                <AnimatePresence>
+                  {showLoginPrompt && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20"
                     >
-                      <X className="w-5 h-5" />
-                    </button>
-                    <LogIn className="w-12 h-12 text-primary mb-4" />
-                    <h3 className="font-heading font-bold text-lg text-foreground mb-2">
-                      Free Trial Ended
-                    </h3>
-                    <p className="text-muted-foreground text-sm mb-4">
-                      You've used your {GUEST_CHAT_LIMIT} free chats. Sign in for unlimited access to our AI assistant.
-                    </p>
-                    <Button variant="gradient" onClick={() => navigate("/auth")}>
-                      Sign In to Continue
-                      <LogIn className="w-4 h-4" />
-                    </Button>
-                  </motion.div>
-                )}
+                      <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="flex flex-col items-center"
+                      >
+                        <button onClick={() => setShowLoginPrompt(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+                          <X className="w-5 h-5" />
+                        </button>
+                        <LogIn className="w-12 h-12 text-primary mb-4" />
+                        <h3 className="font-heading font-bold text-lg mb-2">Free Trial Ended</h3>
+                        <p className="text-muted-foreground text-sm mb-4">Sign in for unlimited access.</p>
+                        <Button variant="gradient" onClick={() => navigate("/auth")}>Sign In to Continue</Button>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Chat Input */}
-              <div className="p-4 border-t border-border">
+              <div className="p-4 border-t border-border bg-card">
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyPress}
-                    placeholder={
-                      showChat
-                        ? remainingChats > 0
-                          ? "Ask anything about BCA..."
-                          : "Sign in for more chats..."
-                        : "Click 'Try AI Assistant' to start..."
-                    }
-                    disabled={!showChat || remainingChats === 0}
-                    className="flex-1 px-4 py-3 rounded-xl bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                    placeholder={showChat ? "Ask anything..." : "Click 'Try AI Assistant'..."}
+                    disabled={!showChat || (remainingChats === 0 && !isLoading)}
+                    className="flex-1 px-4 py-3 rounded-xl bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                   />
-                  <Button
-                    variant="default"
-                    size="icon"
-                    className="rounded-xl"
-                    onClick={showChat ? handleSendMessage : () => setShowChat(true)}
-                    disabled={isLoading || (showChat && remainingChats === 0)}
-                  >
-                    <Send className="w-4 h-4" />
-                  </Button>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button
+                      variant="default"
+                      size="icon"
+                      className="rounded-xl"
+                      onClick={showChat ? handleSendMessage : () => setShowChat(true)}
+                      disabled={isLoading || (showChat && remainingChats === 0)}
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
             </div>
-
-            {/* Decorative Elements */}
-            <div className="absolute -top-4 -right-4 w-20 h-20 bg-secondary/20 rounded-full blur-2xl" />
-            <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-primary/20 rounded-full blur-2xl" />
           </motion.div>
         </div>
       </div>
