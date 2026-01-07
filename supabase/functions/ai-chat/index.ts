@@ -24,9 +24,23 @@ Guidelines:
 - Keep responses concise but thorough
 - If you don't know something, say so honestly
 - Reference relevant resources when appropriate
-- Use Nepali context when relevant (local companies, opportunities, etc.)`;
+- Use Nepali context when relevant (local companies, opportunities, etc.)
 
-async function getAISettings(supabaseClient: any) {
+For image generation requests:
+- When users ask to generate, create, or draw an image, respond with: [IMAGE_GEN: <description>]
+- Extract the key visual elements from their request`;
+
+interface AISettings {
+  ai_provider?: string;
+  openrouter_api_key?: string;
+  openrouter_model?: string;
+  bytez_api_key?: string;
+  bytez_chat_model?: string;
+  bytez_image_model?: string;
+  custom_system_prompt?: string;
+}
+
+async function getAISettings(supabaseClient: any): Promise<AISettings | null> {
   try {
     const { data, error } = await supabaseClient
       .from("ai_settings")
@@ -37,9 +51,9 @@ async function getAISettings(supabaseClient: any) {
       return null;
     }
 
-    const settings: Record<string, string> = {};
+    const settings: AISettings = {};
     data?.forEach((row: any) => {
-      settings[row.setting_key] = row.setting_value || "";
+      settings[row.setting_key as keyof AISettings] = row.setting_value || "";
     });
 
     return settings;
@@ -99,6 +113,68 @@ async function callOpenRouter(messages: any[], systemPrompt: string, apiKey: str
   return response;
 }
 
+async function callBytezChat(messages: any[], systemPrompt: string, apiKey: string, model: string) {
+  console.log("Calling Bytez with model:", model);
+
+  const response = await fetch(`https://api.bytez.com/models/v2/${model}`, {
+    method: "POST",
+    headers: {
+      Authorization: apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+      stream: true,
+      params: {
+        max_length: 2048,
+        temperature: 0.7,
+      },
+    }),
+  });
+
+  return response;
+}
+
+async function callBytezImageGen(prompt: string, apiKey: string, model: string) {
+  console.log("Calling Bytez Image Generation with model:", model);
+
+  const response = await fetch(`https://api.bytez.com/models/v2/${model}`, {
+    method: "POST",
+    headers: {
+      Authorization: apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      input: prompt,
+    }),
+  });
+
+  return response;
+}
+
+function detectImageGenRequest(content: string): string | null {
+  const imagePatterns = [
+    /generate\s+(?:an?\s+)?image\s+(?:of\s+)?(.+)/i,
+    /create\s+(?:an?\s+)?image\s+(?:of\s+)?(.+)/i,
+    /draw\s+(?:an?\s+)?(?:image\s+(?:of\s+)?)?(.+)/i,
+    /make\s+(?:an?\s+)?image\s+(?:of\s+)?(.+)/i,
+    /show\s+(?:me\s+)?(?:an?\s+)?image\s+(?:of\s+)?(.+)/i,
+    /visualize\s+(.+)/i,
+  ];
+
+  for (const pattern of imagePatterns) {
+    const match = content.match(pattern);
+    if (match) {
+      return match[1].trim();
+    }
+  }
+
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -136,7 +212,7 @@ serve(async (req) => {
 
     console.log("Authenticated user:", user.id);
 
-    const { messages } = await req.json();
+    const { messages, mode } = await req.json();
     
     // Create admin client to fetch settings
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -151,9 +227,64 @@ serve(async (req) => {
     console.log("Using AI provider:", provider);
     console.log("Processing chat request for user:", user.id, "with", messages.length, "messages");
 
+    // Check for image generation request (only for Bytez)
+    const lastMessage = messages[messages.length - 1];
+    if (provider === "bytez" && lastMessage?.role === "user") {
+      const imagePrompt = detectImageGenRequest(lastMessage.content);
+      
+      if (imagePrompt || mode === "image") {
+        const apiKey = settings?.bytez_api_key;
+        const imageModel = settings?.bytez_image_model || "dreamlike-art/dreamlike-photoreal-2.0";
+
+        if (!apiKey) {
+          return new Response(
+            JSON.stringify({ error: "Bytez API key not configured. Please set it in Admin > AI Settings." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        try {
+          const imageResponse = await callBytezImageGen(imagePrompt || lastMessage.content, apiKey, imageModel);
+          
+          if (!imageResponse.ok) {
+            const errorText = await imageResponse.text();
+            console.error("Bytez image generation error:", imageResponse.status, errorText);
+            throw new Error("Failed to generate image");
+          }
+
+          const imageData = await imageResponse.json();
+          
+          // Return image as a special response
+          return new Response(
+            JSON.stringify({ 
+              type: "image",
+              output: imageData.output,
+              prompt: imagePrompt || lastMessage.content
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } catch (error) {
+          console.error("Image generation error:", error);
+          // Fall back to chat response about the image
+        }
+      }
+    }
+
     let response: Response;
 
-    if (provider === "openrouter") {
+    if (provider === "bytez") {
+      const apiKey = settings?.bytez_api_key;
+      const model = settings?.bytez_chat_model || "Qwen/Qwen3-4B";
+
+      if (!apiKey) {
+        return new Response(
+          JSON.stringify({ error: "Bytez API key not configured. Please set it in Admin > AI Settings." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      response = await callBytezChat(messages, systemPrompt, apiKey, model);
+    } else if (provider === "openrouter") {
       // Get API key from database settings
       const apiKey = settings?.openrouter_api_key;
       const model = settings?.openrouter_model || "meta-llama/llama-3.2-3b-instruct:free";
@@ -188,7 +319,7 @@ serve(async (req) => {
       }
       if (response.status === 401) {
         return new Response(
-          JSON.stringify({ error: "Invalid OpenRouter API key. Please check your API key in Admin > AI Settings." }),
+          JSON.stringify({ error: "Invalid API key. Please check your API key in Admin > AI Settings." }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
