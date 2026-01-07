@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.ai-chat-guest]
 verify_jwt = false
 
+[functions.ai-voice]
+verify_jwt = false
+
 [functions.send-event-reminder]
 verify_jwt = false
 
