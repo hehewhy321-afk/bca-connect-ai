@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_generated_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          model_used: string | null
+          prompt: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          model_used?: string | null
+          prompt: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          model_used?: string | null
+          prompt?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_settings: {
         Row: {
           created_at: string
