@@ -1,16 +1,19 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Send, Bot, User, Sparkles, Trash2, Copy, Check } from "lucide-react";
+import { Send, Bot, User, Sparkles, Trash2, Copy, Check, Image, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  type?: "text" | "image";
+  imageUrl?: string;
 }
 
 export default function AIAssistant() {
@@ -52,6 +55,7 @@ export default function AIAssistant() {
       id: Date.now().toString(),
       role: "user",
       content: input.trim(),
+      type: "text",
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -88,6 +92,27 @@ export default function AIAssistant() {
         throw new Error(errorData.error || "Failed to get response");
       }
 
+      // Check if it's an image response
+      const contentType = response.headers.get("content-type");
+      if (contentType?.includes("application/json")) {
+        const jsonData = await response.json();
+        
+        if (jsonData.type === "image") {
+          // Handle image response
+          const imageUrl = jsonData.output?.url || jsonData.output;
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: `Generated image for: "${jsonData.prompt}"`,
+            type: "image",
+            imageUrl: typeof imageUrl === "string" ? imageUrl : undefined,
+          };
+          setMessages((prev) => [...prev, assistantMessage]);
+          setIsLoading(false);
+          return;
+        }
+      }
+
       if (!response.body) {
         throw new Error("No response body");
       }
@@ -101,7 +126,7 @@ export default function AIAssistant() {
       // Add empty assistant message
       setMessages((prev) => [
         ...prev,
-        { id: assistantId, role: "assistant", content: "" },
+        { id: assistantId, role: "assistant", content: "", type: "text" },
       ]);
 
       let buffer = "";
@@ -160,7 +185,7 @@ export default function AIAssistant() {
     "Explain polymorphism in Java",
     "What is normalization in databases?",
     "Write a Python function for binary search",
-    "Difference between TCP and UDP",
+    "Generate an image of a futuristic classroom",
   ];
 
   return (
@@ -177,7 +202,7 @@ export default function AIAssistant() {
                 AI Study Assistant
               </h1>
               <p className="text-sm text-muted-foreground">
-                Your 24/7 BCA study companion
+                Chat & Image Generation • 24/7 BCA companion
               </p>
             </div>
           </div>
@@ -203,16 +228,21 @@ export default function AIAssistant() {
                 </h2>
                 <p className="text-muted-foreground mb-6 max-w-md">
                   Ask me anything about your BCA curriculum, programming
-                  concepts, or exam preparation.
+                  concepts, or even generate images!
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
                   {suggestedQuestions.map((question) => (
                     <button
                       key={question}
                       onClick={() => setInput(question)}
-                      className="p-3 text-left text-sm rounded-xl bg-muted hover:bg-muted/80 text-foreground transition-colors"
+                      className="p-3 text-left text-sm rounded-xl bg-muted hover:bg-muted/80 text-foreground transition-colors flex items-center gap-2"
                     >
-                      {question}
+                      {question.toLowerCase().includes("image") ? (
+                        <Image className="w-4 h-4 text-primary flex-shrink-0" />
+                      ) : (
+                        <Bot className="w-4 h-4 text-primary flex-shrink-0" />
+                      )}
+                      <span>{question}</span>
                     </button>
                   ))}
                 </div>
@@ -237,6 +267,8 @@ export default function AIAssistant() {
                     >
                       {message.role === "user" ? (
                         <User className="w-4 h-4 text-primary-foreground" />
+                      ) : message.type === "image" ? (
+                        <Image className="w-4 h-4 text-primary-foreground" />
                       ) : (
                         <Bot className="w-4 h-4 text-primary-foreground" />
                       )}
@@ -253,9 +285,23 @@ export default function AIAssistant() {
                             : "bg-muted text-foreground rounded-bl-md"
                         }`}
                       >
-                        <div className="text-sm">
-                          <MarkdownRenderer content={message.content} />
-                        </div>
+                        {message.type === "image" && message.imageUrl ? (
+                          <div className="space-y-2">
+                            <p className="text-sm">{message.content}</p>
+                            <img
+                              src={message.imageUrl}
+                              alt="Generated image"
+                              className="rounded-lg max-w-full h-auto"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = "none";
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="text-sm">
+                            <MarkdownRenderer content={message.content} />
+                          </div>
+                        )}
                       </div>
                       {message.role === "assistant" && message.content && (
                         <button
@@ -277,16 +323,9 @@ export default function AIAssistant() {
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                       <Bot className="w-4 h-4 text-primary-foreground" />
                     </div>
-                    <div className="flex items-center gap-1 p-4 bg-muted rounded-2xl rounded-bl-md">
-                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                      <div
-                        className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: "0.1s" }}
-                      />
-                      <div
-                        className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      />
+                    <div className="flex items-center gap-2 p-4 bg-muted rounded-2xl rounded-bl-md">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm text-muted-foreground">Thinking...</span>
                     </div>
                   </div>
                 )}
@@ -302,7 +341,7 @@ export default function AIAssistant() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask anything about BCA..."
+                placeholder="Ask anything or try 'Generate an image of...'"
                 className="flex-1 px-4 py-3 rounded-xl bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 disabled={isLoading}
               />
@@ -315,6 +354,9 @@ export default function AIAssistant() {
                 <Send className="w-5 h-5" />
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              💬 Chat • 🎨 Image Generation (try "Generate an image of...")
+            </p>
           </form>
         </div>
       </div>
