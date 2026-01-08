@@ -145,7 +145,7 @@ const AdminAISettings = () => {
     openrouter_custom_models: "[]",
     bytez_api_key: "",
     bytez_chat_model: "Qwen/Qwen3-4B",
-    bytez_image_model: "dreamlike-art/dreamlike-photoreal-2.0",
+    bytez_image_model: "black-forest-labs/FLUX.1-schnell",
     bytez_custom_models: "[]",
     custom_system_prompt: "",
   });
@@ -175,7 +175,7 @@ const AdminAISettings = () => {
         openrouter_custom_models: "[]",
         bytez_api_key: "",
         bytez_chat_model: "Qwen/Qwen3-4B",
-        bytez_image_model: "dreamlike-art/dreamlike-photoreal-2.0",
+        bytez_image_model: "black-forest-labs/FLUX.1-schnell",
         bytez_custom_models: "[]",
         custom_system_prompt: "",
       };
