@@ -62,44 +62,40 @@ const PAID_MODELS: ModelInfo[] = [
 
 const ALL_OPENROUTER_MODELS = [...FREE_MODELS, ...PAID_MODELS];
 
-// Bytez models organized by category
+// Bytez models organized by category - using verified working model IDs
 const BYTEZ_LLM_MODELS: ModelInfo[] = [
-  // General-purpose LLMs
-  { id: "THUDM/GLM-4.7", name: "GLM-4.7", provider: "THUDM", tier: "free", category: "LLM" },
-  { id: "THUDM/GLM-4.7-FP8", name: "GLM-4.7-FP8", provider: "THUDM", tier: "free", category: "LLM" },
-  { id: "utter-project/EuroLLM-22B-Instruct-5122", name: "EuroLLM-22B-Instruct", provider: "Utter Project", tier: "free", category: "LLM" },
-  { id: "allenai/Olmo-3.1-32B-Instruct", name: "Olmo-3.1-32B-Instruct", provider: "Allen AI", tier: "free", category: "LLM" },
-  { id: "allenai/Olmo-3.1-32B-Think", name: "Olmo-3.1-32B-Think", provider: "Allen AI", tier: "free", category: "LLM" },
-  { id: "deepseek-ai/DeepSeek-R1", name: "DeepSeek-R1", provider: "DeepSeek", tier: "free", category: "LLM" },
-  { id: "meta-llama/Meta-Llama-3-8B", name: "Meta-Llama-3-8B", provider: "Meta", tier: "free", category: "LLM" },
-  { id: "meta-llama/Llama-3.1-8B-Instruct", name: "Llama-3.1-8B-Instruct", provider: "Meta", tier: "free", category: "LLM" },
-  { id: "meta-llama/Llama-2-7b-chat-hf", name: "Llama-2-7b-chat-hf", provider: "Meta", tier: "free", category: "LLM" },
-  { id: "mistralai/Mixtral-8x7B-Instruct-v0.1", name: "Mixtral-8x7B-Instruct", provider: "Mistral AI", tier: "free", category: "LLM" },
-  { id: "THUDM/AutoGLM-Phone-9B-Multilingual", name: "AutoGLM-Phone-9B", provider: "THUDM", tier: "free", category: "LLM" },
+  // General-purpose LLMs - verified working models
   { id: "Qwen/Qwen3-4B", name: "Qwen3 4B", provider: "Qwen", tier: "free", category: "LLM" },
   { id: "Qwen/Qwen3-8B", name: "Qwen3 8B", provider: "Qwen", tier: "free", category: "LLM" },
-  { id: "Qwen/Qwen3-14B", name: "Qwen3 14B", provider: "Qwen", tier: "free", category: "LLM" },
-  { id: "microsoft/Phi-3-mini-4k-instruct", name: "Phi-3 Mini", provider: "Microsoft", tier: "free", category: "LLM" },
+  { id: "Qwen/Qwen2.5-7B-Instruct", name: "Qwen2.5 7B Instruct", provider: "Qwen", tier: "free", category: "LLM" },
+  { id: "Qwen/Qwen2.5-14B-Instruct", name: "Qwen2.5 14B Instruct", provider: "Qwen", tier: "free", category: "LLM" },
+  { id: "meta-llama/Llama-3.2-3B-Instruct", name: "Llama 3.2 3B Instruct", provider: "Meta", tier: "free", category: "LLM" },
+  { id: "meta-llama/Llama-3.1-8B-Instruct", name: "Llama 3.1 8B Instruct", provider: "Meta", tier: "free", category: "LLM" },
+  { id: "meta-llama/Llama-2-7b-chat-hf", name: "Llama 2 7B Chat", provider: "Meta", tier: "free", category: "LLM" },
+  { id: "mistralai/Mistral-7B-Instruct-v0.3", name: "Mistral 7B Instruct v0.3", provider: "Mistral AI", tier: "free", category: "LLM" },
+  { id: "mistralai/Mixtral-8x7B-Instruct-v0.1", name: "Mixtral 8x7B Instruct", provider: "Mistral AI", tier: "free", category: "LLM" },
+  { id: "microsoft/Phi-3-mini-4k-instruct", name: "Phi-3 Mini 4K", provider: "Microsoft", tier: "free", category: "LLM" },
+  { id: "microsoft/Phi-3.5-mini-instruct", name: "Phi-3.5 Mini", provider: "Microsoft", tier: "free", category: "LLM" },
   { id: "google/gemma-2-9b-it", name: "Gemma 2 9B", provider: "Google", tier: "free", category: "LLM" },
+  { id: "google/gemma-2-2b-it", name: "Gemma 2 2B", provider: "Google", tier: "free", category: "LLM" },
+  { id: "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B", name: "DeepSeek R1 Distill 7B", provider: "DeepSeek", tier: "free", category: "LLM" },
 ];
 
 const BYTEZ_VLM_MODELS: ModelInfo[] = [
   // Vision-Language Models
-  { id: "MiniMax/MiniMax-M2.1", name: "MiniMax-M2.1", provider: "MiniMax", tier: "free", category: "VLM" },
-  { id: "MiniMax/MiniMax-V-Flash", name: "MiniMax-V-Flash", provider: "MiniMax", tier: "free", category: "VLM" },
-  { id: "THUDM/GLM-4.6V", name: "GLM-4.6V", provider: "THUDM", tier: "free", category: "VLM" },
-  { id: "THUDM/GLM-4.6V-Flash", name: "GLM-4.6V-Flash", provider: "THUDM", tier: "free", category: "VLM" },
+  { id: "Qwen/Qwen2-VL-7B-Instruct", name: "Qwen2 VL 7B", provider: "Qwen", tier: "free", category: "VLM" },
+  { id: "llava-hf/llava-1.5-7b-hf", name: "LLaVA 1.5 7B", provider: "LLaVA", tier: "free", category: "VLM" },
+  { id: "microsoft/Phi-3-vision-128k-instruct", name: "Phi-3 Vision 128K", provider: "Microsoft", tier: "free", category: "VLM" },
 ];
 
 const BYTEZ_IMAGE_GEN_MODELS: ModelInfo[] = [
-  // Image Generation / Diffusion Models
-  { id: "FLUX.2-dev-Turbo", name: "FLUX.2-dev-Turbo", provider: "Black Forest Labs", tier: "free", category: "Image Gen" },
-  { id: "black-forest-labs/FLUX.1-dev", name: "FLUX.1-dev", provider: "Black Forest Labs", tier: "free", category: "Image Gen" },
-  { id: "black-forest-labs/FLUX.1-schnell", name: "FLUX.1-schnell", provider: "Black Forest Labs", tier: "free", category: "Image Gen" },
+  // Image Generation / Diffusion Models - verified working models
+  { id: "black-forest-labs/FLUX.1-schnell", name: "FLUX.1 Schnell (Fast)", provider: "Black Forest Labs", tier: "free", category: "Image Gen" },
+  { id: "black-forest-labs/FLUX.1-dev", name: "FLUX.1 Dev (Quality)", provider: "Black Forest Labs", tier: "free", category: "Image Gen" },
   { id: "stabilityai/stable-diffusion-xl-base-1.0", name: "Stable Diffusion XL", provider: "Stability AI", tier: "free", category: "Image Gen" },
-  { id: "CompVis/stable-diffusion-v1-4", name: "Stable Diffusion 1.4", provider: "CompVis", tier: "free", category: "Image Gen" },
-  { id: "dreamlike-art/dreamlike-photoreal-2.0", name: "Dreamlike Photoreal 2.0", provider: "Dreamlike", tier: "free", category: "Image Gen" },
+  { id: "stabilityai/stable-diffusion-2-1", name: "Stable Diffusion 2.1", provider: "Stability AI", tier: "free", category: "Image Gen" },
   { id: "runwayml/stable-diffusion-v1-5", name: "Stable Diffusion 1.5", provider: "RunwayML", tier: "free", category: "Image Gen" },
+  { id: "CompVis/stable-diffusion-v1-4", name: "Stable Diffusion 1.4", provider: "CompVis", tier: "free", category: "Image Gen" },
 ];
 
 const BYTEZ_IMAGE_LORA_MODELS: ModelInfo[] = [
