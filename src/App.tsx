@@ -20,6 +20,7 @@ import Settings from "./pages/Settings";
 
 // Lazy load less frequently accessed pages
 const AIAssistant = lazy(() => import("./pages/AIAssistant"));
+const ImageGallery = lazy(() => import("./pages/ImageGallery"));
 const Achievements = lazy(() => import("./pages/Achievements"));
 const Community = lazy(() => import("./pages/Community"));
 const Alumni = lazy(() => import("./pages/Alumni"));
@@ -128,6 +129,7 @@ const App = () => (
               {/* Dashboard routes - eager loaded pages don't need LazyRoute */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/dashboard/ai-assistant" element={<ProtectedRoute><LazyRoute><AIAssistant /></LazyRoute></ProtectedRoute>} />
+              <Route path="/dashboard/image-gallery" element={<ProtectedRoute><LazyRoute><ImageGallery /></LazyRoute></ProtectedRoute>} />
               <Route path="/dashboard/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
               <Route path="/dashboard/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
               <Route path="/dashboard/achievements" element={<ProtectedRoute><LazyRoute><Achievements /></LazyRoute></ProtectedRoute>} />
