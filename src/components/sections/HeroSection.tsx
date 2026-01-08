@@ -1,201 +1,209 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { motion, easeOut } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles, Users, Calendar, BookOpen, Code, Cpu, Terminal, Database, Laptop } from "lucide-react";
+import {
+  ArrowRight,
+  Sparkles,
+  Code,
+  Cpu,
+  Terminal,
+  Database,
+  Laptop,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-
-interface Stats {
-  members: number;
-  events: number;
-  resources: number;
-}
+import { useTypewriter, Cursor } from "react-simple-typewriter";
 
 export function HeroSection() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState<Stats>({ members: 0, events: 0, resources: 0 });
+  const sectionRef = useRef<HTMLElement>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
+  const [text] = useTypewriter({
+    words: [
+      "Tech Community",
+      "Innovation Hub",
+      "Skill Builders",
+      "Future Leaders",
+    ],
+    loop: true,
+    typeSpeed: 80,
+    deleteSpeed: 50,
+    delaySpeed: 2000,
+  });
+
+  // Mouse position track - HeroSection भित्र मात्र
   useEffect(() => {
-    fetchStats();
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!sectionRef.current) return;
+      const rect = sectionRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      setMousePosition({ x, y });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  const fetchStats = async () => {
-    try {
-      const [profilesRes, eventsRes, resourcesRes] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("events").select("id", { count: "exact", head: true }),
-        supabase.from("resources").select("id", { count: "exact", head: true }),
-      ]);
-
-      setStats({
-        members: profilesRes.count || 0,
-        events: eventsRes.count || 0,
-        resources: resourcesRes.count || 0,
-      });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    }
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.3,
+      },
+    },
   };
 
-  const statItems = [
-    { icon: Users, value: `${stats.members}+`, label: "Active Members" },
-    { icon: Calendar, value: `${stats.events}+`, label: "Events" },
-    { icon: BookOpen, value: `${stats.resources}+`, label: "Resources" },
-  ];
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: easeOut } },
+  };
 
   return (
     <section
+      ref={sectionRef}
       id="home"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 pb-10"
     >
-      {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-accent/80" />
-      
-      {/* Pattern Overlay */}
-      <div className="absolute inset-0 bg-hero-pattern opacity-30" />
+      {/* Black Background */}
+      <div className="absolute inset-0 bg-black" />
 
-      {/* --- Floating Background Icons --- */}
+      {/* Subtle Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/20 via-black to-blue-950/20" />
+
+      {/* Mouse Glow Effect*/}
+      <div
+        className="pointer-events-none absolute inset-0 z-20"
+        style={{
+          background: `radial-gradient(800px at ${mousePosition.x}px ${mousePosition.y}px, rgba(34, 211, 238, 0.15), transparent 80%)`,
+        }}
+      />
+
+      {/* Floating Tech Icons */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Code Icon - Top Left */}
-        <motion.div
-          animate={{ y: [0, -30, 0], rotate: [0, 10, 0], opacity: [0.1, 0.2, 0.1] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[15%] left-[5%] text-white"
-        >
-          <Code size={120} strokeWidth={0.5} />
-        </motion.div>
-
-        {/* Cpu Icon - Top Right */}
-        <motion.div
-          animate={{ y: [0, 30, 0], rotate: [0, -10, 0], opacity: [0.1, 0.15, 0.1] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute top-[20%] right-[8%] text-white"
-        >
-          <Cpu size={100} strokeWidth={0.5} />
-        </motion.div>
-
-        {/* Terminal Icon - Bottom Left */}
-        <motion.div
-          animate={{ x: [0, 20, 0], opacity: [0.05, 0.15, 0.05] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[25%] left-[10%] text-white"
-        >
-          <Terminal size={80} strokeWidth={0.5} />
-        </motion.div>
-
-        {/* Database Icon - Bottom Right */}
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[15%] right-[12%] text-white"
-        >
-          <Database size={90} strokeWidth={0.5} />
-        </motion.div>
-
-        {/* Laptop Icon - Middle Left */}
-        <motion.div
-          animate={{ rotate: [0, 360] }}
-          transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[45%] left-[-2%] text-white opacity-10"
-        >
-          <Laptop size={140} strokeWidth={0.5} />
-        </motion.div>
-      </div>
-      
-      {/* Animated Blobs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-secondary/30 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/20 rounded-full blur-3xl animate-float-delayed" />
-      
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Badge */}
+        {[
+          { Icon: Code, size: 110, top: "15%", left: "8%", delay: 0 },
+          { Icon: Cpu, size: 90, top: "18%", right: "10%", delay: 2 },
+          { Icon: Terminal, size: 80, bottom: "32%", left: "8%", delay: 1 },
+          { Icon: Database, size: 85, bottom: "22%", right: "12%", delay: 3 },
+          { Icon: Laptop, size: 130, top: "45%", left: "-6%", delay: 0 },
+        ].map(({ Icon, size, top, left, right, bottom, delay }, i) => (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 mb-8"
+            key={i}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{
+              y: i % 2 === 0 ? [0, -30, 0] : [0, 30, 0],
+              x: i === 2 ? [0, 40, 0] : [0, -20, 0],
+              rotate: i === 4 ? [0, 360] : [0, 15, -15, 0],
+              opacity: [0.15, 0.35, 0.15], // अझ subtle breathing
+            }}
+            transition={{
+              y: { duration: 18 + i * 2, repeat: Infinity, ease: "easeInOut" },
+              x: { duration: 20 + i * 2, repeat: Infinity, ease: "easeInOut" },
+              rotate: {
+                duration: i === 4 ? 80 : 22,
+                repeat: Infinity,
+                ease: "linear",
+              },
+              opacity: {
+                duration: 12,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay,
+              },
+            }}
+            style={{ top, left, right, bottom }}
+            className="absolute text-cyan-400/50 drop-shadow-2xl" 
           >
-            <Sparkles className="w-4 h-4 text-secondary" />
-            <span className="text-sm font-medium text-primary-foreground">
-              Powered by AI • Built for Success
-            </span>
+            <Icon size={size} strokeWidth={0.6} />{" "}
+            
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-6 relative z-30">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="max-w-4xl mx-auto text-center space-y-10 md:space-y-14"
+        >
+          {/* Neon Badge */}
+          <motion.div variants={itemVariants}>
+            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-black/70 backdrop-blur-xl border border-cyan-400/50 shadow-2xl shadow-cyan-500/30 mt-10">
+              <Sparkles className="w-5 h-5 text-cyan-300 animate-pulse" />
+              <span className="text-sm md:text-base font-semibold text-cyan-200 tracking-wide">
+                Powered by AI • Built for Success
+              </span>
+            </div>
           </motion.div>
 
-          {/* Main Heading */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-primary-foreground leading-tight mb-6"
-          >
-            Empowering Future
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-secondary to-secondary/70">
-              Tech Leaders
-            </span>
-          </motion.h1>
+          {/* Heading + Typewriter */}
+          <motion.div variants={itemVariants} className="space-y-6">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight">
+              Empowering Future
+              <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-cyan-200 to-blue-400 drop-shadow-[0_0_30px_rgba(34,211,238,0.6)]">
+                Tech Leaders
+              </span>
+            </h1>
+            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-300 font-medium mt-8 min-h-[60px]">
+              <span className="text-cyan-300">{text}</span>
+              <Cursor cursorColor="#06b6d4" />
+            </h2>
+          </motion.div>
 
           {/* Subtitle */}
           <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg md:text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-10"
+            variants={itemVariants}
+            className="text-base sm:text-lg md:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed px-4"
           >
-            Join the official BCA Association of MMAMC College, Nepal. Connect,
-            learn, and grow with AI-powered tools, collaborative projects, and
-            industry connections.
+            Official BCA Association of MMAMC College, Nepal. Connect, learn,
+            and grow through workshops, collaborative projects, events, and
+            industry networks.
           </motion.p>
 
-          {/* CTA Buttons */}
+          {/* Buttons */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+            variants={itemVariants}
+            className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4"
           >
-            <Button variant="hero" size="xl" className="group" onClick={() => navigate("/auth")}>
-              Get Started
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <Button
+              size="lg"
+              onClick={() => navigate("/auth")}
+              className="group relative overflow-hidden bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold px-10 py-7 text-lg rounded-2xl shadow-2xl shadow-cyan-500/50 transition-all duration-300"
+            >
+              <span className="relative z-10 flex items-center gap-3">
+                Get Started
+                <ArrowRight className="w-6 h-6 transition-transform duration-300 group-hover:translate-x-4 group-hover:scale-110" />
+              </span>
+              <motion.div
+                className="absolute inset-0 bg-white/30"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
             </Button>
-            <Button variant="heroOutline" size="xl" onClick={() => {
-              document.querySelector("#features")?.scrollIntoView({ behavior: "smooth" });
-            }}>
+            <Button
+              variant="outline"
+              size="lg"
+              className="border-2 border-cyan-400/60 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-200 hover:text-cyan-100 px-10 py-7 text-lg rounded-2xl backdrop-blur-sm shadow-xl transition-all duration-300"
+              onClick={() =>
+                document
+                  .querySelector("#features")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
               Explore Features
             </Button>
           </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="grid grid-cols-3 gap-4 max-w-lg mx-auto"
-          >
-            {statItems.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
-                whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                className="glass rounded-2xl p-4 text-center border border-white/10 shadow-lg"
-              >
-                <stat.icon className="w-6 h-6 text-secondary mx-auto mb-2" />
-                <div className="font-heading text-2xl font-bold text-primary-foreground">
-                  {stat.value}
-                </div>
-                <div className="text-xs text-primary-foreground/70 uppercase tracking-wider font-semibold">
-                  {stat.label}
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Bottom Wave */}
-      <div className="absolute bottom-0 left-0 right-0">
+      <div className="absolute bottom-0 left-0 right-0 opacity-50">
         <svg
           viewBox="0 0 1440 120"
           fill="none"
@@ -204,9 +212,15 @@ export function HeroSection() {
           preserveAspectRatio="none"
         >
           <path
-            d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z"
-            className="fill-background"
+            d="M0 120L60 100C120 80 240 40 360 35C480 30 600 40 720 50C840 60 960 70 1080 65C1200 60 1320 40 1380 30L1440 20V120H0Z"
+            fill="url(#wave_gradient)"
           />
+          <defs>
+            <linearGradient id="wave_gradient" x1="0" y1="0" x2="1440" y2="120">
+              <stop stopColor="#06b6d4" stopOpacity="0.6" />
+              <stop offset="1" stopColor="#1e293b" stopOpacity="0.8" />
+            </linearGradient>
+          </defs>
         </svg>
       </div>
     </section>
