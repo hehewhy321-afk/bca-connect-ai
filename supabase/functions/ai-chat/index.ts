@@ -114,9 +114,11 @@ async function callOpenRouter(messages: any[], systemPrompt: string, apiKey: str
 }
 
 async function callBytezChat(messages: any[], systemPrompt: string, apiKey: string, model: string) {
-  console.log("Calling Bytez with model:", model);
+  // Ensure model has proper format - if it doesn't have a slash, use a default known working model
+  const modelId = model.includes('/') ? model : `Qwen/Qwen3-4B`;
+  console.log("Calling Bytez with model:", modelId);
 
-  const response = await fetch(`https://api.bytez.com/models/v2/${model}`, {
+  const response = await fetch(`https://api.bytez.com/models/v2/${modelId}`, {
     method: "POST",
     headers: {
       Authorization: apiKey,
@@ -139,16 +141,19 @@ async function callBytezChat(messages: any[], systemPrompt: string, apiKey: stri
 }
 
 async function callBytezImageGen(prompt: string, apiKey: string, model: string) {
-  console.log("Calling Bytez Image Generation with model:", model);
+  // Ensure model has proper format for image generation
+  const modelId = model.includes('/') ? model : `black-forest-labs/FLUX.1-schnell`;
+  console.log("Calling Bytez Image Generation with model:", modelId);
 
-  const response = await fetch(`https://api.bytez.com/models/v2/${model}`, {
+  const response = await fetch(`https://api.bytez.com/models/v2/${modelId}`, {
     method: "POST",
     headers: {
       Authorization: apiKey,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      input: prompt,
+      prompt: prompt,
+      num_inference_steps: 4,
     }),
   });
 
@@ -234,7 +239,7 @@ serve(async (req) => {
       
       if (imagePrompt || mode === "image") {
         const apiKey = settings?.bytez_api_key;
-        const imageModel = settings?.bytez_image_model || "dreamlike-art/dreamlike-photoreal-2.0";
+        const imageModel = settings?.bytez_image_model || "black-forest-labs/FLUX.1-schnell";
 
         if (!apiKey) {
           return new Response(
@@ -249,20 +254,52 @@ serve(async (req) => {
           if (!imageResponse.ok) {
             const errorText = await imageResponse.text();
             console.error("Bytez image generation error:", imageResponse.status, errorText);
-            throw new Error("Failed to generate image");
+            // Don't throw, fall through to chat
+          } else {
+            const imageData = await imageResponse.json();
+            
+            // Extract image URL from response (Bytez returns base64 or URL)
+            let imageUrl = "";
+            if (imageData.output) {
+              if (typeof imageData.output === "string") {
+                if (imageData.output.startsWith("http")) {
+                  imageUrl = imageData.output;
+                } else if (imageData.output.startsWith("data:")) {
+                  imageUrl = imageData.output;
+                } else {
+                  imageUrl = `data:image/png;base64,${imageData.output}`;
+                }
+              } else if (Array.isArray(imageData.output) && imageData.output[0]) {
+                const first = imageData.output[0];
+                if (typeof first === "string") {
+                  imageUrl = first.startsWith("http") ? first : `data:image/png;base64,${first}`;
+                } else if (first.url) {
+                  imageUrl = first.url;
+                } else if (first.b64_json) {
+                  imageUrl = `data:image/png;base64,${first.b64_json}`;
+                }
+              }
+            }
+            
+            if (imageUrl) {
+              // Save image to database
+              await supabaseClient.from("ai_generated_images").insert({
+                user_id: user.id,
+                prompt: imagePrompt || lastMessage.content,
+                image_url: imageUrl,
+                model_used: imageModel,
+              });
+              
+              return new Response(
+                JSON.stringify({ 
+                  type: "image",
+                  output: imageUrl,
+                  prompt: imagePrompt || lastMessage.content
+                }),
+                { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+              );
+            }
           }
-
-          const imageData = await imageResponse.json();
-          
-          // Return image as a special response
-          return new Response(
-            JSON.stringify({ 
-              type: "image",
-              output: imageData.output,
-              prompt: imagePrompt || lastMessage.content
-            }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
         } catch (error) {
           console.error("Image generation error:", error);
           // Fall back to chat response about the image

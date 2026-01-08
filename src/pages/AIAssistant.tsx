@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Send, Bot, User, Sparkles, Trash2, Copy, Check, Image, Loader2 } from "lucide-react";
+import { Send, Bot, User, Sparkles, Trash2, Copy, Check, Image, Loader2, Mic, MicOff, Volume2, VolumeX, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
 
 interface Message {
   id: string;
@@ -16,14 +17,63 @@ interface Message {
   imageUrl?: string;
 }
 
+// Voice recording hook
+function useVoiceRecording() {
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      
+      chunksRef.current = [];
+      mediaRecorderRef.current = mediaRecorder;
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        setAudioBlob(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Failed to start recording:", error);
+      throw error;
+    }
+  }, []);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  }, [isRecording]);
+
+  return { isRecording, audioBlob, startRecording, stopRecording, setAudioBlob };
+}
+
 export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isRecording, audioBlob, startRecording, stopRecording, setAudioBlob } = useVoiceRecording();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -32,6 +82,95 @@ export default function AIAssistant() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle voice recording result
+  useEffect(() => {
+    if (audioBlob) {
+      handleVoiceInput(audioBlob);
+      setAudioBlob(null);
+    }
+  }, [audioBlob]);
+
+  const handleVoiceInput = async (blob: Blob) => {
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Please log in to use voice features");
+      }
+
+      // Convert blob to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(blob);
+      const base64Audio = await base64Promise;
+
+      // Send to speech-to-text
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-voice`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            action: "stt",
+            audio: base64Audio,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to transcribe audio");
+      }
+
+      const { text } = await response.json();
+      if (text) {
+        setInput(text);
+        toast({
+          title: "Voice transcribed",
+          description: "Your speech has been converted to text.",
+        });
+      }
+    } catch (error) {
+      console.error("Voice input error:", error);
+      toast({
+        title: "Voice error",
+        description: error instanceof Error ? error.message : "Failed to process voice",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMicClick = async () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      try {
+        await startRecording();
+        toast({
+          title: "Recording started",
+          description: "Speak now. Click the mic again to stop.",
+        });
+      } catch (error) {
+        toast({
+          title: "Microphone access denied",
+          description: "Please allow microphone access to use voice input.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   const handleCopy = async (content: string, id: string) => {
     await navigator.clipboard.writeText(content);
@@ -202,16 +341,24 @@ export default function AIAssistant() {
                 AI Study Assistant
               </h1>
               <p className="text-sm text-muted-foreground">
-                Chat & Image Generation • 24/7 BCA companion
+                Chat, Voice & Image Generation • 24/7 BCA companion
               </p>
             </div>
           </div>
-          {messages.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={handleClearChat}>
-              <Trash2 className="w-4 h-4 mr-2" />
-              Clear Chat
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <Link to="/dashboard/image-gallery">
+              <Button variant="outline" size="sm">
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Gallery
+              </Button>
+            </Link>
+            {messages.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={handleClearChat}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Clear Chat
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Chat Area */}
@@ -337,25 +484,39 @@ export default function AIAssistant() {
           {/* Input */}
           <form onSubmit={handleSubmit} className="p-4 border-t border-border">
             <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="icon"
+                variant={isRecording ? "destructive" : "outline"}
+                className="h-12 w-12 rounded-xl flex-shrink-0"
+                onClick={handleMicClick}
+                disabled={isLoading}
+              >
+                {isRecording ? (
+                  <MicOff className="w-5 h-5" />
+                ) : (
+                  <Mic className="w-5 h-5" />
+                )}
+              </Button>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask anything or try 'Generate an image of...'"
+                placeholder={isRecording ? "Recording... Click mic to stop" : "Ask anything or try 'Generate an image of...'"}
                 className="flex-1 px-4 py-3 rounded-xl bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                disabled={isLoading}
+                disabled={isLoading || isRecording}
               />
               <Button
                 type="submit"
                 size="icon"
                 className="h-12 w-12 rounded-xl"
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || isLoading || isRecording}
               >
                 <Send className="w-5 h-5" />
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              💬 Chat • 🎨 Image Generation (try "Generate an image of...")
+              🎤 Voice Input • 💬 Chat • 🎨 Image Generation
             </p>
           </form>
         </div>
