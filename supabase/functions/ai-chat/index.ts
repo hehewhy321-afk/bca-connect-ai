@@ -118,22 +118,22 @@ async function callBytezChat(messages: any[], systemPrompt: string, apiKey: stri
   const modelId = model.includes('/') ? model : `Qwen/Qwen3-4B`;
   console.log("Calling Bytez with model:", modelId);
 
-  const response = await fetch(`https://api.bytez.com/models/v2/${modelId}`, {
+  // Use OpenAI-compatible endpoint for proper streaming format
+  const response = await fetch(`https://api.bytez.com/models/v2/openai/v1/chat/completions`, {
     method: "POST",
     headers: {
-      Authorization: apiKey,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      model: modelId,
       messages: [
         { role: "system", content: systemPrompt },
         ...messages,
       ],
+      max_tokens: 2048,
+      temperature: 0.7,
       stream: true,
-      params: {
-        max_length: 2048,
-        temperature: 0.7,
-      },
     }),
   });
 
@@ -148,7 +148,7 @@ async function callBytezImageGen(prompt: string, apiKey: string, model: string) 
   const response = await fetch(`https://api.bytez.com/models/v2/${modelId}`, {
     method: "POST",
     headers: {
-      Authorization: apiKey,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
