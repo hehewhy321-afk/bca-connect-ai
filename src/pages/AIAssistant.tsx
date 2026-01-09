@@ -1,6 +1,21 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Send, Bot, User, Sparkles, Trash2, Copy, Check, Image, Loader2, Mic, MicOff, Volume2, VolumeX, ImageIcon } from "lucide-react";
+import {
+  Send,
+  Bot,
+  User,
+  Sparkles,
+  Trash2,
+  Copy,
+  Check,
+  Image,
+  Loader2,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  ImageIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
@@ -8,6 +23,57 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+
+type ThinkFilterState = {
+  inThink: boolean;
+  carry: string;
+};
+
+function getCarrySuffix(input: string, tag: string) {
+  const max = Math.min(tag.length - 1, input.length);
+  for (let k = max; k >= 1; k--) {
+    if (tag.startsWith(input.slice(-k))) return input.slice(-k);
+  }
+  return "";
+}
+
+function filterThinkDelta(delta: string, state: ThinkFilterState) {
+  const OPEN = "<think>";
+  const CLOSE = "</think>";
+
+  let s = state.carry + delta;
+  state.carry = "";
+
+  let out = "";
+
+  while (s.length) {
+    if (!state.inThink) {
+      const i = s.indexOf(OPEN);
+      if (i === -1) {
+        const carry = getCarrySuffix(s, OPEN);
+        state.carry = carry;
+        out += carry ? s.slice(0, -carry.length) : s;
+        break;
+      }
+      out += s.slice(0, i);
+      s = s.slice(i + OPEN.length);
+      state.inThink = true;
+      continue;
+    }
+
+    const j = s.indexOf(CLOSE);
+    if (j === -1) {
+      const carry = getCarrySuffix(s, CLOSE);
+      state.carry = carry;
+      break;
+    }
+
+    s = s.slice(j + CLOSE.length);
+    state.inThink = false;
+  }
+
+  return out;
+}
 
 interface Message {
   id: string;
@@ -231,13 +297,12 @@ export default function AIAssistant() {
         throw new Error(errorData.error || "Failed to get response");
       }
 
-      // Check if it's an image response
+      // Check if it's an image/JSON response
       const contentType = response.headers.get("content-type");
       if (contentType?.includes("application/json")) {
         const jsonData = await response.json();
-        
-        if (jsonData.type === "image") {
-          // Handle image response
+
+        if (jsonData?.type === "image") {
           const imageUrl = jsonData.output?.url || jsonData.output;
           const assistantMessage: Message = {
             id: (Date.now() + 1).toString(),
@@ -250,6 +315,24 @@ export default function AIAssistant() {
           setIsLoading(false);
           return;
         }
+
+        const fallbackText =
+          jsonData?.output ?? jsonData?.content ?? jsonData?.message ?? jsonData?.error;
+        if (fallbackText) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: String(fallbackText),
+              type: "text",
+            },
+          ]);
+          setIsLoading(false);
+          return;
+        }
+
+        throw new Error("Unexpected AI response format");
       }
 
       if (!response.body) {
@@ -269,6 +352,7 @@ export default function AIAssistant() {
       ]);
 
       let buffer = "";
+      const thinkState: ThinkFilterState = { inThink: false, carry: "" };
 
       while (true) {
         const { done, value } = await reader.read();
@@ -293,12 +377,15 @@ export default function AIAssistant() {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
-              assistantContent += content;
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId ? { ...m, content: assistantContent } : m
-                )
-              );
+              const filtered = filterThinkDelta(content, thinkState);
+              if (filtered) {
+                assistantContent += filtered;
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantId ? { ...m, content: assistantContent } : m
+                  )
+                );
+              }
             }
           } catch {
             // Incomplete JSON, will be handled in next iteration
