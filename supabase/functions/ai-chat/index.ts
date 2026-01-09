@@ -65,7 +65,7 @@ async function getAISettings(supabaseClient: any): Promise<AISettings | null> {
 
 async function callLovableAI(messages: any[], systemPrompt: string) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  
+
   if (!LOVABLE_API_KEY) {
     throw new Error("LOVABLE_API_KEY is not configured");
   }
@@ -78,15 +78,52 @@ async function callLovableAI(messages: any[], systemPrompt: string) {
     },
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
       stream: true,
     }),
   });
 
   return response;
+}
+
+async function callLovableImageGen(prompt: string) {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+
+  if (!LOVABLE_API_KEY) {
+    throw new Error("LOVABLE_API_KEY is not configured");
+  }
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-3-pro-image-preview",
+      messages: [
+        {
+          role: "user",
+          content: `Generate an image: ${prompt}`,
+        },
+      ],
+      modalities: ["image", "text"],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Lovable image generation failed: ${response.status} ${errorText}`);
+  }
+
+  const data = await response.json();
+  const imageUrl = data?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+  if (!imageUrl) {
+    throw new Error("Lovable image generation returned no image");
+  }
+
+  return imageUrl as string;
 }
 
 async function callOpenRouter(messages: any[], systemPrompt: string, apiKey: string, model: string) {
@@ -102,10 +139,7 @@ async function callOpenRouter(messages: any[], systemPrompt: string, apiKey: str
     },
     body: JSON.stringify({
       model: model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
       stream: true,
     }),
   });
@@ -249,15 +283,14 @@ serve(async (req) => {
         }
 
         try {
-          const imageResponse = await callBytezImageGen(imagePrompt || lastMessage.content, apiKey, imageModel);
-          
-          if (!imageResponse.ok) {
-            const errorText = await imageResponse.text();
-            console.error("Bytez image generation error:", imageResponse.status, errorText);
-            // Don't throw, fall through to chat
-          } else {
+          const requestedPrompt = imagePrompt || lastMessage.content;
+
+          // 1) Try Bytez image generation first
+          const imageResponse = await callBytezImageGen(requestedPrompt, apiKey, imageModel);
+
+          if (imageResponse.ok) {
             const imageData = await imageResponse.json();
-            
+
             // Extract image URL from response (Bytez returns base64 or URL)
             let imageUrl = "";
             if (imageData.output) {
@@ -280,29 +313,59 @@ serve(async (req) => {
                 }
               }
             }
-            
+
             if (imageUrl) {
-              // Save image to database
               await supabaseClient.from("ai_generated_images").insert({
                 user_id: user.id,
-                prompt: imagePrompt || lastMessage.content,
+                prompt: requestedPrompt,
                 image_url: imageUrl,
                 model_used: imageModel,
               });
-              
+
               return new Response(
-                JSON.stringify({ 
+                JSON.stringify({
                   type: "image",
                   output: imageUrl,
-                  prompt: imagePrompt || lastMessage.content
+                  prompt: requestedPrompt,
                 }),
                 { headers: { ...corsHeaders, "Content-Type": "application/json" } }
               );
             }
+
+            console.error("Bytez image generation returned no image output");
+          } else {
+            const errorText = await imageResponse.text();
+            console.error("Bytez image generation error:", imageResponse.status, errorText);
           }
+
+          // 2) Fallback to Lovable image generation (works without Bytez plan limits)
+          console.log("Falling back to Lovable image generation");
+          const fallbackImageUrl = await callLovableImageGen(requestedPrompt);
+
+          await supabaseClient.from("ai_generated_images").insert({
+            user_id: user.id,
+            prompt: requestedPrompt,
+            image_url: fallbackImageUrl,
+            model_used: "lovable:google/gemini-3-pro-image-preview",
+          });
+
+          return new Response(
+            JSON.stringify({
+              type: "image",
+              output: fallbackImageUrl,
+              prompt: requestedPrompt,
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
         } catch (error) {
           console.error("Image generation error:", error);
-          // Fall back to chat response about the image
+          return new Response(
+            JSON.stringify({
+              error:
+                "Image generation failed. Please try again, or switch image model/provider in AI Settings.",
+            }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
         }
       }
     }
