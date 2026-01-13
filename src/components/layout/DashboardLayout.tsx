@@ -22,7 +22,6 @@ const sidebarLinks = [
   { name: "Neural Nexus", href: "/dashboard/ai-assistant", icon: Bot },
   { name: "Forum", href: "/dashboard/forum", icon: MessageSquare },
   { name: "Hall of Fame", href: "/dashboard/achievements", icon: Trophy },
-  { name: "Admin Portal", href: "/admin", icon: Shield, adminOnly: true },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -44,7 +43,7 @@ export function DashboardLayout({
     isModerator
   } = useUserRole();
 
-  const filteredLinks = sidebarLinks.filter(link => !link.adminOnly || isAdmin || isModerator);
+
 
   const handleSignOut = async () => {
     await signOut();
@@ -97,7 +96,7 @@ export function DashboardLayout({
 
         {/* Navigation */}
         <nav className="px-4 py-2 space-y-1 overflow-y-auto h-[calc(100vh-220px)] scrollbar-none">
-          {filteredLinks.map((link) => {
+          {sidebarLinks.map((link) => {
             const isActive = link.href === "/dashboard"
               ? location.pathname === "/dashboard"
               : location.pathname === link.href || location.pathname.startsWith(link.href + "/");
@@ -125,10 +124,22 @@ export function DashboardLayout({
         </nav>
 
         {/* Footer Actions */}
-        <div className="absolute bottom-8 left-4 right-4">
+        <div className="absolute bottom-6 left-4 right-4 space-y-2">
+          {(isAdmin || isModerator) && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-4 h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all font-bold group"
+              onClick={() => navigate("/admin")}
+            >
+              <div className="p-2 rounded-lg bg-primary/20 group-hover:bg-primary transition-colors">
+                <Shield className="w-4 h-4 text-primary group-hover:text-primary-foreground" />
+              </div>
+              Admin Portal
+            </Button>
+          )}
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 h-14 rounded-2xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all font-bold"
+            className="w-full justify-start gap-3 h-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all font-bold"
             onClick={handleSignOut}
           >
             <LogOut className="w-5 h-5" />
