@@ -2,7 +2,7 @@
 
 A comprehensive web platform for BCA Association of MMAMC College, Nepal. Built with React, TypeScript, Supabase, and Tailwind CSS.
 
-![BCA Association](https://github.com/user-attachments/assets/bd064cb4-bc3a-415e-8708-5a1af821dab5)
+![BCA Association](https://github.com/user-attachments/assets/fe22f9bd-68fa-4205-8693-924e576d46ce)
 
 ## Table of Contents
 
