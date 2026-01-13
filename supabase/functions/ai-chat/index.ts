@@ -266,12 +266,16 @@ serve(async (req) => {
     console.log("Using AI provider:", provider);
     console.log("Processing chat request for user:", user.id, "with", messages.length, "messages");
 
-    // Check for image generation request (only for Bytez)
+    // Handle explicit image mode or image generation request
     const lastMessage = messages[messages.length - 1];
-    if (provider === "bytez" && lastMessage?.role === "user") {
-      const imagePrompt = detectImageGenRequest(lastMessage.content);
+    const imagePrompt = lastMessage?.role === "user" ? detectImageGenRequest(lastMessage.content) : null;
+    
+    // If mode is "image" or image prompt detected, generate image
+    if (mode === "image" || imagePrompt) {
+      const requestedPrompt = imagePrompt || lastMessage.content;
       
-      if (imagePrompt || mode === "image") {
+      // Determine which provider to use for image generation
+      if (provider === "bytez") {
         const apiKey = settings?.bytez_api_key;
         const imageModel = settings?.bytez_image_model || "black-forest-labs/FLUX.1-schnell";
 
@@ -283,9 +287,7 @@ serve(async (req) => {
         }
 
         try {
-          const requestedPrompt = imagePrompt || lastMessage.content;
-
-          // 1) Try Bytez image generation first
+          console.log("Calling Bytez Image Generation with model:", imageModel);
           const imageResponse = await callBytezImageGen(requestedPrompt, apiKey, imageModel);
 
           if (imageResponse.ok) {
@@ -319,7 +321,7 @@ serve(async (req) => {
                 user_id: user.id,
                 prompt: requestedPrompt,
                 image_url: imageUrl,
-                model_used: imageModel,
+                model_used: `bytez:${imageModel}`,
               });
 
               return new Response(
@@ -327,6 +329,8 @@ serve(async (req) => {
                   type: "image",
                   output: imageUrl,
                   prompt: requestedPrompt,
+                  model: imageModel,
+                  provider: "bytez",
                 }),
                 { headers: { ...corsHeaders, "Content-Type": "application/json" } }
               );
@@ -336,9 +340,14 @@ serve(async (req) => {
           } else {
             const errorText = await imageResponse.text();
             console.error("Bytez image generation error:", imageResponse.status, errorText);
+            
+            // Check if it's a plan limitation error
+            if (imageResponse.status === 403 && errorText.includes("upgrade")) {
+              console.log("Bytez plan limitation - falling back to Lovable");
+            }
           }
 
-          // 2) Fallback to Lovable image generation (works without Bytez plan limits)
+          // Fallback to Lovable image generation if Bytez fails
           console.log("Falling back to Lovable image generation");
           const fallbackImageUrl = await callLovableImageGen(requestedPrompt);
 
@@ -354,6 +363,10 @@ serve(async (req) => {
               type: "image",
               output: fallbackImageUrl,
               prompt: requestedPrompt,
+              model: "google/gemini-3-pro-image-preview",
+              provider: "lovable",
+              fallback: true,
+              fallbackReason: "Bytez plan limitation - using Lovable AI instead",
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
@@ -361,8 +374,38 @@ serve(async (req) => {
           console.error("Image generation error:", error);
           return new Response(
             JSON.stringify({
-              error:
-                "Image generation failed. Please try again, or switch image model/provider in AI Settings.",
+              error: "Image generation failed. Please try again, or switch image model/provider in AI Settings.",
+            }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } else {
+        // Use Lovable for image generation (default or lovable provider)
+        try {
+          const imageUrl = await callLovableImageGen(requestedPrompt);
+
+          await supabaseClient.from("ai_generated_images").insert({
+            user_id: user.id,
+            prompt: requestedPrompt,
+            image_url: imageUrl,
+            model_used: "lovable:google/gemini-3-pro-image-preview",
+          });
+
+          return new Response(
+            JSON.stringify({
+              type: "image",
+              output: imageUrl,
+              prompt: requestedPrompt,
+              model: "google/gemini-3-pro-image-preview",
+              provider: "lovable",
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } catch (error) {
+          console.error("Lovable image generation error:", error);
+          return new Response(
+            JSON.stringify({
+              error: "Image generation failed. Please try again.",
             }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
@@ -370,11 +413,14 @@ serve(async (req) => {
       }
     }
 
+    // Regular chat mode
     let response: Response;
+    let providerInfo = { provider: provider, model: "" };
 
     if (provider === "bytez") {
       const apiKey = settings?.bytez_api_key;
       const model = settings?.bytez_chat_model || "Qwen/Qwen3-4B";
+      providerInfo.model = model;
 
       if (!apiKey) {
         return new Response(
@@ -388,6 +434,7 @@ serve(async (req) => {
       // Get API key from database settings
       const apiKey = settings?.openrouter_api_key;
       const model = settings?.openrouter_model || "meta-llama/llama-3.2-3b-instruct:free";
+      providerInfo.model = model;
 
       if (!apiKey) {
         return new Response(
@@ -398,6 +445,8 @@ serve(async (req) => {
 
       response = await callOpenRouter(messages, systemPrompt, apiKey, model);
     } else {
+      providerInfo.provider = "lovable";
+      providerInfo.model = "google/gemini-2.5-flash";
       response = await callLovableAI(messages, systemPrompt);
     }
 
@@ -407,34 +456,38 @@ serve(async (req) => {
       
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment.", code: "RATE_LIMITED" }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add more credits or switch to a free model." }),
+          JSON.stringify({ error: "AI credits exhausted. Please add more credits or switch to a free model.", code: "CREDITS_EXHAUSTED" }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 401) {
         return new Response(
-          JSON.stringify({ error: "Invalid API key. Please check your API key in Admin > AI Settings." }),
+          JSON.stringify({ error: "Invalid API key. Please check your API key in Admin > AI Settings.", code: "INVALID_API_KEY" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
       return new Response(
-        JSON.stringify({ error: "AI service temporarily unavailable" }),
+        JSON.stringify({ error: "AI service temporarily unavailable", code: "SERVICE_ERROR" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Streaming response from AI provider");
+    console.log("Streaming response from AI provider:", providerInfo.provider, providerInfo.model);
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
+    // Add provider info header to response
+    const headers = new Headers(corsHeaders);
+    headers.set("Content-Type", "text/event-stream");
+    headers.set("X-AI-Provider", providerInfo.provider);
+    headers.set("X-AI-Model", providerInfo.model);
+
+    return new Response(response.body, { headers });
   } catch (error) {
     console.error("Chat error:", error);
     return new Response(
