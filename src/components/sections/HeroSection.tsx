@@ -20,7 +20,7 @@ export function HeroSection() {
 
   const [text] = useTypewriter({
     words: [
-      "Tech Community",
+      "BCA Community",
       "Innovation Hub",
       "Skill Builders",
       "Future Leaders",
@@ -28,7 +28,7 @@ export function HeroSection() {
     loop: true,
     typeSpeed: 80,
     deleteSpeed: 50,
-    delaySpeed: 2200,
+    delaySpeed: 2000,
   });
 
   useEffect(() => {
@@ -48,18 +48,18 @@ export function HeroSection() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.15,
-        delayChildren: 0.2,
+        staggerChildren: 0.1,
+        delayChildren: 0.3,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 40 },
+    hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.9, ease: easeOut },
+      transition: { duration: 0.8, ease: easeOut },
     },
   };
 
@@ -67,123 +67,120 @@ export function HeroSection() {
     <section
       ref={sectionRef}
       id="home"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16 px-4"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 pb-16 px-4"
     >
-      {/* Deep Black Base */}
-      <div className="absolute inset-0 bg-black" />
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 bg-background" />
+      {/* Minimalist: Removed radial gradient overlay */}
 
-      {/* Very Subtle Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-950/10 via-black to-indigo-950/10" />
-
-      {/* Soft Mouse Glow */}
+      {/* Mouse Reactive Ambient Glow */}
       <div
-        className="pointer-events-none absolute inset-0 z-10"
+        className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-300"
         style={{
-          background: `radial-gradient(900px at ${mousePosition.x}px ${mousePosition.y}px, rgba(34, 211, 238, 0.12), transparent 80%)`,
+          background: `radial-gradient(600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(218, 120, 9, 0.08), transparent 80%)`,
         }}
       />
 
-      {/* Balanced Floating Icons */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {/* Floating Animated Icons */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20 dark:opacity-40">
         {[
-          { Icon: Code, size: 100, top: "12%", left: "6%", delay: 0 },
-          { Icon: Cpu, size: 85, top: "15%", right: "8%", delay: 3 },
-          { Icon: Terminal, size: 75, bottom: "35%", left: "10%", delay: 1 },
-          { Icon: Database, size: 80, bottom: "20%", right: "15%", delay: 4 },
-          { Icon: Laptop, size: 120, top: "50%", left: "-4%", delay: 2 },
+          { Icon: Code, size: 40, top: "15%", left: "10%", delay: 0 },
+          { Icon: Cpu, size: 30, top: "20%", right: "15%", delay: 1 },
+          { Icon: Terminal, size: 35, bottom: "25%", left: "15%", delay: 2 },
+          { Icon: Database, size: 45, bottom: "20%", right: "10%", delay: 3 },
+          { Icon: Laptop, size: 50, top: "45%", left: "5%", delay: 4 },
         ].map(({ Icon, size, top, left, right, bottom, delay }, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, scale: 0.7 }}
+            initial={{ opacity: 0, scale: 0.5 }}
             animate={{
-              y: i % 2 === 0 ? [0, -25, 0] : [0, 25, 0],
-              x: i === 2 ? [0, 30, 0] : [0, -15, 0],
-              rotate: i === 4 ? [0, 360] : [0, 10, -10, 0],
-              opacity: [0.08, 0.22, 0.08], 
+              y: [0, -20, 0],
+              opacity: [0.2, 0.5, 0.2],
+              rotate: [0, 10, -10, 0],
             }}
             transition={{
-              y: { duration: 22 + i * 3, repeat: Infinity, ease: "easeInOut" },
-              x: { duration: 24 + i * 3, repeat: Infinity, ease: "easeInOut" },
-              rotate: { duration: i === 4 ? 90 : 25, repeat: Infinity, ease: "linear" },
-              opacity: { duration: 14, repeat: Infinity, ease: "easeInOut", delay },
+              duration: 5 + i,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay,
             }}
             style={{ top, left, right, bottom }}
-            className="absolute text-cyan-400/50" 
+            className="absolute text-primary/40"
           >
-            <Icon size={size} strokeWidth={0.5} />
+            <Icon size={size} strokeWidth={1} />
           </motion.div>
         ))}
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto relative z-30">
+      <div className="container mx-auto relative z-20">
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          animate="visible"
-          className="max-w-5xl mx-auto text-center space-y-10 md:space-y-14"
+          whileInView="visible"
+          viewport={{ once: true }}
+          className="max-w-4xl mx-auto text-center space-y-8"
         >
-          {/* Elegant Neon Badge */}
-          <motion.div variants={itemVariants}>
-            <div className="inline-flex items-center gap-3 px-7 py-3.5 rounded-full bg-black/60 backdrop-blur-md border border-cyan-400/40 shadow-2xl shadow-cyan-500/20">
-              <Sparkles className="w-5 h-5 text-cyan-300 animate-pulse" />
-              <span className="text-sm md:text-base font-medium text-cyan-100 tracking-wider">
-                Powered by AI • Built for Success
+          {/* Badge */}
+          <motion.div variants={itemVariants} className="flex justify-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm">
+              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+              <span className="text-sm font-medium text-primary tracking-wide">
+                BCA Association • MMAMC Biratnagar
               </span>
             </div>
           </motion.div>
 
-          {/* Hero Heading */}
+          {/* Headline */}
           <motion.div variants={itemVariants} className="space-y-4">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-tight tracking-tight">
-              Empowering Future
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground">
+              Empowering the Next
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-cyan-100 to-blue-300 drop-shadow-2xl">
-                Tech Leaders
-              </span>
+              <span className="text-gradient font-black">Generation of Devs</span>
             </h1>
-
-            <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-gray-300 font-light mt-8 min-h-[60px]">
-              <span className="text-cyan-300 font-medium">{text}</span>
-              <Cursor cursorColor="#06b6d4" />
-            </h2>
+            <div className="text-xl md:text-2xl text-muted-foreground font-medium h-[40px]">
+              We are <span className="text-primary italic">{text}</span>
+              <Cursor cursorColor="#da7809" />
+            </div>
           </motion.div>
 
-          {/* Subtitle */}
+          {/* Description */}
           <motion.p
             variants={itemVariants}
-            className="text-base md:text-lg text-gray-400 max-w-3xl mx-auto leading-relaxed px-4"
+            className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed"
           >
-            Official BCA Association of MMAMC College, Nepal. Connect, learn, and grow through workshops, collaborative projects, events, and industry networks.
+            A vibrant community of BCA students at MMAMC, dedicated to fostering innovation,
+            collaboration, and professional growth in the tech industry.
           </motion.p>
 
-          {/* Clean & Elegant Buttons */}
+          {/* CTAs */}
           <motion.div
             variants={itemVariants}
-            className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-4"
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8"
           >
             <Button
               size="lg"
-              variant="outline"
               onClick={() => navigate("/auth")}
-              className="group relative px-10 py-6 text-lg font-semibold rounded-2xl border-2 border-cyan-400/70 text-cyan-200 hover:text-cyan-50 hover:border-cyan-300 hover:bg-cyan-500/5 backdrop-blur-sm shadow-xl transition-all duration-500"
+              className="group h-14 px-8 text-lg font-bold rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all active:scale-95"
             >
-              <span className="flex items-center gap-4">
-                Get Started
-                <ArrowRight className="w-6 h-6 transition-all duration-500 group-hover:translate-x-3 group-hover:scale-110" />
-              </span>
+              Join Our Community
+              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
-
             <Button
               size="lg"
               variant="outline"
-              className="px-10 py-6 text-lg font-semibold rounded-2xl border-2 border-cyan-400/50 text-cyan-300 hover:text-cyan-100 hover:border-cyan-300 hover:bg-cyan-500/5 backdrop-blur-sm shadow-xl transition-all duration-500"
-              onClick={() => document.querySelector("#features")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}
+              className="h-14 px-8 text-lg font-semibold rounded-2xl border-2 hover:bg-muted transition-all active:scale-95"
             >
-              Explore Features
+              Explore More
             </Button>
           </motion.div>
         </motion.div>
+      </div>
+
+      {/* Background Micro-Interactions: Grid Lines */}
+      <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-[0.07] pointer-events-none">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#da7809_1px,transparent_1px),linear-gradient(to_bottom,#da7809_1px,transparent_1px)] bg-[size:40px_40px]" />
       </div>
     </section>
   );

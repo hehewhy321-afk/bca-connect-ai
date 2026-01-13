@@ -13,6 +13,7 @@ import {
   Search,
   History,
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -130,7 +131,7 @@ export default function AdminQRScanner() {
           qrbox: { width: 250, height: 250 },
         },
         onScanSuccess,
-        () => {} // Ignore scan errors
+        () => { } // Ignore scan errors
       );
 
       setIsScanning(true);
@@ -288,219 +289,221 @@ export default function AdminQRScanner() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            Event Check-in Scanner
-          </h1>
-          <p className="text-muted-foreground">
-            Scan QR codes to mark attendee presence
-          </p>
+      <div className="space-y-10">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-lg shadow-primary/5">
+              <QrCode className="w-7 h-7" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
+                Sentinel Protocol
+              </h1>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">
+                Scanning and validating entity access sequences
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Event Selection & Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Select Event</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose event" />
-                </SelectTrigger>
-                <SelectContent>
-                  {events.map((event) => (
-                    <SelectItem key={event.id} value={event.id}>
-                      {event.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
+        {/* Global Hub Select & Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="glass-card p-6 rounded-[2rem] border border-white/5 relative overflow-hidden group">
+            <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-3 ml-1">Active Sector (Event)</Label>
+            <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+              <SelectTrigger className="h-12 rounded-xl bg-white/5 border-white/10 font-bold">
+                <SelectValue placeholder="Choose event" />
+              </SelectTrigger>
+              <SelectContent className="glass-card border-white/10">
+                {events.map((event) => (
+                  <SelectItem key={event.id} value={event.id} className="font-bold">
+                    {event.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">
-                Total Registrations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" />
-                <span className="text-2xl font-bold">{stats.total}</span>
+          <div className="glass-card p-6 rounded-[2rem] border border-white/5 relative overflow-hidden group">
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 ml-1">Total Signals (Registrations)</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <User className="w-5 h-5" />
               </div>
-            </CardContent>
-          </Card>
+              <span className="text-3xl font-black text-foreground tracking-tight">{stats.total}</span>
+            </div>
+          </div>
 
-          <Card className="bg-green-500/10 border-green-500/30">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-green-400">
-                Checked In
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-400" />
-                <span className="text-2xl font-bold text-green-400">
-                  {stats.checkedIn}
-                </span>
-                <span className="text-sm text-green-400/70">
-                  / {stats.total}
-                </span>
+          <div className="glass-card p-6 rounded-[2rem] border border-primary/20 bg-primary/5 relative overflow-hidden group">
+            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2 ml-1">Validated Nodes (Checked In)</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/10 text-green-500">
+                <Check className="w-5 h-5" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-green-500 tracking-tight">{stats.checkedIn}</span>
+                <span className="text-xs font-bold text-green-500/50 uppercase tracking-widest">/ {stats.total}</span>
+              </div>
+            </div>
+            {/* Pulsing indicator */}
+            <div className="absolute top-4 right-4 w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Scanner Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <QrCode className="w-5 h-5" />
-                QR Code Scanner
-              </CardTitle>
-              <CardDescription>
-                Point camera at attendee's QR code
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Scanner Container */}
-              <div
-                id="qr-reader"
-                ref={scannerContainerRef}
-                className={`relative rounded-xl overflow-hidden bg-muted ${
-                  isScanning ? "aspect-square" : "h-64"
-                }`}
-              >
-                {!isScanning && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Camera className="w-16 h-16 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground text-center">
-                      Camera is off
-                      <br />
-                      Click "Start Scanner" to begin
-                    </p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Scanner Core */}
+          <div className="glass-card p-10 rounded-[3rem] border border-white/5 relative overflow-hidden group">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                <Camera className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-2 underline-offset-4">Sensor Array</h2>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Visual code decryption field</p>
+              </div>
+            </div>
+
+            <div className="space-y-8">
+              <div className="relative aspect-square max-w-sm mx-auto">
+                {/* Scanner Frame Decoration */}
+                <div className="absolute -inset-4 border-2 border-primary/20 rounded-[2.5rem] pointer-events-none" />
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-2xl z-20" />
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-2xl z-20" />
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-2xl z-20" />
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-2xl z-20" />
+
+                <div
+                  id="qr-reader"
+                  ref={scannerContainerRef}
+                  className={`relative rounded-[2rem] overflow-hidden bg-black/40 border border-white/5 w-full h-full shadow-inner ${isScanning ? "" : "flex flex-col items-center justify-center"
+                    }`}
+                >
+                  {!isScanning && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center p-8"
+                    >
+                      <CameraOff className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Awaiting initialization...</p>
+                    </motion.div>
+                  )}
+                  {isScanning && (
+                    <div className="absolute inset-0 bg-primary/5 animate-pulse pointer-events-none" />
+                  )}
+                </div>
+
+                {isProcessing && (
+                  <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-[2rem]">
+                    <div className="text-center">
+                      <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                      <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] animate-pulse">DECRYPTING...</p>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Scanner Controls */}
-              <div className="flex gap-3">
+              <div className="flex gap-4">
                 {!isScanning ? (
                   <Button
                     onClick={startScanner}
-                    className="flex-1"
                     disabled={!selectedEvent}
+                    className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
                   >
-                    <Camera className="w-4 h-4 mr-2" />
-                    Start Scanner
+                    <Camera className="w-5 h-5 mr-3" />
+                    INITIALIZE SENSORS
                   </Button>
                 ) : (
                   <Button
                     onClick={stopScanner}
                     variant="destructive"
-                    className="flex-1"
+                    className="flex-1 h-14 rounded-2xl bg-red-500 text-white font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all"
                   >
-                    <CameraOff className="w-4 h-4 mr-2" />
-                    Stop Scanner
+                    <CameraOff className="w-5 h-5 mr-3" />
+                    TERMINATE SENSORS
                   </Button>
                 )}
               </div>
 
-              {/* Manual Code Entry */}
-              <div className="pt-4 border-t border-border">
-                <p className="text-sm font-medium mb-2">Manual Code Entry</p>
-                <div className="flex gap-2">
+              <div className="pt-8 border-t border-white/5">
+                <Label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block mb-4 ml-1">Manual Signal Override (Check-in Code)</Label>
+                <div className="flex gap-3">
                   <Input
-                    placeholder="Enter check-in code..."
+                    placeholder="Enter alphanumeric sequence..."
                     value={manualCode}
                     onChange={(e) => setManualCode(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleManualCheckIn()}
+                    className="h-12 rounded-xl bg-white/5 border-white/10 font-bold focus:ring-primary/20"
                   />
                   <Button
                     onClick={handleManualCheckIn}
                     disabled={!manualCode.trim() || isProcessing}
+                    className="h-12 w-12 rounded-xl bg-white/5 border border-white/10 hover:bg-primary/20 hover:text-primary transition-all"
                   >
-                    <Search className="w-4 h-4" />
+                    <Search className="w-5 h-5" />
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
 
-              {isProcessing && (
-                <div className="flex items-center justify-center py-4">
-                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  <span className="ml-2 text-muted-foreground">
-                    Processing...
-                  </span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Verification Log */}
+          <div className="glass-card p-10 rounded-[3rem] border border-white/5 relative overflow-hidden group">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                <History className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-2 underline-offset-4">Signal Integrity Log</h2>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Latest 10 validated access events</p>
+              </div>
+            </div>
 
-          {/* Recent Check-ins */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <History className="w-5 h-5" />
-                Recent Check-ins
-              </CardTitle>
-              <CardDescription>Last 10 successful check-ins</CardDescription>
-            </CardHeader>
-            <CardContent>
+            <div className="space-y-4">
               {recentCheckIns.length === 0 ? (
-                <div className="text-center py-12">
-                  <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    No check-ins yet
-                    <br />
-                    Scan a QR code to get started
-                  </p>
+                <div className="text-center py-24">
+                  <Clock className="w-16 h-16 text-muted-foreground/10 mx-auto mb-6" />
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">No logs recorded in current session</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 pr-2 max-h-[600px] overflow-y-auto custom-scrollbar">
                   {recentCheckIns.map((checkIn, idx) => (
                     <motion.div
                       key={`${checkIn.id}-${idx}`}
-                      initial={{ opacity: 0, x: -20 }}
+                      initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20"
+                      className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-green-500/30 transition-all group/log flex items-center gap-5"
                     >
-                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                        <Check className="w-5 h-5 text-green-400" />
+                      <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 border border-green-500/20 shadow-lg shadow-green-500/5">
+                        <Check className="w-6 h-6" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium truncate">{checkIn.name}</p>
+                        <div className="flex items-center gap-3 mb-1">
+                          <p className="text-base font-black text-foreground tracking-tight truncate">{checkIn.name}</p>
                           <Badge
-                            variant="outline"
-                            className={
-                              checkIn.type === "member"
-                                ? "bg-primary/10 text-primary border-primary/30"
-                                : "bg-secondary/10 text-secondary border-secondary/30"
-                            }
+                            className={`rounded-lg text-[8px] font-black uppercase px-2 py-0 border ${checkIn.type === "member"
+                              ? "bg-primary/10 text-primary border-primary/20"
+                              : "bg-white/5 text-muted-foreground border-white/10"
+                              }`}
                           >
-                            {checkIn.type === "member" ? "Member" : "Public"}
+                            {checkIn.type === "member" ? "PROTOCOL AGENT" : "EXTERNAL ENTITY"}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {checkIn.email}
-                        </p>
+                        <p className="text-[10px] font-bold text-muted-foreground truncate uppercase tracking-widest">{checkIn.email}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-green-400">
+                        <p className="text-lg font-black text-green-500 tracking-tight leading-none mb-1">
                           {formatTime(checkIn.checkedInAt)}
                         </p>
+                        <p className="text-[8px] font-black text-muted-foreground/50 uppercase tracking-widest">VALIDATED</p>
                       </div>
                     </motion.div>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </AdminLayout>

@@ -80,7 +80,7 @@ export const FeaturedAlumniSection = () => {
   }
 
   return (
-    <section id="featured-alumni" className="py-20 px-4 bg-muted/30">
+    <section id="featured-alumni" className="py-20 px-4 bg-background">
       <div className="container mx-auto max-w-6xl">
         {/* Header */}
         <motion.div
@@ -128,14 +128,14 @@ export const FeaturedAlumniSection = () => {
                 <h3 className="font-heading font-semibold text-foreground mb-1">
                   {member.full_name}
                 </h3>
-                
+
                 {member.job_title && (
                   <p className="text-sm text-primary font-medium flex items-center justify-center gap-1 mb-1">
                     <Briefcase className="w-3 h-3" />
                     {member.job_title}
                   </p>
                 )}
-                
+
                 {member.current_company && (
                   <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mb-3">
                     <Building2 className="w-3 h-3" />

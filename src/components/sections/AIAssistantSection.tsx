@@ -172,19 +172,9 @@ export function AIAssistantSection() {
   return (
     <section
       id="ai-assistant"
-      className="py-20 md:py-32 bg-gradient-to-br from-muted/50 to-background relative overflow-hidden"
+      className="py-20 md:py-32 bg-background relative overflow-hidden"
     >
-      {/* Background Decoration with Floating Animation */}
-      <motion.div 
-        animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 8, repeat: Infinity }}
-        className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" 
-      />
-      <motion.div 
-        animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
-        transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-        className="absolute bottom-0 left-0 w-80 h-80 bg-accent/5 rounded-full blur-3xl" 
-      />
+      {/* Background Decoration - Removed for minimalism */}
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -195,7 +185,7 @@ export function AIAssistantSection() {
             viewport={{ once: true }}
             variants={containerVariants}
           >
-            <motion.span 
+            <motion.span
               variants={itemVariants}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-medium mb-4"
             >
@@ -232,9 +222,9 @@ export function AIAssistantSection() {
             </div>
 
             <motion.div variants={itemVariants} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button 
-                variant="gradient" 
-                size="lg" 
+              <Button
+                variant="gradient"
+                size="lg"
                 onClick={() => setShowChat(true)}
               >
                 Try AI Assistant
@@ -288,7 +278,7 @@ export function AIAssistantSection() {
                       </div>
                     </motion.div>
                   ) : messages.length === 0 ? (
-                    <motion.div 
+                    <motion.div
                       key="empty"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -307,11 +297,10 @@ export function AIAssistantSection() {
                         className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[80%] p-3 rounded-2xl text-sm whitespace-pre-wrap ${
-                            msg.role === "user"
+                          className={`max-w-[80%] p-3 rounded-2xl text-sm whitespace-pre-wrap ${msg.role === "user"
                               ? "bg-primary text-primary-foreground rounded-br-md shadow-md"
                               : "bg-muted text-foreground rounded-bl-md border border-border"
-                          }`}
+                            }`}
                         >
                           {msg.content || (
                             <span className="flex items-center gap-1.5 py-1">

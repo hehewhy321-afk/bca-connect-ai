@@ -10,6 +10,7 @@ import {
   Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -82,7 +83,7 @@ export default function AdminAnnouncements() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const announcementData = {
         title: formData.title,
@@ -203,95 +204,103 @@ export default function AdminAnnouncements() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="space-y-10">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">
-              Announcements
+            <h1 className="text-3xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
+              Media Tower
             </h1>
-            <p className="text-muted-foreground">
-              Create and manage announcements for members
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">
+              Broadcasting intelligence to the community
             </p>
           </div>
+
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) resetForm();
           }}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                New Announcement
+              <Button className="h-12 px-8 rounded-2xl bg-primary text-primary-foreground font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+                <Plus className="w-5 h-5 mr-2" />
+                NEW BROADCAST
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg glass border-white/10 p-8 rounded-[2.5rem]">
               <DialogHeader>
-                <DialogTitle>
-                  {editingAnnouncement ? "Edit Announcement" : "Create Announcement"}
+                <DialogTitle className="text-2xl font-black tracking-tight text-foreground underline decoration-primary/30 decoration-4 underline-offset-8 mb-6">
+                  {editingAnnouncement ? "MODIFY SIGNAL" : "INITIATE SIGNAL"}
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Title</Label>
+              <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Header Title</Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Announcement title"
+                    className="h-11 rounded-xl bg-white/5 border-white/10 focus:ring-primary/20"
+                    placeholder="Brief identifying headline"
                     required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="content">Content</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="content" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Signal Payload</Label>
                   <Textarea
                     id="content"
                     value={formData.content}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    placeholder="Announcement content..."
-                    rows={4}
+                    className="min-h-[120px] rounded-xl bg-white/5 border-white/10 focus:ring-primary/20"
+                    placeholder="Full announcement content..."
                     required
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="priority">Priority</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="priority" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Priority Protocol</Label>
                     <Select
                       value={formData.priority}
                       onValueChange={(value) => setFormData({ ...formData, priority: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11 rounded-xl bg-white/5 border-white/10">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="normal">Normal</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
+                      <SelectContent className="glass-card">
+                        <SelectItem value="low">Standard</SelectItem>
+                        <SelectItem value="normal">Priority</SelectItem>
+                        <SelectItem value="high">Critical</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label htmlFor="expires_at">Expires At (Optional)</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="expires_at" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Expiration Node</Label>
                     <Input
                       id="expires_at"
                       type="date"
                       value={formData.expires_at}
                       onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
+                      className="h-11 rounded-xl bg-white/5 border-white/10"
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
                   <Switch
                     id="is_pinned"
                     checked={formData.is_pinned}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_pinned: checked })}
+                    className="data-[state=checked]:bg-primary"
                   />
-                  <Label htmlFor="is_pinned">Pin this announcement</Label>
+                  <div>
+                    <Label htmlFor="is_pinned" className="text-xs font-black uppercase tracking-widest text-foreground block">Pin Signal</Label>
+                    <span className="text-[9px] text-muted-foreground font-bold leading-none">Keeps this at the top of the feed</span>
+                  </div>
                 </div>
-                <div className="flex gap-2 justify-end">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
+                <div className="flex gap-3 pt-4">
+                  <Button type="button" variant="ghost" className="flex-1 h-11 rounded-xl font-black text-xs uppercase" onClick={() => setIsDialogOpen(false)}>
+                    ABORT
                   </Button>
-                  <Button type="submit">
-                    {editingAnnouncement ? "Update" : "Create"}
+                  <Button type="submit" className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-black text-xs uppercase">
+                    {editingAnnouncement ? "UPDATE SIGNAL" : "TRANSMIT NOW"}
                   </Button>
                 </div>
               </form>
@@ -299,88 +308,116 @@ export default function AdminAnnouncements() {
           </Dialog>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        {/* Intelligence Query */}
+        <div className="relative group max-w-2xl">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input
-            placeholder="Search announcements..."
+            placeholder="Search signals by payload keywords..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
           />
         </div>
 
-        {/* Announcements List */}
+        {/* Signals List */}
         {loading ? (
-          <div className="space-y-4">
+          <div className="grid gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-muted rounded-xl animate-pulse" />
+              <div key={i} className="h-32 glass rounded-[2rem] animate-pulse" />
             ))}
           </div>
         ) : filteredAnnouncements.length === 0 ? (
-          <div className="text-center py-12">
-            <Megaphone className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No announcements yet</p>
+          <div className="text-center py-20 glass-card rounded-[3rem] border border-white/5">
+            <Megaphone className="w-16 h-16 text-muted-foreground/30 mx-auto mb-6" />
+            <h3 className="text-xl font-black text-foreground tracking-tight mb-2">No Active Signals</h3>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">The airwaves are currently silent.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid gap-6">
             {filteredAnnouncements.map((announcement, index) => (
               <motion.div
                 key={announcement.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="bg-card rounded-xl border border-border p-5"
+                className="glass-card rounded-[2.5rem] border border-white/5 p-8 hover:shadow-2xl hover:shadow-primary/5 transition-all group relative overflow-hidden"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
+                {/* Background Decoration */}
+                <div className={`absolute -right-12 -bottom-12 w-48 h-48 opacity-5 group-hover:opacity-10 transition-opacity rounded-full bg-gradient-to-br from-primary to-accent`} />
+
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8 relative z-10">
+                  <div className="flex-1 space-y-4">
+                    <div className="flex items-center gap-3 flex-wrap">
                       {announcement.is_pinned && (
-                        <Pin className="w-4 h-4 text-primary fill-primary" />
+                        <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
+                          <Pin className="w-3.5 h-3.5 text-primary fill-primary" />
+                        </div>
                       )}
-                      <h3 className="font-semibold text-foreground truncate">
+                      <h3 className="text-xl font-black text-foreground tracking-tight group-hover:text-primary transition-colors line-clamp-1">
                         {announcement.title}
                       </h3>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(announcement.priority || "normal")}`}>
-                        {announcement.priority || "normal"}
-                      </span>
+                      <Badge className={`uppercase tracking-tighter font-black text-[8px] px-3 py-1 rounded-full ${announcement.priority === "high" ? "bg-red-500/20 text-red-500 border border-red-500/30" :
+                        announcement.priority === "low" ? "bg-white/5 text-muted-foreground border border-white/10" :
+                          "bg-primary/20 text-primary border border-primary/30"
+                        }`}>
+                        {announcement.priority || "NORMAL"} PROTOCOL
+                      </Badge>
                     </div>
-                    <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
+
+                    <p className="text-muted-foreground text-sm font-medium leading-relaxed italic border-l-4 border-primary/20 pl-6 my-4 line-clamp-3">
                       {announcement.content}
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        Created: {formatDate(announcement.created_at)}
-                      </span>
+
+                    <div className="flex flex-wrap items-center gap-6 pt-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-white/5">
+                          <Clock className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                          DEFORMED {formatDate(announcement.created_at)}
+                        </span>
+                      </div>
+
                       {announcement.expires_at && (
-                        <span>Expires: {formatDate(announcement.expires_at)}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-lg bg-red-500/10">
+                            <Clock className="w-3.5 h-3.5 text-red-500" />
+                          </div>
+                          <span className="text-[10px] font-black text-red-500/70 uppercase tracking-widest">
+                            DEGRADES {formatDate(announcement.expires_at)}
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+
+                  <div className="flex items-center gap-2 lg:flex-col lg:justify-start">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => togglePin(announcement)}
-                      className={announcement.is_pinned ? "text-primary" : ""}
+                      className={`w-12 h-12 rounded-2xl border transition-all ${announcement.is_pinned
+                        ? "bg-primary/20 text-primary border-primary/30 shadow-lg shadow-primary/20"
+                        : "bg-white/5 text-muted-foreground border-white/5 hover:bg-white/10"
+                        }`}
                     >
-                      <Pin className={`w-4 h-4 ${announcement.is_pinned ? "fill-current" : ""}`} />
+                      <Pin className={`w-5 h-5 ${announcement.is_pinned ? "fill-current" : ""}`} />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/20 hover:text-primary transition-all"
                       onClick={() => handleEdit(announcement)}
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit className="w-5 h-5" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(announcement.id)}
-                      className="text-destructive hover:text-destructive"
+                      className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 hover:bg-red-500/20 hover:text-red-500 transition-all"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-5 h-5" />
                     </Button>
                   </div>
                 </div>

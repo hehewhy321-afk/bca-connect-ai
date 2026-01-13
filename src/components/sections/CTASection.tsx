@@ -19,6 +19,7 @@ export function CTASection() {
   const handleLearnMoreClick = () => {
     navigate("/about");
   };
+
   return (
     <section className="py-20 md:py-32 bg-background">
       <div className="container mx-auto px-4">
@@ -27,27 +28,19 @@ export function CTASection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="relative rounded-3xl overflow-hidden"
+          className="relative rounded-3xl p-8 md:p-16 overflow-hidden bg-background border border-border"
         >
-          {/* Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-secondary via-secondary/90 to-primary" />
-          <div className="absolute inset-0 bg-hero-pattern opacity-20" />
-
-          {/* Decorative Blobs */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary-foreground/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/20 rounded-full blur-3xl" />
-
           {/* Content */}
-          <div className="relative z-10 py-16 md:py-24 px-8 md:px-16 text-center">
+          <div className="relative z-10 text-center">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 mb-6"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 backdrop-blur-sm border border-primary/20 mb-6"
             >
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-              <span className="text-sm font-medium text-primary-foreground">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">
                 Start Your Journey Today
               </span>
             </motion.div>
@@ -57,7 +50,7 @@ export function CTASection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground mb-4"
+              className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4"
             >
               Ready to Unlock Your Potential?
             </motion.h2>
@@ -67,7 +60,7 @@ export function CTASection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-primary-foreground/80 text-lg max-w-2xl mx-auto mb-8"
+              className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8"
             >
               Join the BCA Association today and get access to AI-powered study
               tools, exclusive events, career opportunities, and a supportive
@@ -81,17 +74,17 @@ export function CTASection() {
               transition={{ duration: 0.5, delay: 0.4 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
-              <Button 
-                variant="hero" 
-                size="xl" 
-                className="group" 
+              <Button
+                variant="hero"
+                size="xl"
+                className="group"
                 onClick={handleJoinClick}
               >
                 Join BCA Association
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button 
-                variant="glass" 
+              <Button
+                variant="outline"
                 size="xl"
                 onClick={handleLearnMoreClick}
               >

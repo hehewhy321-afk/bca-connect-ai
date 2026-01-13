@@ -11,6 +11,8 @@ import {
   Sparkles,
   Megaphone,
   Pin,
+  Bot,
+  MessageSquare,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -118,28 +120,28 @@ export default function Dashboard() {
       title: "Upcoming Events",
       value: stats.eventsCount,
       icon: Calendar,
-      color: "from-primary to-primary/70",
+      color: "from-primary to-accent",
       href: "/dashboard/events",
     },
     {
-      title: "Resources",
+      title: "Study Resources",
       value: stats.resourcesCount,
       icon: BookOpen,
-      color: "from-accent to-accent/70",
+      color: "from-orange-500 to-primary",
       href: "/dashboard/resources",
     },
     {
-      title: "XP Points",
+      title: "Performance XP",
       value: stats.xpPoints,
       icon: TrendingUp,
-      color: "from-secondary to-secondary/70",
+      color: "from-accent to-primary",
       href: "/dashboard/achievements",
     },
     {
-      title: "Level",
+      title: "Current Level",
       value: stats.level,
       icon: Trophy,
-      color: "from-primary to-accent",
+      color: "from-primary to-primary",
       href: "/dashboard/achievements",
     },
   ];
@@ -154,49 +156,58 @@ export default function Dashboard() {
     });
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityStyles = (priority: string) => {
     switch (priority) {
       case "high":
-        return "border-l-destructive bg-destructive/5";
+        return "border-l-primary bg-primary/10";
       case "low":
-        return "border-l-muted-foreground bg-muted/50";
+        return "border-l-muted-foreground bg-muted/20";
       default:
-        return "border-l-primary bg-primary/5";
+        return "border-l-accent bg-accent/10";
     }
   };
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        {/* Welcome Section */}
+      <div className="space-y-10">
+        {/* Modern Welcome Banner */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-gradient-to-r from-primary to-accent rounded-2xl p-6 md:p-8 text-primary-foreground"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="relative overflow-hidden glass rounded-[2.5rem] p-8 md:p-12 border border-border"
         >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="font-heading text-2xl md:text-3xl font-bold mb-2">
-                Welcome back, {user?.user_metadata?.full_name || "Member"}! 👋
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-[100px] -mr-32 -mt-32 animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/20 rounded-full blur-[80px] -ml-24 -mb-24" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+            <div className="space-y-4 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-xs font-black text-primary uppercase tracking-widest">Personalized AI Dashboard</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tight leading-none">
+                Welcome back, <br />
+                <span className="text-gradient">{user?.user_metadata?.full_name?.split(" ")[0] || "Member"}!</span>
               </h1>
-              <p className="text-primary-foreground/80">
-                Ready to learn something new today? Check out your personalized
-                dashboard.
+              <p className="text-muted-foreground text-lg font-medium leading-relaxed">
+                You've earned <span className="text-primary font-bold">{stats.xpPoints} XP</span> this week.
+                Keep pushing to reach level {stats.level + 1}!
               </p>
             </div>
+
             <Link to="/dashboard/ai-assistant">
-              <Button variant="hero" size="lg" className="group">
-                <Sparkles className="w-5 h-5" />
-                Ask AI Assistant
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <Button size="lg" className="h-16 px-10 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 font-black text-lg shadow-2xl shadow-primary/30 transition-all active:scale-95 group">
+                <Bot className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform" />
+                Talk to AI
+                <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-2 transition-transform" />
               </Button>
             </Link>
           </div>
         </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Dynamic Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {statCards.map((stat, index) => (
             <motion.div
               key={stat.title}
@@ -205,188 +216,172 @@ export default function Dashboard() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <Link to={stat.href}>
-                <div className="bg-card rounded-2xl p-5 border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300 group">
-                  <div
-                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
-                  >
-                    <stat.icon className="w-6 h-6 text-primary-foreground" />
+                <div className="glass-card h-full rounded-3xl p-6 border border-border hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 group relative overflow-hidden">
+                  {/* Subtle Glow Background */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-6 shadow-xl shadow-primary/20 group-hover:scale-110 transition-transform duration-500`}>
+                    <stat.icon className="w-7 h-7 text-white" />
                   </div>
-                  <p className="text-sm text-muted-foreground mb-1">
-                    {stat.title}
-                  </p>
-                  <p className="font-heading text-2xl font-bold text-foreground">
-                    {loading ? "..." : stat.value}
-                  </p>
+
+                  <div className="space-y-1">
+                    <p className="text-xs font-black text-muted-foreground uppercase tracking-widest group-hover:text-primary transition-colors">
+                      {stat.title}
+                    </p>
+                    <p className="text-4xl font-black text-foreground tracking-tighter">
+                      {loading ? (
+                        <span className="inline-block w-8 h-8 bg-muted animate-pulse rounded" />
+                      ) : stat.value}
+                    </p>
+                  </div>
+
+                  {/* Icon Mini Decor */}
+                  <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <stat.icon size={100} strokeWidth={1} />
+                  </div>
                 </div>
               </Link>
             </motion.div>
           ))}
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Upcoming Events */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="lg:col-span-2 bg-card rounded-2xl border border-border p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-heading text-lg font-semibold text-foreground">
-                Upcoming Events
-              </h2>
-              <Link to="/dashboard/events">
-                <Button variant="ghost" size="sm">
-                  View All
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-
-            {loading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-20 bg-muted rounded-xl animate-pulse"
-                  />
-                ))}
-              </div>
-            ) : upcomingEvents.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                No upcoming events at the moment.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {upcomingEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground truncate text-sm sm:text-base">
-                          {event.title}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                            {formatDate(event.start_date)}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
-                            {event.category}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="w-full sm:w-auto mt-2 sm:mt-0">
-                      Register
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-
-          {/* Quick Actions & Announcements */}
+        {/* Main Interface Sections */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Upcoming Events - Focused UI */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="bg-card rounded-2xl border border-border p-6"
+            className="lg:col-span-2 glass-card rounded-[2.5rem] border border-border p-8"
           >
-            <h2 className="font-heading text-lg font-semibold text-foreground mb-6">
-              Quick Actions
-            </h2>
-            <div className="space-y-3">
-              <Link to="/dashboard/ai-assistant" className="block">
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 hover:from-primary/20 hover:to-accent/20 transition-colors">
-                  <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-primary-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">AI Assistant</p>
-                    <p className="text-xs text-muted-foreground">
-                      Get study help
-                    </p>
-                  </div>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
+                  <Calendar className="w-5 h-5 text-primary" />
                 </div>
+                <h2 className="text-xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
+                  Upcoming Events
+                </h2>
+              </div>
+              <Link to="/dashboard/events">
+                <Button variant="ghost" className="rounded-xl hover:bg-muted font-bold">
+                  View Schedule
+                </Button>
               </Link>
-              <Link to="/dashboard/resources" className="block">
-                <div className="flex items-center gap-3 p-4 rounded-xl hover:bg-muted transition-colors">
-                  <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-accent-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Browse Resources</p>
-                    <p className="text-xs text-muted-foreground">
-                      Study materials
-                    </p>
-                  </div>
+            </div>
+
+            <div className="space-y-4">
+              {loading ? (
+                [1, 2, 3].map((i) => (
+                  <div key={i} className="h-24 glass rounded-3xl animate-pulse" />
+                ))
+              ) : upcomingEvents.length === 0 ? (
+                <div className="text-center py-12 glass rounded-3xl border border-dashed border-white/10">
+                  <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground font-medium">Clear schedule for now</p>
                 </div>
-              </Link>
-              <Link to="/dashboard/community" className="block">
-                <div className="flex items-center gap-3 p-4 rounded-xl hover:bg-muted transition-colors">
-                  <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
-                    <Users className="w-5 h-5 text-secondary-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Community</p>
-                    <p className="text-xs text-muted-foreground">
-                      Connect with peers
-                    </p>
-                  </div>
-                </div>
-              </Link>
+              ) : (
+                upcomingEvents.map((event) => (
+                  <motion.div
+                    key={event.id}
+                    whileHover={{ x: 8 }}
+                    className="flex flex-col sm:flex-row sm:items-center gap-5 p-5 rounded-3xl bg-muted/50 border border-border hover:bg-muted transition-all group"
+                  >
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                      <span className="text-2xl">📅</span>
+                    </div>
+
+                    <div className="flex-1 space-y-2">
+                      <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                        {event.title}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground font-medium">
+                        <span className="flex items-center gap-1.5 bg-background/50 px-2.5 py-1 rounded-lg">
+                          <Clock className="w-4 h-4" />
+                          {formatDate(event.start_date)}
+                        </span>
+                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary">
+                          <Pin className="w-3 h-3" />
+                          {event.location || "Online"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button variant="outline" className="rounded-xl h-12 px-6 border-border hover:border-primary active:scale-95 transition-all">
+                      Details
+                    </Button>
+                  </motion.div>
+                ))
+              )}
             </div>
           </motion.div>
-        </div>
 
-        {/* Announcements Section */}
-        {announcements.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="bg-card rounded-2xl border border-border p-6"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <Megaphone className="w-5 h-5 text-primary" />
-              <h2 className="font-heading text-lg font-semibold text-foreground">
-                Announcements
+          {/* Quick Actions & Announcements */}
+          <div className="space-y-8">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="glass-card rounded-[2.5rem] border border-border p-8"
+            >
+              <h2 className="text-xl font-black text-foreground tracking-tight underline elevation-1 decoration-accent/30 decoration-4 underline-offset-8 mb-8">
+                Quick Hub
               </h2>
-            </div>
-            <div className="space-y-3">
-              {announcements.map((announcement) => (
-                <div
-                  key={announcement.id}
-                  className={`p-4 rounded-xl border-l-4 ${getPriorityColor(announcement.priority || "normal")}`}
-                >
-                  <div className="flex items-start gap-2">
-                    {announcement.is_pinned && (
-                      <Pin className="w-4 h-4 text-primary fill-primary flex-shrink-0 mt-0.5" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-foreground">
-                        {announcement.title}
+
+              <div className="grid gap-4">
+                {[
+                  { title: "Smart Resources", sub: "Explore curriculum", icon: BookOpen, color: "bg-primary", href: "/dashboard/resources" },
+                  { title: "Student Connect", sub: "Peer networking", icon: Users, color: "bg-accent", href: "/dashboard/community" },
+                  { title: "Forum Discussions", sub: "Join the talk", icon: MessageSquare, color: "bg-muted", href: "/dashboard/forum" }
+                ].map((action, i) => (
+                  <Link key={i} to={action.href} className="group">
+                    <div className="flex items-center gap-4 p-4 rounded-3xl bg-muted/50 border border-border hover:bg-primary/10 hover:border-primary/20 transition-all duration-300">
+                      <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                        <action.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-foreground">{action.title}</p>
+                        <p className="text-xs text-muted-foreground font-medium">{action.sub}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Compact Announcements */}
+            {announcements.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+                className="glass-card rounded-[2.5rem] border border-border p-8"
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <Megaphone className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-black text-foreground tracking-tight uppercase tracking-wider">Updates</h2>
+                </div>
+
+                <div className="space-y-4">
+                  {announcements.map((ann) => (
+                    <div
+                      key={ann.id}
+                      className={`p-4 rounded-2xl border-l-[6px] ${getPriorityStyles(ann.priority)} transition-colors`}
+                    >
+                      <h3 className="font-bold text-sm text-foreground mb-1 flex items-center gap-2">
+                        {ann.is_pinned && <Pin className="w-3 h-3 text-primary fill-primary" />}
+                        {ann.title}
                       </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                        {announcement.content}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {formatDate(announcement.created_at)}
+                      <p className="text-xs text-muted-foreground font-medium line-clamp-2">
+                        {ann.content}
                       </p>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+              </motion.div>
+            )}
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

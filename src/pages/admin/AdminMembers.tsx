@@ -121,9 +121,9 @@ export default function AdminMembers() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ 
+        .update({
           is_alumni: isAlumni,
-          semester: isAlumni ? null : undefined 
+          semester: isAlumni ? null : undefined
         })
         .eq("user_id", userId);
 
@@ -164,167 +164,173 @@ export default function AdminMembers() {
   };
 
   const roleColors: Record<string, string> = {
-    admin: "bg-secondary/10 text-secondary",
-    moderator: "bg-accent/10 text-accent",
-    member: "bg-muted text-muted-foreground",
+    admin: "bg-primary/20 text-primary border border-primary/20",
+    moderator: "bg-accent/20 text-accent border border-accent/20",
+    member: "bg-white/5 text-muted-foreground border border-white/10",
   };
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <Link
-            to="/admin"
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">
-              Manage Members
-            </h1>
-            <p className="text-muted-foreground">
-              View and manage user accounts and roles
-            </p>
+      <div className="space-y-10">
+        {/* Modern Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <Link
+              to="/admin"
+              className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all active:scale-90"
+            >
+              <ArrowLeft className="w-5 h-5 text-foreground" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
+                Registry
+              </h1>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">
+                User base and role management
+              </p>
+            </div>
+          </div>
+
+          <div className="relative group min-w-[300px]">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Input
+              placeholder="Search by name, email or batch..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all"
+            />
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-card rounded-xl border border-border p-4 text-center">
-            <p className="font-heading text-2xl font-bold text-primary">
-              {members.length}
-            </p>
-            <p className="text-sm text-muted-foreground">Total Members</p>
-          </div>
-          <div className="bg-card rounded-xl border border-border p-4 text-center">
-            <p className="font-heading text-2xl font-bold text-secondary">
-              {members.filter((m) => m.role === "admin").length}
-            </p>
-            <p className="text-sm text-muted-foreground">Admins</p>
-          </div>
-          <div className="bg-card rounded-xl border border-border p-4 text-center">
-            <p className="font-heading text-2xl font-bold text-accent">
-              {members.filter((m) => m.role === "moderator").length}
-            </p>
-            <p className="text-sm text-muted-foreground">Moderators</p>
-          </div>
+        {/* Dynamic Stats View */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {[
+            { label: "Community", val: members.length, icon: Users, color: "text-primary" },
+            { label: "Privileged", val: members.filter(m => m.role === "admin").length, icon: Shield, color: "text-accent" },
+            { label: "Guardians", val: members.filter(m => m.role === "moderator").length, icon: UserCheck, color: "text-primary" }
+          ].map((stat, i) => (
+            <div key={i} className="glass-card rounded-3xl p-6 border border-white/5 flex items-center justify-between group overflow-hidden relative">
+              <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <stat.icon size={80} strokeWidth={1} />
+              </div>
+              <div className="relative z-10">
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">{stat.label}</p>
+                <p className="text-3xl font-black text-foreground tracking-tighter">{stat.val}</p>
+              </div>
+              <div className={`p-3 rounded-2xl bg-white/5 group-hover:scale-110 transition-transform ${stat.color}`}>
+                <stat.icon size={24} />
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            placeholder="Search members..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        {/* Members List */}
+        {/* Member Grid/List */}
         {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className="h-20 bg-card rounded-2xl border border-border animate-pulse"
-              />
+          <div className="grid gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-28 glass rounded-[2rem] animate-pulse" />
             ))}
           </div>
         ) : filteredMembers.length === 0 ? (
-          <div className="text-center py-12 bg-card rounded-2xl border border-border">
-            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-heading text-lg font-medium text-foreground mb-2">
-              No members found
-            </h3>
+          <div className="text-center py-20 glass rounded-[3rem] border border-dashed border-white/10">
+            <UserX className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-muted-foreground">No matches in current registry</h3>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid gap-4">
             {filteredMembers.map((member, index) => (
               <motion.div
                 key={member.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: index * 0.02 }}
-                className="bg-card rounded-2xl border border-border p-5 hover:border-primary/30 transition-all"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className="glass-card rounded-[2rem] border border-white/5 p-6 hover:shadow-2xl hover:shadow-primary/5 transition-all group"
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-medium">
-                      {member.avatar_url ? (
-                        <img
-                          src={member.avatar_url}
-                          alt={member.full_name}
-                          className="w-full h-full rounded-full object-cover"
-                        />
-                      ) : (
-                        getInitials(member.full_name)
-                      )}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  {/* Avatar & Info */}
+                  <div className="flex items-center gap-5">
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent p-[1px] shadow-lg shadow-primary/20">
+                        <div className="w-full h-full rounded-2xl bg-black flex items-center justify-center overflow-hidden">
+                          {member.avatar_url ? (
+                            <img
+                              src={member.avatar_url}
+                              alt={member.full_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xl font-black text-primary">{getInitials(member.full_name)}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-background flex items-center justify-center ${member.is_alumni ? "bg-primary" : "bg-green-500"}`}>
+                        {member.is_alumni ? <GraduationCap size={10} className="text-white" /> : <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-foreground">
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-black text-foreground tracking-tight group-hover:text-primary transition-colors">
                           {member.full_name}
                         </h3>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            roleColors[member.role || "member"]
-                          }`}
-                        >
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${roleColors[member.role || "member"]}`}>
                           {member.role}
                         </span>
-                        {member.is_alumni && (
-                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                            Alumni
-                          </span>
-                        )}
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Mail className="w-3 h-3" />
+                      <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <Mail className="w-3.5 h-3.5 text-primary" />
                           {member.email}
                         </span>
-                        {member.batch && <span>• {member.batch}</span>}
-                        {member.semester && <span>• Sem {member.semester}</span>}
+                        {member.batch && <span className="bg-white/5 px-2 py-0.5 rounded-lg opacity-80 decoration-accent decoration-2 underline-offset-2">• {member.batch}</span>}
+                        {member.semester && <span className="opacity-80 decoration-primary decoration-2 underline-offset-2">• SEMESTER {member.semester}</span>}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="text-right hidden sm:block">
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Award className="w-4 h-4" />
-                        Level {member.level}
+                  {/* Actions & Progression */}
+                  <div className="flex flex-wrap items-center gap-4 lg:gap-8">
+                    <div className="flex items-center gap-6 px-6 py-3 rounded-2xl bg-white/5 border border-white/5">
+                      <div className="text-center">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-0.5">Progression</p>
+                        <div className="flex items-center gap-1.5 font-black text-foreground">
+                          <Award size={14} className="text-primary" />
+                          <span>LVL {member.level}</span>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {member.xp_points} XP
+                      <div className="w-[1px] h-8 bg-white/10" />
+                      <div className="text-center">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-0.5">Global XP</p>
+                        <p className="font-black text-foreground tracking-tight">{member.xp_points}</p>
                       </div>
                     </div>
 
-                    {/* Alumni Toggle */}
-                    <div className="flex items-center gap-2">
-                      <GraduationCap className="w-4 h-4 text-muted-foreground" />
-                      <Switch
-                        checked={member.is_alumni}
-                        onCheckedChange={(checked) =>
-                          handleAlumniToggle(member.user_id, checked)
+                    <div className="flex items-center gap-4">
+                      {/* Control Panel */}
+                      <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-white/5 border border-white/10">
+                        <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-[10px] font-black uppercase text-muted-foreground hidden sm:block">Alumni</span>
+                        <Switch
+                          checked={member.is_alumni}
+                          onCheckedChange={(checked) =>
+                            handleAlumniToggle(member.user_id, checked)
+                          }
+                          className="data-[state=checked]:bg-primary"
+                        />
+                      </div>
+
+                      <select
+                        value={member.role}
+                        onChange={(e) =>
+                          handleRoleChange(member.user_id, e.target.value)
                         }
-                      />
+                        className="h-11 px-4 rounded-xl bg-white/5 border border-white/10 text-foreground text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50 transition-all appearance-none cursor-pointer hover:bg-white/10 min-w-[120px]"
+                      >
+                        <option value="member" className="bg-background">Member</option>
+                        <option value="moderator" className="bg-background">Moderator</option>
+                        <option value="admin" className="bg-background">Admin</option>
+                      </select>
                     </div>
-
-                    <select
-                      value={member.role}
-                      onChange={(e) =>
-                        handleRoleChange(member.user_id, e.target.value)
-                      }
-                      className="px-3 py-1.5 rounded-lg bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                    >
-                      <option value="member">Member</option>
-                      <option value="moderator">Moderator</option>
-                      <option value="admin">Admin</option>
-                    </select>
                   </div>
                 </div>
               </motion.div>

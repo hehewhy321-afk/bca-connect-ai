@@ -1,64 +1,31 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, ChevronDown, MessageSquare, Shield, GraduationCap } from "lucide-react";
+import { motion, AnimatePresence, easeOut } from "framer-motion";
+import { LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, ChevronDown, MessageSquare, Shield, GraduationCap, Award } from "lucide-react";
 import logoImg from "@/assets/logo.jpg";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 import { useUserRole } from "@/hooks/useUserRole";
-interface SidebarLink {
-  name: string;
-  href: string;
-  icon: typeof LayoutDashboard;
-  adminOnly?: boolean;
-}
-const sidebarLinks: SidebarLink[] = [{
-  name: "Dashboard",
-  href: "/dashboard",
-  icon: LayoutDashboard
-}, {
-  name: "Events",
-  href: "/dashboard/events",
-  icon: Calendar
-}, {
-  name: "Resources",
-  href: "/dashboard/resources",
-  icon: BookOpen
-}, {
-  name: "AI Assistant",
-  href: "/dashboard/ai-assistant",
-  icon: Bot
-}, {
-  name: "Forum",
-  href: "/dashboard/forum",
-  icon: MessageSquare
-}, {
-  name: "Community",
-  href: "/dashboard/community",
-  icon: Users
-}, {
-  name: "Alumni",
-  href: "/dashboard/alumni",
-  icon: GraduationCap
-}, {
-  name: "Achievements",
-  href: "/dashboard/achievements",
-  icon: Trophy
-}, {
-  name: "Admin Panel",
-  href: "/admin",
-  icon: Shield,
-  adminOnly: true
-}, {
-  name: "Settings",
-  href: "/dashboard/settings",
-  icon: Settings
-}];
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
+
+const sidebarLinks = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Events Hub", href: "/dashboard/events", icon: Calendar },
+  { name: "Study Library", href: "/dashboard/resources", icon: BookOpen },
+  { name: "Certificates", href: "/dashboard/certificates", icon: Award },
+  { name: "Alumni Network", href: "/dashboard/alumni", icon: GraduationCap },
+  { name: "Community", href: "/dashboard/community", icon: Users },
+  { name: "Neural Nexus", href: "/dashboard/ai-assistant", icon: Bot },
+  { name: "Forum", href: "/dashboard/forum", icon: MessageSquare },
+  { name: "Hall of Fame", href: "/dashboard/achievements", icon: Trophy },
+  { name: "Admin Portal", href: "/admin", icon: Shield, adminOnly: true },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+];
+
 export function DashboardLayout({
   children
 }: DashboardLayoutProps) {
@@ -76,7 +43,9 @@ export function DashboardLayout({
     isAdmin,
     isModerator
   } = useUserRole();
+
   const filteredLinks = sidebarLinks.filter(link => !link.adminOnly || isAdmin || isModerator);
+
   const handleSignOut = async () => {
     await signOut();
     toast({
@@ -85,91 +54,148 @@ export function DashboardLayout({
     });
     navigate("/");
   };
-  return <div className="min-h-screen bg-background">
+
+  return (
+    <div className="min-h-screen bg-background relative selection:bg-primary/30">
+      {/* Background Decor */}
+      <div className="fixed top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[150px] -z-10 animate-pulse" />
+      <div className="fixed bottom-0 left-0 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[150px] -z-10" />
+
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
-        {sidebarOpen && <motion.div initial={{
-        opacity: 0
-      }} animate={{
-        opacity: 1
-      }} exit={{
-        opacity: 0
-      }} className="fixed inset-0 bg-foreground/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
+        {sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
       </AnimatePresence>
 
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 z-50 h-full w-64 bg-card border-r border-border transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        {/* Logo */}
-        <div className="p-4 border-b border-border">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={logoImg} alt="BCA Association Logo" className="w-10 h-10 rounded-xl object-cover" />
+      <aside className={`fixed top-0 left-0 z-[70] h-full w-72 glass border-r border-white/10 transition-transform duration-500 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        {/* Logo Section */}
+        <div className="p-8">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent p-[1px] shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
+              <div className="w-full h-full rounded-2xl bg-muted flex items-center justify-center overflow-hidden">
+                <img src={logoImg} alt="BCA" className="w-full h-full object-cover" />
+              </div>
+            </div>
             <div className="flex flex-col">
-              <span className="font-heading font-bold text-lg text-foreground">
+              <span className="font-black text-lg text-foreground tracking-tight leading-none">
                 BCA Association
               </span>
-              <span className="text-xs text-muted-foreground">MMAMC Biratnagar</span>
+              <span className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase mt-1.5 px-0.5 opacity-60">
+                MMAMC Biratnagar
+              </span>
             </div>
           </Link>
         </div>
 
-        {/* Nav Links */}
-        <nav className="p-4 space-y-1">
-          {filteredLinks.map(link => {
-          const isActive = location.pathname === link.href || location.pathname.startsWith(link.href + "/");
-          return <Link key={link.name} to={link.href} onClick={() => setSidebarOpen(false)} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${isActive ? "bg-primary text-primary-foreground shadow-md" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-                <link.icon className="w-5 h-5" />
+        {/* Navigation */}
+        <nav className="px-4 py-2 space-y-1 overflow-y-auto h-[calc(100vh-220px)] scrollbar-none">
+          {filteredLinks.map((link) => {
+            const isActive = link.href === "/dashboard"
+              ? location.pathname === "/dashboard"
+              : location.pathname === link.href || location.pathname.startsWith(link.href + "/");
+            return (
+              <Link
+                key={link.name}
+                to={link.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 px-5 py-4 rounded-[1.25rem] text-sm font-semibold transition-all duration-300 group relative ${isActive
+                  ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  }`}
+              >
+                <link.icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
                 {link.name}
-              </Link>;
-        })}
+                {isActive && (
+                  <motion.div
+                    layoutId="active-nav"
+                    className="absolute right-3 w-1.5 h-1.5 rounded-full bg-primary-foreground"
+                  />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Sign Out */}
-        <div className="absolute bottom-4 left-4 right-4">
-          <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive" onClick={handleSignOut}>
+        {/* Footer Actions */}
+        <div className="absolute bottom-8 left-4 right-4">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 h-14 rounded-2xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all font-bold"
+            onClick={handleSignOut}
+          >
             <LogOut className="w-5 h-5" />
             Sign Out
           </Button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="lg:pl-64">
-        {/* Top Bar */}
-        <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl border-b border-border">
-          <div className="flex items-center justify-between px-4 h-16">
-            {/* Mobile Menu Button */}
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors">
-              {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+      {/* Main Content Area */}
+      <div className="lg:pl-72 flex flex-col min-h-screen">
+        {/* Top Header */}
+        <header className="sticky top-0 z-[50] glass-card border-b border-white/5 backdrop-blur-2xl">
+          <div className="flex items-center justify-between px-6 h-20">
+            {/* Mobile Trigger & Title */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="lg:hidden p-2.5 rounded-xl bg-white/5 border border-white/10 text-foreground active:scale-95 transition-all"
+              >
+                {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+              <h1 className="font-black text-xl text-foreground tracking-tight hidden lg:block">
+                {sidebarLinks.find(l => l.href === location.pathname)?.name || "Dashboard"}
+              </h1>
+            </div>
 
-            {/* Page Title */}
-            <h1 className="font-heading font-semibold text-lg text-foreground hidden lg:block">
-              {sidebarLinks.find(l => l.href === location.pathname)?.name || "Dashboard"}
-            </h1>
-
-            {/* Right Side */}
-            <div className="flex items-center gap-3">
-              {/* Notifications */}
+            {/* Actions Area */}
+            <div className="flex items-center gap-4">
               <NotificationsDropdown />
 
-              {/* User Menu */}
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-medium text-sm">
+              <div className="h-10 w-[1px] bg-white/10 mx-1 hidden sm:block" />
+
+              <div className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl bg-white/5 border border-white/5 items-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-black text-sm shadow-lg shadow-primary/20">
                   {user?.email?.charAt(0).toUpperCase() || "U"}
                 </div>
-                <div className="hidden md:block">
-                  <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
+                <div className="hidden sm:block leading-tight">
+                  <p className="text-sm font-bold text-foreground truncate max-w-[150px]">
                     {user?.user_metadata?.full_name || user?.email?.split("@")[0]}
                   </p>
-                  <p className="text-xs text-muted-foreground">Member</p>
+                  <p className="text-[10px] font-black text-primary uppercase tracking-widest opacity-80">
+                    {isAdmin ? "Super Admin" : isModerator ? "Moderator" : "Member"}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="p-4 md:p-6 lg:p-8">{children}</main>
+        {/* Dynamic Page Content */}
+        <main className="flex-1 p-6 md:p-8 lg:p-10">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: easeOut }}
+          >
+            {children}
+          </motion.div>
+        </main>
+
+        {/* Dashboard Footer */}
+        <footer className="p-8 text-center border-t border-white/5">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] opacity-40">
+            © {new Date().getFullYear()} BCA Connect AI • All Rights Reserved
+          </p>
+        </footer>
       </div>
-    </div>;
+    </div>
+  );
 }

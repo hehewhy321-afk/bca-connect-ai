@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -29,7 +30,7 @@ const ForumPost = lazy(() => import("./pages/ForumPost"));
 const NewForumPost = lazy(() => import("./pages/NewForumPost"));
 
 // Admin pages - lazy load as they're less frequently accessed
-const AdminPanel = lazy(() => import("./pages/admin/AdminPanel"));
+import AdminPanel from "./pages/admin/AdminPanel";
 const AdminEventsHub = lazy(() => import("./pages/admin/AdminEventsHub"));
 const EventForm = lazy(() => import("./pages/admin/EventForm"));
 const AdminResources = lazy(() => import("./pages/admin/AdminResources"));
@@ -44,6 +45,9 @@ const AdminWebsiteSettings = lazy(() => import("./pages/admin/AdminWebsiteSettin
 const AdminFAQs = lazy(() => import("./pages/admin/AdminFAQs"));
 const AdminQRScanner = lazy(() => import("./pages/admin/AdminQRScanner"));
 const AdminAISettings = lazy(() => import("./pages/admin/AdminAISettings"));
+const AdminPaymentVerification = lazy(() => import("./pages/admin/AdminPaymentVerification"));
+const AdminCertificates = lazy(() => import("./pages/admin/AdminCertificates"));
+const Certificates = lazy(() => import("./pages/dashboard/Certificates"));
 
 // Public pages - lazy load
 const Notice = lazy(() => import("./pages/Notice"));
@@ -80,15 +84,15 @@ function MinimalLoader() {
 // Redirect authenticated users away from auth page
 function AuthRedirect() {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return <MinimalLoader />;
   }
-  
+
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }
-  
+
   return <Auth />;
 }
 
@@ -104,67 +108,72 @@ function LazyRoute({ children }: { children: React.ReactNode }) {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <ErrorBoundary>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ScrollToTop />
-            <Routes>
-              {/* Public routes - eager loaded */}
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<AuthRedirect />} />
-              
-              {/* Public routes - lazy loaded */}
-              <Route path="/notice" element={<LazyRoute><Notice /></LazyRoute>} />
-              <Route path="/faq" element={<LazyRoute><FAQ /></LazyRoute>} />
-              <Route path="/contact" element={<LazyRoute><Contact /></LazyRoute>} />
-              <Route path="/privacy" element={<LazyRoute><PrivacyPolicy /></LazyRoute>} />
-              <Route path="/terms" element={<LazyRoute><TermsOfService /></LazyRoute>} />
-              <Route path="/about" element={<LazyRoute><About /></LazyRoute>} />
-              <Route path="/events" element={<LazyRoute><PublicEvents /></LazyRoute>} />
-              <Route path="/events/:id" element={<LazyRoute><EventDetail /></LazyRoute>} />
-              <Route path="/install" element={<LazyRoute><Install /></LazyRoute>} />
-              
-              {/* Dashboard routes - eager loaded pages don't need LazyRoute */}
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/dashboard/ai-assistant" element={<ProtectedRoute><LazyRoute><AIAssistant /></LazyRoute></ProtectedRoute>} />
-              <Route path="/dashboard/image-gallery" element={<ProtectedRoute><LazyRoute><ImageGallery /></LazyRoute></ProtectedRoute>} />
-              <Route path="/dashboard/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
-              <Route path="/dashboard/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
-              <Route path="/dashboard/achievements" element={<ProtectedRoute><LazyRoute><Achievements /></LazyRoute></ProtectedRoute>} />
-              <Route path="/dashboard/community" element={<ProtectedRoute><LazyRoute><Community /></LazyRoute></ProtectedRoute>} />
-              <Route path="/dashboard/alumni" element={<ProtectedRoute><LazyRoute><Alumni /></LazyRoute></ProtectedRoute>} />
-              <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/dashboard/forum" element={<ProtectedRoute><LazyRoute><Forum /></LazyRoute></ProtectedRoute>} />
-              <Route path="/dashboard/forum/new" element={<ProtectedRoute><LazyRoute><NewForumPost /></LazyRoute></ProtectedRoute>} />
-              <Route path="/dashboard/forum/:id" element={<ProtectedRoute><LazyRoute><ForumPost /></LazyRoute></ProtectedRoute>} />
-              
-              {/* Admin routes */}
-              <Route path="/admin" element={<ProtectedRoute><LazyRoute><AdminPanel /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/events" element={<ProtectedRoute><LazyRoute><AdminEventsHub /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/events/new" element={<ProtectedRoute><LazyRoute><EventForm /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/events/:id" element={<ProtectedRoute><LazyRoute><EventForm /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/qr-scanner" element={<ProtectedRoute><LazyRoute><AdminQRScanner /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/resources" element={<ProtectedRoute><LazyRoute><AdminResources /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/resources/new" element={<ProtectedRoute><LazyRoute><ResourceForm /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/resources/:id" element={<ProtectedRoute><LazyRoute><ResourceForm /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/members" element={<ProtectedRoute><LazyRoute><AdminMembers /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/announcements" element={<ProtectedRoute><LazyRoute><AdminAnnouncements /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/notices" element={<ProtectedRoute><LazyRoute><AdminNotices /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/contacts" element={<ProtectedRoute><LazyRoute><AdminContacts /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/users" element={<ProtectedRoute><LazyRoute><AdminUsers /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/founding-members" element={<ProtectedRoute><LazyRoute><AdminFoundingMembers /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/settings" element={<ProtectedRoute><LazyRoute><AdminWebsiteSettings /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/faqs" element={<ProtectedRoute><LazyRoute><AdminFAQs /></LazyRoute></ProtectedRoute>} />
-              <Route path="/admin/ai-settings" element={<ProtectedRoute><LazyRoute><AdminAISettings /></LazyRoute></ProtectedRoute>} />
-              
-              {/* 404 */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </ErrorBoundary>
-      </TooltipProvider>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <TooltipProvider>
+          <ErrorBoundary>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ScrollToTop />
+              <Routes>
+                {/* Public routes - eager loaded */}
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<AuthRedirect />} />
+
+                {/* Public routes - lazy loaded */}
+                <Route path="/notice" element={<LazyRoute><Notice /></LazyRoute>} />
+                <Route path="/faq" element={<LazyRoute><FAQ /></LazyRoute>} />
+                <Route path="/contact" element={<LazyRoute><Contact /></LazyRoute>} />
+                <Route path="/privacy" element={<LazyRoute><PrivacyPolicy /></LazyRoute>} />
+                <Route path="/terms" element={<LazyRoute><TermsOfService /></LazyRoute>} />
+                <Route path="/about" element={<LazyRoute><About /></LazyRoute>} />
+                <Route path="/events" element={<LazyRoute><PublicEvents /></LazyRoute>} />
+                <Route path="/events/:id" element={<LazyRoute><EventDetail /></LazyRoute>} />
+                <Route path="/install" element={<LazyRoute><Install /></LazyRoute>} />
+
+                {/* Dashboard routes - eager loaded pages don't need LazyRoute */}
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/dashboard/ai-assistant" element={<ProtectedRoute><LazyRoute><AIAssistant /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/image-gallery" element={<ProtectedRoute><LazyRoute><ImageGallery /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
+                <Route path="/dashboard/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />
+                <Route path="/dashboard/achievements" element={<ProtectedRoute><LazyRoute><Achievements /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/community" element={<ProtectedRoute><LazyRoute><Community /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/alumni" element={<ProtectedRoute><LazyRoute><Alumni /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/dashboard/forum" element={<ProtectedRoute><LazyRoute><Forum /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/forum/new" element={<ProtectedRoute><LazyRoute><NewForumPost /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/forum/:id" element={<ProtectedRoute><LazyRoute><ForumPost /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/certificates" element={<ProtectedRoute><LazyRoute><Certificates /></LazyRoute></ProtectedRoute>} />
+
+                {/* Admin routes */}
+                <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+                <Route path="/admin/events" element={<ProtectedRoute><LazyRoute><AdminEventsHub /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/events/new" element={<ProtectedRoute><LazyRoute><EventForm /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/events/:id" element={<ProtectedRoute><LazyRoute><EventForm /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/qr-scanner" element={<ProtectedRoute><LazyRoute><AdminQRScanner /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/resources" element={<ProtectedRoute><LazyRoute><AdminResources /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/resources/new" element={<ProtectedRoute><LazyRoute><ResourceForm /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/resources/:id" element={<ProtectedRoute><LazyRoute><ResourceForm /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/members" element={<ProtectedRoute><LazyRoute><AdminMembers /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/announcements" element={<ProtectedRoute><LazyRoute><AdminAnnouncements /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/notices" element={<ProtectedRoute><LazyRoute><AdminNotices /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/contacts" element={<ProtectedRoute><LazyRoute><AdminContacts /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/users" element={<ProtectedRoute><LazyRoute><AdminUsers /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/founding-members" element={<ProtectedRoute><LazyRoute><AdminFoundingMembers /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/settings" element={<ProtectedRoute><LazyRoute><AdminWebsiteSettings /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/faqs" element={<ProtectedRoute><LazyRoute><AdminFAQs /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/ai-settings" element={<ProtectedRoute><LazyRoute><AdminAISettings /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/payment-verification" element={<ProtectedRoute><LazyRoute><AdminPaymentVerification /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/certificates" element={<ProtectedRoute><LazyRoute><AdminCertificates /></LazyRoute></ProtectedRoute>} />
+
+                {/* 404 */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </ErrorBoundary>
+        </TooltipProvider>
+      </ThemeProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

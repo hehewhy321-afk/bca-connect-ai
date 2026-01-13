@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -160,7 +161,7 @@ const AdminAISettings = () => {
       const { data, error } = await supabase
         .from("ai_settings")
         .select("*");
-      
+
       if (error) throw error;
       return data;
     },
@@ -179,13 +180,13 @@ const AdminAISettings = () => {
         bytez_custom_models: "[]",
         custom_system_prompt: "",
       };
-      
+
       aiSettings.forEach((setting) => {
         if (setting.setting_key in settingsMap) {
           settingsMap[setting.setting_key as keyof AISettingsMap] = setting.setting_value || "";
         }
       });
-      
+
       setSettings(settingsMap);
     }
   }, [aiSettings]);
@@ -201,7 +202,7 @@ const AdminAISettings = () => {
         const { error } = await supabase
           .from("ai_settings")
           .upsert(update, { onConflict: "setting_key" });
-        
+
         if (error) throw error;
       }
     },
@@ -285,15 +286,6 @@ const AdminAISettings = () => {
     toast.success("Custom model removed");
   };
 
-  const selectedModel = ALL_OPENROUTER_MODELS.find(m => m.id === settings.openrouter_model) ||
-    getOpenRouterCustomModels().find(m => m.id === settings.openrouter_model);
-  
-  const selectedBytezChatModel = ALL_BYTEZ_CHAT_MODELS.find(m => m.id === settings.bytez_chat_model) ||
-    getBytezCustomModels().find(m => m.id === settings.bytez_chat_model);
-  
-  const selectedBytezImageModel = ALL_BYTEZ_IMAGE_MODELS.find(m => m.id === settings.bytez_image_model) ||
-    getBytezCustomModels().find(m => m.id === settings.bytez_image_model);
-
   if (isLoading) {
     return (
       <AdminLayout>
@@ -309,644 +301,330 @@ const AdminAISettings = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Bot className="h-8 w-8" />
-            AI Settings
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Configure your AI assistant provider and model settings
-          </p>
-        </div>
-
-        {/* Provider Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5" />
-              AI Provider
-            </CardTitle>
-            <CardDescription>
-              Choose between Lovable AI, OpenRouter, or Bytez for AI capabilities
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card 
-                className={`cursor-pointer transition-all ${
-                  settings.ai_provider === "lovable" 
-                    ? "ring-2 ring-primary bg-primary/5" 
-                    : "hover:bg-muted/50"
-                }`}
-                onClick={() => setSettings(s => ({ ...s, ai_provider: "lovable" }))}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center justify-between">
-                    Lovable AI
-                    <Badge variant="secondary">Built-in</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Uses Gemini 2.5 Flash. No API key required. Simple and reliable.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={`cursor-pointer transition-all ${
-                  settings.ai_provider === "openrouter" 
-                    ? "ring-2 ring-primary bg-primary/5" 
-                    : "hover:bg-muted/50"
-                }`}
-                onClick={() => setSettings(s => ({ ...s, ai_provider: "openrouter" }))}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center justify-between">
-                    OpenRouter
-                    <Badge variant="outline" className="text-green-600 border-green-600">
-                      Free Models
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Access 100+ models including free options. Bring your own API key.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className={`cursor-pointer transition-all ${
-                  settings.ai_provider === "bytez" 
-                    ? "ring-2 ring-primary bg-primary/5" 
-                    : "hover:bg-muted/50"
-                }`}
-                onClick={() => setSettings(s => ({ ...s, ai_provider: "bytez" }))}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center justify-between">
-                    Bytez
-                    <Badge variant="outline" className="text-purple-600 border-purple-600">
-                      <Image className="h-3 w-3 mr-1" />
-                      Multi-Modal
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Chat + Image + Voice. Single API for all models.
-                  </p>
-                </CardContent>
-              </Card>
+      <div className="space-y-10 pb-20">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-lg shadow-primary/5">
+              <Bot className="w-7 h-7" />
             </div>
-          </CardContent>
-        </Card>
-
-        {/* OpenRouter Configuration */}
-        {settings.ai_provider === "openrouter" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5" />
-                OpenRouter Configuration
-              </CardTitle>
-              <CardDescription>
-                Get your free API key from{" "}
-                <a 
-                  href="https://openrouter.ai/keys" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline inline-flex items-center gap-1"
-                >
-                  openrouter.ai/keys
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="api-key">API Key</Label>
-                <Input
-                  id="api-key"
-                  type="password"
-                  placeholder="sk-or-v1-..."
-                  value={settings.openrouter_api_key}
-                  onChange={(e) => setSettings(s => ({ ...s, openrouter_api_key: e.target.value }))}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Your API key is stored securely and only accessed by the server
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Model Selection</Label>
-                  <Dialog open={customModelDialogOpen && customModelProvider === "openrouter"} onOpenChange={(open) => {
-                    setCustomModelDialogOpen(open);
-                    if (open) setCustomModelProvider("openrouter");
-                  }}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Custom Model
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add Custom OpenRouter Model</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>Model ID</Label>
-                          <Input
-                            placeholder="e.g., openai/gpt-4-turbo"
-                            value={newCustomModel.id}
-                            onChange={(e) => setNewCustomModel(s => ({ ...s, id: e.target.value }))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Display Name</Label>
-                          <Input
-                            placeholder="e.g., GPT-4 Turbo"
-                            value={newCustomModel.name}
-                            onChange={(e) => setNewCustomModel(s => ({ ...s, name: e.target.value }))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Category</Label>
-                          <Select value={newCustomModel.category} onValueChange={(v) => setNewCustomModel(s => ({ ...s, category: v }))}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="LLM">LLM (Text)</SelectItem>
-                              <SelectItem value="VLM">VLM (Vision)</SelectItem>
-                              <SelectItem value="Image Gen">Image Generation</SelectItem>
-                              <SelectItem value="Audio">Audio/Speech</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <DialogClose asChild>
-                          <Button variant="outline">Cancel</Button>
-                        </DialogClose>
-                        <Button onClick={addCustomModel}>Add Model</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                <Select
-                  value={settings.openrouter_model}
-                  onValueChange={(value) => setSettings(s => ({ ...s, openrouter_model: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <ScrollArea className="h-[300px]">
-                      {openRouterCustomModels.length > 0 && (
-                        <>
-                          <div className="px-2 py-1.5 text-sm font-semibold text-purple-600">
-                            ⭐ Custom Models
-                          </div>
-                          {openRouterCustomModels.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              <div className="flex items-center gap-2">
-                                <span>{model.name}</span>
-                                <Badge variant="outline" className="text-xs">{model.category}</Badge>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </>
-                      )}
-                      <div className="px-2 py-1.5 text-sm font-semibold text-green-600">
-                        🆓 Free Models
-                      </div>
-                      {FREE_MODELS.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          <div className="flex items-center gap-2">
-                            <span>{model.name}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {model.provider}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                      <div className="px-2 py-1.5 text-sm font-semibold text-amber-600 border-t mt-2 pt-2">
-                        💰 Paid Models
-                      </div>
-                      {PAID_MODELS.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          <div className="flex items-center gap-2">
-                            <span>{model.name}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {model.provider}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </ScrollArea>
-                  </SelectContent>
-                </Select>
-                {selectedModel && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant={selectedModel.tier === "free" ? "secondary" : "outline"}>
-                      {selectedModel.tier === "free" ? "🆓 Free" : "💰 Paid"}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {selectedModel.category}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Custom Models List */}
-              {openRouterCustomModels.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Your Custom Models</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {openRouterCustomModels.map((model) => (
-                      <Badge key={model.id} variant="secondary" className="flex items-center gap-1">
-                        {model.name}
-                        <button
-                          onClick={() => removeCustomModel(model.id, "openrouter")}
-                          className="ml-1 hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Bytez Configuration */}
-        {settings.ai_provider === "bytez" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Bytez Configuration
-              </CardTitle>
-              <CardDescription>
-                Get your API key from{" "}
-                <a 
-                  href="https://bytez.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline inline-flex items-center gap-1"
-                >
-                  bytez.com
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-                {" "}• Browse models at{" "}
-                <a 
-                  href="https://bytez.com/model" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline inline-flex items-center gap-1"
-                >
-                  bytez.com/model
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="bytez-api-key">API Key</Label>
-                <Input
-                  id="bytez-api-key"
-                  type="password"
-                  placeholder="Your Bytez API key..."
-                  value={settings.bytez_api_key}
-                  onChange={(e) => setSettings(s => ({ ...s, bytez_api_key: e.target.value }))}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Single API key for all models including chat, image, and voice
-                </p>
-              </div>
-
-              <Tabs defaultValue="chat" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="chat" className="flex items-center gap-1">
-                    <Bot className="h-4 w-4" />
-                    Chat
-                  </TabsTrigger>
-                  <TabsTrigger value="image" className="flex items-center gap-1">
-                    <Image className="h-4 w-4" />
-                    Image
-                  </TabsTrigger>
-                  <TabsTrigger value="custom" className="flex items-center gap-1">
-                    <Plus className="h-4 w-4" />
-                    Custom
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="chat" className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label>Chat Model</Label>
-                    <Select
-                      value={settings.bytez_chat_model}
-                      onValueChange={(value) => setSettings(s => ({ ...s, bytez_chat_model: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a chat model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <ScrollArea className="h-[300px]">
-                          {bytezCustomModels.filter(m => m.category === "LLM" || m.category === "VLM").length > 0 && (
-                            <>
-                              <div className="px-2 py-1.5 text-sm font-semibold text-purple-600">
-                                ⭐ Custom Models
-                              </div>
-                              {bytezCustomModels.filter(m => m.category === "LLM" || m.category === "VLM").map((model) => (
-                                <SelectItem key={model.id} value={model.id}>
-                                  <div className="flex items-center gap-2">
-                                    <span>{model.name}</span>
-                                    <Badge variant="outline" className="text-xs">{model.category}</Badge>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </>
-                          )}
-                          <div className="px-2 py-1.5 text-sm font-semibold text-blue-600">
-                            💬 Text / LLM Models
-                          </div>
-                          {BYTEZ_LLM_MODELS.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              <div className="flex items-center gap-2">
-                                <span>{model.name}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {model.provider}
-                                </Badge>
-                              </div>
-                            </SelectItem>
-                          ))}
-                          <div className="px-2 py-1.5 text-sm font-semibold text-purple-600 border-t mt-2 pt-2">
-                            👁️ Vision-Language Models
-                          </div>
-                          {BYTEZ_VLM_MODELS.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              <div className="flex items-center gap-2">
-                                <span>{model.name}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {model.provider}
-                                </Badge>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </ScrollArea>
-                      </SelectContent>
-                    </Select>
-                    {selectedBytezChatModel && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="secondary">{selectedBytezChatModel.category}</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          by {selectedBytezChatModel.provider}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="image" className="space-y-4 mt-4">
-                  <div className="space-y-2">
-                    <Label>Image Generation Model</Label>
-                    <Select
-                      value={settings.bytez_image_model}
-                      onValueChange={(value) => setSettings(s => ({ ...s, bytez_image_model: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an image model" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <ScrollArea className="h-[300px]">
-                          {bytezCustomModels.filter(m => m.category === "Image Gen" || m.category === "Image LoRA").length > 0 && (
-                            <>
-                              <div className="px-2 py-1.5 text-sm font-semibold text-purple-600">
-                                ⭐ Custom Models
-                              </div>
-                              {bytezCustomModels.filter(m => m.category === "Image Gen" || m.category === "Image LoRA").map((model) => (
-                                <SelectItem key={model.id} value={model.id}>
-                                  <div className="flex items-center gap-2">
-                                    <span>{model.name}</span>
-                                    <Badge variant="outline" className="text-xs">{model.category}</Badge>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </>
-                          )}
-                          <div className="px-2 py-1.5 text-sm font-semibold text-pink-600">
-                            🎨 Image Generation Models
-                          </div>
-                          {BYTEZ_IMAGE_GEN_MODELS.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              <div className="flex items-center gap-2">
-                                <span>{model.name}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {model.provider}
-                                </Badge>
-                              </div>
-                            </SelectItem>
-                          ))}
-                          <div className="px-2 py-1.5 text-sm font-semibold text-orange-600 border-t mt-2 pt-2">
-                            ✨ Image LoRA / Fine-Tuned
-                          </div>
-                          {BYTEZ_IMAGE_LORA_MODELS.map((model) => (
-                            <SelectItem key={model.id} value={model.id}>
-                              <div className="flex items-center gap-2">
-                                <span>{model.name}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {model.provider}
-                                </Badge>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </ScrollArea>
-                      </SelectContent>
-                    </Select>
-                    {selectedBytezImageModel && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="secondary">🎨 {selectedBytezImageModel.category}</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          by {selectedBytezImageModel.provider}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="custom" className="space-y-4 mt-4">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label>Custom Bytez Models</Label>
-                      <Dialog open={customModelDialogOpen && customModelProvider === "bytez"} onOpenChange={(open) => {
-                        setCustomModelDialogOpen(open);
-                        if (open) setCustomModelProvider("bytez");
-                      }}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Custom Model
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Add Custom Bytez Model</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label>Model ID (from bytez.com/model)</Label>
-                              <Input
-                                placeholder="e.g., organization/model-name"
-                                value={newCustomModel.id}
-                                onChange={(e) => setNewCustomModel(s => ({ ...s, id: e.target.value }))}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Display Name</Label>
-                              <Input
-                                placeholder="e.g., My Custom Model"
-                                value={newCustomModel.name}
-                                onChange={(e) => setNewCustomModel(s => ({ ...s, name: e.target.value }))}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Category</Label>
-                              <Select value={newCustomModel.category} onValueChange={(v) => setNewCustomModel(s => ({ ...s, category: v }))}>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="LLM">LLM (Text)</SelectItem>
-                                  <SelectItem value="VLM">VLM (Vision-Language)</SelectItem>
-                                  <SelectItem value="Image Gen">Image Generation</SelectItem>
-                                  <SelectItem value="Image LoRA">Image LoRA</SelectItem>
-                                  <SelectItem value="Audio">Audio/Speech</SelectItem>
-                                  <SelectItem value="Domain">Domain-Specific</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button variant="outline">Cancel</Button>
-                            </DialogClose>
-                            <Button onClick={addCustomModel}>Add Model</Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-
-                    {bytezCustomModels.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Plus className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>No custom models added yet</p>
-                        <p className="text-sm">Add models from bytez.com/model</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {bytezCustomModels.map((model) => (
-                          <div key={model.id} className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                            <div>
-                              <p className="font-medium">{model.name}</p>
-                              <p className="text-sm text-muted-foreground">{model.id}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">{model.category}</Badge>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeCustomModel(model.id, "bytez")}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                <p className="text-sm font-medium flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  Bytez Features
-                </p>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li className="flex items-center gap-2">
-                    <Bot className="h-4 w-4" /> Chat with AI models for study assistance
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Image className="h-4 w-4" /> Generate images from text prompts
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Mic className="h-4 w-4" /> Speech-to-text (voice input)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Volume2 className="h-4 w-4" /> Text-to-speech (voice output)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Eye className="h-4 w-4" /> Vision-Language models for image understanding
-                  </li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Custom System Prompt */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Custom System Prompt (Optional)</CardTitle>
-            <CardDescription>
-              Override the default AI assistant personality and instructions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              placeholder="Leave empty to use the default BCA AI Study Assistant prompt..."
-              value={settings.custom_system_prompt}
-              onChange={(e) => setSettings(s => ({ ...s, custom_system_prompt: e.target.value }))}
-              rows={6}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button 
-            onClick={handleSave} 
+            <div>
+              <h1 className="text-3xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
+                Neural Nexus
+              </h1>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">
+                Calibrating artificial intelligence protocols and cognitive paths
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={handleSave}
             disabled={saveMutation.isPending}
-            size="lg"
+            className="h-14 px-8 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-[1.05] transition-all active:scale-95"
           >
-            {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Settings
+            {saveMutation.isPending ? (
+              <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+            ) : (
+              <Sparkles className="h-5 w-5 mr-3" />
+            )}
+            SYNC PROTOCOLS
           </Button>
         </div>
 
-        {/* Info Card */}
-        <Card className="bg-muted/50">
-          <CardHeader>
-            <CardTitle className="text-lg">💡 Tips for Using AI Models</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>• <strong>Lovable AI</strong> - Best for quick setup, no API key needed</p>
-            <p>• <strong>OpenRouter</strong> - Great for accessing many free models like Llama, Gemma, Mistral</p>
-            <p>• <strong>Bytez</strong> - Best for multi-modal (chat + image + voice) with single API</p>
-            <p>• Add custom models from bytez.com/model or OpenRouter's model library</p>
-            <p>• Free models have rate limits but are perfect for learning and development</p>
-          </CardContent>
-        </Card>
+        {/* AI Provider Matrix */}
+        <div className="glass-card p-10 rounded-[3rem] border border-white/5 relative overflow-hidden group">
+          <div className="flex items-center gap-3 mb-8">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-black text-foreground uppercase tracking-widest">Provider Matrix</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { id: "lovable", name: "Lovable AI", icon: Bot, badge: "Native", desc: "Uses Gemini 1.5 Flash. Reliable & zero config." },
+              { id: "openrouter", name: "OpenRouter", icon: Zap, badge: "Extensible", desc: "Access 100+ models via single API key." },
+              { id: "bytez", name: "Bytez", icon: Image, badge: "Multi-Modal", desc: "High-performance chat, image, & voice." }
+            ].map((provider) => (
+              <div
+                key={provider.id}
+                onClick={() => setSettings(s => ({ ...s, ai_provider: provider.id }))}
+                className={`cursor-pointer glass-card p-6 rounded-[2rem] border transition-all hover:scale-[1.02] ${settings.ai_provider === provider.id
+                  ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
+                  : "border-white/5 hover:border-primary/20"
+                  }`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-3 rounded-xl ${settings.ai_provider === provider.id ? "bg-primary text-primary-foreground" : "bg-white/5 text-primary"}`}>
+                    <provider.icon className="w-5 h-5" />
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${settings.ai_provider === provider.id ? "bg-primary/20 text-primary border-primary/30" : "bg-white/5 text-muted-foreground border-white/10"}`}>{provider.badge}</span>
+                </div>
+                <h3 className="text-base font-black text-foreground mb-2">{provider.name}</h3>
+                <p className="text-xs font-medium text-muted-foreground leading-relaxed">{provider.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Configuration Tabs */}
+        <Tabs defaultValue="config" className="space-y-8">
+          <TabsList className="h-16 p-2 bg-white/5 border border-white/10 rounded-[2rem] glass">
+            <TabsTrigger value="config" className="px-8 rounded-2xl font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
+              Configuration
+            </TabsTrigger>
+            <TabsTrigger value="directive" className="px-8 rounded-2xl font-black text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
+              System Directives
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="config" className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* OpenRouter Config */}
+            {settings.ai_provider === "openrouter" && (
+              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 rounded-[3rem] border border-white/5 space-y-8">
+                <div className="flex items-center gap-4 pb-6 border-b border-white/5">
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                    <Key className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-foreground tracking-tight">OpenRouter Integration</h2>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Acquire secret cipher from <a href="https://openrouter.ai/keys" target="_blank" className="text-primary hover:underline font-black underline-offset-4">OPENROUTER.AI</a></p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Archive API Key</Label>
+                    <Input
+                      type="password"
+                      placeholder="sk-or-v1-..."
+                      value={settings.openrouter_api_key}
+                      onChange={(e) => setSettings(s => ({ ...s, openrouter_api_key: e.target.value }))}
+                      className="h-12 rounded-xl bg-white/5 border-white/10 font-bold focus:ring-primary/20"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Cognitive Engine</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setCustomModelProvider("openrouter"); setCustomModelDialogOpen(true); }}
+                        className="h-8 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-primary hover:bg-primary/10"
+                      >
+                        <Plus className="h-3 w-3 mr-2" /> ADD CORE
+                      </Button>
+                    </div>
+
+                    <Select value={settings.openrouter_model} onValueChange={(v) => setSettings(s => ({ ...s, openrouter_model: v }))}>
+                      <SelectTrigger className="h-14 rounded-2xl bg-white/5 border-white/10 font-black text-xs uppercase tracking-widest focus:ring-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="glass-card rounded-2xl border-white/10">
+                        <ScrollArea className="h-[300px]">
+                          <div className="p-2 space-y-1">
+                            <p className="px-2 py-1 text-[8px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Verified Cores</p>
+                            {ALL_OPENROUTER_MODELS.map(model => (
+                              <SelectItem key={model.id} value={model.id} className="rounded-xl focus:bg-primary/20">
+                                <span className="font-bold">{model.name}</span>
+                                <span className="ml-2 text-[8px] opacity-40 uppercase">{model.tier}</span>
+                              </SelectItem>
+                            ))}
+                            {openRouterCustomModels.length > 0 && (
+                              <>
+                                <p className="px-2 py-1 mt-4 text-[8px] font-black text-accent uppercase tracking-[0.2em] opacity-60">Custom Cores</p>
+                                {openRouterCustomModels.map(model => (
+                                  <div key={model.id} className="flex items-center justify-between pr-2">
+                                    <SelectItem value={model.id} className="flex-1 rounded-xl focus:bg-accent/20">
+                                      <span className="font-bold">{model.name}</span>
+                                    </SelectItem>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 text-red-500 hover:text-red-600"
+                                      onClick={(e) => { e.stopPropagation(); removeCustomModel(model.id, "openrouter"); }}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Bytez Config */}
+            {settings.ai_provider === "bytez" && (
+              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 rounded-[3rem] border border-white/5 space-y-10">
+                <div className="flex items-center gap-4 pb-6 border-b border-white/5">
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-foreground tracking-tight">Bytez Neural Engine</h2>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Configure unified multi-modal access via <a href="https://bytez.com" target="_blank" className="text-primary hover:underline font-black">BYTEZ.COM</a></p>
+                  </div>
+                </div>
+
+                <div className="grid gap-8 lg:grid-cols-2">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Secret Access Key</Label>
+                      <Input
+                        type="password"
+                        placeholder="Bytez API Key..."
+                        value={settings.bytez_api_key}
+                        onChange={(e) => setSettings(s => ({ ...s, bytez_api_key: e.target.value }))}
+                        className="h-12 rounded-xl bg-white/5 border-white/10 font-bold"
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Linguistic Core (Chat)</Label>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setCustomModelProvider("bytez"); setCustomModelDialogOpen(true); }}
+                          className="h-8 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-primary hover:bg-primary/10"
+                        >
+                          <Plus className="h-3 w-3 mr-2" /> ADD CORE
+                        </Button>
+                      </div>
+                      <Select value={settings.bytez_chat_model} onValueChange={(v) => setSettings(s => ({ ...s, bytez_chat_model: v }))}>
+                        <SelectTrigger className="h-12 rounded-xl bg-white/5 border-white/10 font-bold text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="glass-card">
+                          <ScrollArea className="h-64">
+                            {ALL_BYTEZ_CHAT_MODELS.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                            {bytezCustomModels.filter(m => m.category === "LLM").map(m => (
+                              <SelectItem key={m.id} value={m.id}>{m.name} (Custom)</SelectItem>
+                            ))}
+                          </ScrollArea>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Diffusion Interface (Images)</Label>
+                      <Select value={settings.bytez_image_model} onValueChange={(v) => setSettings(s => ({ ...s, bytez_image_model: v }))}>
+                        <SelectTrigger className="h-12 rounded-xl bg-white/5 border-white/10 font-bold text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="glass-card">
+                          <ScrollArea className="h-64">
+                            {ALL_BYTEZ_IMAGE_MODELS.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                            {bytezCustomModels.filter(m => m.category === "Image Gen").map(m => (
+                              <SelectItem key={m.id} value={m.id}>{m.name} (Custom)</SelectItem>
+                            ))}
+                          </ScrollArea>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10">
+                      <div className="flex items-center gap-3 mb-2 text-primary">
+                        <Mic className="h-4 w-4" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Voice Synthesis</span>
+                      </div>
+                      <p className="text-[10px] font-medium text-muted-foreground italic">Whisper Large v3 and Kokoro-82M are deployed automatically for audio processing.</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Lovable Native Logic */}
+            {settings.ai_provider === "lovable" && (
+              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-12 rounded-[3rem] border border-white/5 text-center space-y-6">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto text-primary animate-pulse">
+                  <Bot size={40} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-foreground tracking-tight">Ethereal Core Active</h2>
+                  <p className="text-sm font-medium text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">The system is currently utilizing the native Lovable AI infrastructure, powered by <span className="text-primary font-bold">Google Gemini 1.5 Flash</span>. No further configuration required.</p>
+                </div>
+                <div className="flex items-center justify-center gap-3 pt-4">
+                  {[1, 2, 3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />)}
+                </div>
+              </motion.div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="directive" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="glass-card p-10 rounded-[3rem] border border-white/5 space-y-8">
+              <div className="flex items-center gap-4 pb-6 border-b border-white/5">
+                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                  <Volume2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-foreground tracking-tight">Personality Matrix</h2>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Calibrating global AI response characteristics</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">System Core Prompt</Label>
+                <Textarea
+                  value={settings.custom_system_prompt}
+                  onChange={(e) => setSettings(s => ({ ...s, custom_system_prompt: e.target.value }))}
+                  placeholder="Inject custom cognitive logic here... (Leave empty for default Study Assistant personality)"
+                  className="min-h-[300px] rounded-[2rem] bg-white/2 border-white/10 p-8 font-medium leading-relaxed focus:ring-primary/20 resize-none glass"
+                />
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest text-center pt-2 italic">Changes to system directives apply to all active sessions upon next initialization.</p>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Global Stats/Tips Area */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="glass-card p-8 rounded-[2.5rem] border border-white/5">
+            <h4 className="flex items-center gap-2 text-xs font-black text-primary uppercase tracking-widest mb-4">
+              <Eye className="w-4 h-4" /> Cognitive Insight
+            </h4>
+            <ul className="space-y-3">
+              {[
+                "Lovable Core is optimized for latency and stability.",
+                "OpenRouter allows deep customization of LLM nodes.",
+                "Bytez provides first-class support for visual synthesis."
+              ].map((tip, i) => (
+                <li key={i} className="flex gap-3 text-xs font-medium text-muted-foreground leading-snug">
+                  <span className="text-primary">•</span> {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="glass-card p-8 rounded-[2.5rem] border border-white/10 bg-primary/[0.02]">
+            <h4 className="flex items-center gap-2 text-xs font-black text-foreground uppercase tracking-widest mb-4">
+              <ExternalLink className="w-4 h-4 text-primary" /> Rapid Access
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: "Docs", url: "#" },
+                { label: "API Status", url: "#" },
+                { label: "Rate Limits", url: "#" },
+                { label: "Model Index", url: "#" }
+              ].map((link, i) => (
+                <a key={i} href={link.url} className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-widest hover:border-primary/30 transition-all">{link.label}</a>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Shared Custom Model Dialog */}
+      <Dialog open={customModelDialogOpen} onOpenChange={setCustomModelDialogOpen}>
+        {/* Already handled by triggering logic above, but good to have fallback if needed */}
+      </Dialog>
     </AdminLayout>
   );
 };

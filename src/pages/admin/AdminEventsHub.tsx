@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
   Edit,
@@ -45,6 +45,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -126,14 +132,14 @@ interface Feedback {
 export default function AdminEventsHub() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   // State
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<Event[]>([]);
   const [internalRegs, setInternalRegs] = useState<InternalRegistration[]>([]);
   const [publicRegs, setPublicRegs] = useState<PublicRegistration[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
-  
+
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<string>("all");
@@ -143,7 +149,7 @@ export default function AdminEventsHub() {
 
   useEffect(() => {
     fetchAllData();
-    
+
     // Realtime subscription for registrations
     const channel = supabase
       .channel('admin-events-hub')
@@ -182,7 +188,7 @@ export default function AdminEventsHub() {
           .in("user_id", userIds);
         profiles?.forEach(p => profilesMap[p.user_id] = p);
       }
-      
+
       const internalWithProfiles = (internalData || []).map(r => ({
         ...r,
         profiles: profilesMap[r.user_id] || null,
@@ -254,7 +260,7 @@ export default function AdminEventsHub() {
       const table = type === "public" ? "public_event_registrations" : "event_registrations";
       const { error } = await supabase.from(table).update({ payment_status: status }).eq("id", id);
       if (error) throw error;
-      
+
       if (type === "internal") {
         setInternalRegs(prev => prev.map(r => r.id === id ? { ...r, payment_status: status } : r));
       } else {
@@ -412,473 +418,392 @@ export default function AdminEventsHub() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="space-y-10">
+        {/* Modern Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">Events Management</h1>
-            <p className="text-muted-foreground">Manage events, registrations, payments & feedback</p>
+            <h1 className="text-3xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
+              Event Hub
+            </h1>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">
+              Management of lifecycle, registrations, and feedback
+            </p>
           </div>
-          <Button onClick={() => navigate("/admin/events/new")}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Event
+          <Button
+            onClick={() => navigate("/admin/events/new")}
+            className="h-12 px-8 rounded-2xl bg-primary text-primary-foreground font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            CREATE EVENT
           </Button>
         </div>
 
-        {/* Quick Stats */}
+        {/* Dynamic Multi-State Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-xl bg-card border border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-primary" />
+          {[
+            { label: "Inventory", val: stats.totalEvents, icon: Calendar, color: "text-primary" },
+            { label: "Members", val: stats.totalInternalRegs, icon: Users, color: "text-accent" },
+            { label: "Public", val: stats.totalPublicRegs, icon: ClipboardList, color: "text-primary" },
+            { label: "Unpaid", val: stats.pendingPayments, icon: CreditCard, color: "text-red-500", highlight: stats.pendingPayments > 0 },
+            { label: "Active", val: stats.upcomingEvents, icon: BarChart3, color: "text-green-500" },
+            { label: "Rating", val: stats.avgRating, icon: Star, color: "text-yellow-400" }
+          ].map((stat, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.05 }}
+              className={`p-5 rounded-[1.75rem] border transition-all ${stat.highlight ? 'bg-red-500/5 border-red-500/20 shadow-lg shadow-red-500/5' : 'glass-card border-white/5'}`}
+            >
+              <div className={`p-2.5 w-fit rounded-xl bg-white/5 mb-3 ${stat.color}`}>
+                <stat.icon size={20} />
               </div>
-              <div>
-                <p className="text-xl font-bold">{stats.totalEvents}</p>
-                <p className="text-xs text-muted-foreground">Total Events</p>
-              </div>
-            </div>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="p-4 rounded-xl bg-card border border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-accent/20 flex items-center justify-center">
-                <Users className="w-5 h-5 text-accent" />
-              </div>
-              <div>
-                <p className="text-xl font-bold">{stats.totalInternalRegs}</p>
-                <p className="text-xs text-muted-foreground">Member Regs</p>
-              </div>
-            </div>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="p-4 rounded-xl bg-card border border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center">
-                <ClipboardList className="w-5 h-5 text-secondary" />
-              </div>
-              <div>
-                <p className="text-xl font-bold">{stats.totalPublicRegs}</p>
-                <p className="text-xs text-muted-foreground">Public Regs</p>
-              </div>
-            </div>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-yellow-500" />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-yellow-400">{stats.pendingPayments}</p>
-                <p className="text-xs text-yellow-400/70">Pending Pay</p>
-              </div>
-            </div>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="p-4 rounded-xl bg-card border border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-green-500" />
-              </div>
-              <div>
-                <p className="text-xl font-bold">{stats.upcomingEvents}</p>
-                <p className="text-xs text-muted-foreground">Upcoming</p>
-              </div>
-            </div>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="p-4 rounded-xl bg-card border border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-yellow-400/20 flex items-center justify-center">
-                <Star className="w-5 h-5 text-yellow-400" />
-              </div>
-              <div>
-                <p className="text-xl font-bold">{stats.avgRating}</p>
-                <p className="text-xs text-muted-foreground">Avg Rating</p>
-              </div>
-            </div>
-          </motion.div>
+              <p className="text-2xl font-black text-foreground tracking-tighter">{stat.val}</p>
+              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none mt-1">{stat.label}</p>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
-            <TabsTrigger value="events" className="gap-2">
-              <Calendar className="w-4 h-4 hidden sm:inline" />Events
-            </TabsTrigger>
-            <TabsTrigger value="internal" className="gap-2">
-              <Users className="w-4 h-4 hidden sm:inline" />Members
-            </TabsTrigger>
-            <TabsTrigger value="public" className="gap-2">
-              <ClipboardList className="w-4 h-4 hidden sm:inline" />Public
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="gap-2">
-              <CreditCard className="w-4 h-4 hidden sm:inline" />Payments
-            </TabsTrigger>
-            <TabsTrigger value="feedback" className="gap-2">
-              <Star className="w-4 h-4 hidden sm:inline" />Feedback
-            </TabsTrigger>
-          </TabsList>
+        {/* Action Center - Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-white/5 pb-4">
+            <TabsList className="bg-white/5 p-1.5 rounded-[1.25rem] h-auto flex-wrap justify-start border border-white/5">
+              {[
+                { val: "events", label: "Registry", icon: Calendar },
+                { val: "internal", label: "Members", icon: Users },
+                { val: "public", label: "Public", icon: ClipboardList },
+                { val: "payments", label: "Ledger", icon: CreditCard },
+                { val: "feedback", label: "Insights", icon: Star }
+              ].map(t => (
+                <TabsTrigger
+                  key={t.val}
+                  value={t.val}
+                  className="px-6 py-2.5 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg font-black text-[10px] uppercase tracking-widest transition-all"
+                >
+                  <t.icon size={14} className="mr-2" />
+                  {t.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-          {/* Search & Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative group min-w-[260px]">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Input
+                  placeholder="Universal search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-11 h-11 rounded-xl bg-white/5 border-white/10 focus:ring-primary/20"
+                />
+              </div>
+
+              {/* Context Specific Filters */}
+              <AnimatePresence mode="wait">
+                {(activeTab === "internal" || activeTab === "public" || activeTab === "feedback") && (
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                    <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+                      <SelectTrigger className="w-full sm:w-48 h-11 rounded-xl bg-white/5 border-white/10 text-xs font-bold">
+                        <SelectValue placeholder="All Clusters" />
+                      </SelectTrigger>
+                      <SelectContent className="glass-card">
+                        <SelectItem value="all">Global Scope</SelectItem>
+                        {events.map(e => <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Dynamic CSV Export */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-11 px-5 rounded-xl bg-white/5 border border-white/10 font-bold text-xs group">
+                    <Download className="w-4 h-4 mr-2 group-hover:text-primary transition-colors" />
+                    EXPORT
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="glass-card p-2 border-white/10">
+                  <DropdownMenuItem onClick={exportInternalRegistrations} className="rounded-lg p-3 cursor-pointer">Member Data (CSV)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportPublicRegistrations} className="rounded-lg p-3 cursor-pointer">Public Data (CSV)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportPayments} className="rounded-lg p-3 cursor-pointer">Payment Ledger (CSV)</DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportFeedback} className="rounded-lg p-3 cursor-pointer">Feedback Report (CSV)</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            {(activeTab === "internal" || activeTab === "public" || activeTab === "feedback") && (
-              <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-                <SelectTrigger className="w-full sm:w-56">
-                  <SelectValue placeholder="Filter by event" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Events</SelectItem>
-                  {events.map(e => <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            )}
-            {activeTab === "payments" && (
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-            {activeTab === "feedback" && (
-              <Select value={ratingFilter} onValueChange={setRatingFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Rating" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Ratings</SelectItem>
-                  {[5,4,3,2,1].map(r => <SelectItem key={r} value={r.toString()}>{r} Star{r > 1 && "s"}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            )}
-            {/* Export Buttons */}
-            {activeTab === "internal" && filteredInternalRegs.length > 0 && (
-              <Button variant="outline" onClick={exportInternalRegistrations}>
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
-            )}
-            {activeTab === "public" && filteredPublicRegs.length > 0 && (
-              <Button variant="outline" onClick={exportPublicRegistrations}>
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
-            )}
-            {activeTab === "payments" && paidRegistrations.length > 0 && (
-              <Button variant="outline" onClick={exportPayments}>
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
-            )}
-            {activeTab === "feedback" && filteredFeedbacks.length > 0 && (
-              <Button variant="outline" onClick={exportFeedback}>
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
-            )}
           </div>
 
-          {/* Events Tab */}
-          <TabsContent value="events" className="space-y-4">
-            {loading ? (
-              <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
-            ) : filteredEvents.length === 0 ? (
-              <div className="text-center py-12 bg-card rounded-xl border border-border">
-                <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No events found</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredEvents.map((event, idx) => (
-                  <motion.div key={event.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}
-                    className="bg-card rounded-xl border border-border p-5 hover:border-primary/30 transition-all">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <h3 className="font-heading font-semibold text-foreground truncate">{event.title}</h3>
-                          <Badge variant={event.status === "upcoming" ? "default" : event.status === "ongoing" ? "secondary" : "outline"}>{event.status}</Badge>
-                          {event.is_featured && <Badge variant="secondary">Featured</Badge>}
-                          {event.registration_fee && event.registration_fee > 0 && (
-                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">₹{event.registration_fee}</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-1 mb-3">{event.description}</p>
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{formatDate(event.start_date)}</span>
-                          <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{event.location}</span>
-                          {event.max_attendees && <span className="flex items-center gap-1"><Users className="w-4 h-4" />{event.max_attendees} spots</span>}
-                          <Badge variant="outline">{event.category}</Badge>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/events/${event.id}`)}><Edit className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteEvent(event.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Internal Registrations Tab */}
-          <TabsContent value="internal" className="space-y-4">
-            {loading ? (
-              <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
-            ) : filteredInternalRegs.length === 0 ? (
-              <div className="text-center py-12 bg-card rounded-xl border border-border">
-                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No member registrations found</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredInternalRegs.map((reg, idx) => (
-                  <motion.div key={reg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}
-                    className="bg-card rounded-xl border border-border p-5">
-                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                      <div className="space-y-2 flex-1">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <h3 className="font-semibold">{reg.profiles?.full_name || "Unknown User"}</h3>
-                          <Badge variant={reg.attended ? "default" : "outline"}>{reg.attended ? "Attended" : "Registered"}</Badge>
-                          {reg.team_name && <Badge variant="secondary">Team: {reg.team_name}</Badge>}
-                        </div>
-                        <p className="text-sm text-primary font-medium">{reg.events?.title || "Unknown Event"}</p>
-                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                          {reg.profiles?.email && <div className="flex items-center gap-1"><Mail className="w-4 h-4" />{reg.profiles.email}</div>}
-                          <div className="flex items-center gap-1"><Calendar className="w-4 h-4" />{formatDateTime(reg.registered_at)}</div>
-                        </div>
-                      </div>
-                      <Button variant={reg.attended ? "outline" : "default"} size="sm" onClick={() => handleToggleAttended(reg.id, reg.attended)}>
-                        {reg.attended ? "Mark Absent" : "Mark Attended"}
+          {/* Tab Contents - Modernized */}
+          <TabsContent value="events" className="mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {loading ? (
+                [1, 2, 3].map(i => <div key={i} className="h-48 glass rounded-[2rem] animate-pulse" />)
+              ) : filteredEvents.map((event, idx) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="glass-card rounded-[2.5rem] border border-white/5 p-8 group relative overflow-hidden flex flex-col h-full"
+                >
+                  <div className="absolute top-0 right-0 p-8">
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 hover:bg-primary/20 hover:text-primary transition-all" onClick={() => navigate(`/admin/events/${event.id}`)}>
+                        <Edit size={16} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 hover:bg-red-500/20 hover:text-red-500 transition-all" onClick={() => handleDeleteEvent(event.id)}>
+                        <Trash2 size={16} />
                       </Button>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
+                  </div>
 
-          {/* Public Registrations Tab */}
-          <TabsContent value="public" className="space-y-4">
-            {loading ? (
-              <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
-            ) : filteredPublicRegs.length === 0 ? (
-              <div className="text-center py-12 bg-card rounded-xl border border-border">
-                <ClipboardList className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No public registrations found</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredPublicRegs.map((reg, idx) => (
-                  <motion.div key={reg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}
-                    className="bg-card rounded-xl border border-border p-5">
-                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                      <div className="space-y-2 flex-1">
-                        <h3 className="font-semibold">{reg.full_name}</h3>
-                        <p className="text-sm text-primary font-medium">{reg.events?.title || "Unknown Event"}</p>
-                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1"><Mail className="w-4 h-4" />{reg.email}</div>
-                          {reg.phone && <div className="flex items-center gap-1"><Phone className="w-4 h-4" />{reg.phone}</div>}
-                          <div className="flex items-center gap-1"><Calendar className="w-4 h-4" />{formatDateTime(reg.created_at)}</div>
+                  <div className="mb-6">
+                    <Badge className={`uppercase tracking-tighter font-black text-[9px] px-3 py-1 rounded-full mb-4 ${event.status === "upcoming" ? "bg-primary text-primary-foreground" :
+                      event.status === "ongoing" ? "bg-green-500 text-white" : "bg-white/10 text-muted-foreground"
+                      }`}>
+                      {event.status}
+                    </Badge>
+                    <h3 className="text-xl font-black text-foreground tracking-tight leading-tight group-hover:text-primary transition-colors decoration-primary/30 decoration-2 underline-offset-4 line-clamp-2">
+                      {event.title}
+                    </h3>
+                  </div>
+
+                  <div className="space-y-4 mt-auto">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Date</p>
+                        <div className="flex items-center gap-2 font-black text-xs text-foreground">
+                          <Calendar size={14} className="text-primary" />
+                          {formatDate(event.start_date)}
                         </div>
-                        {reg.message && <p className="text-sm text-muted-foreground flex items-start gap-1"><MessageSquare className="w-4 h-4 mt-0.5" />{reg.message}</p>}
                       </div>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDeletePublicReg(reg.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Category</p>
+                        <div className="flex items-center gap-2 font-black text-xs text-foreground">
+                          <Star size={14} className="text-accent" />
+                          {event.category.toUpperCase()}
+                        </div>
+                      </div>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
 
-          {/* Payments Tab */}
-          <TabsContent value="payments" className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-card border border-border text-center">
-                <p className="text-2xl font-bold">{paidRegistrations.length}</p>
-                <p className="text-sm text-muted-foreground">Total</p>
-              </div>
-              <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-center">
-                <p className="text-2xl font-bold text-green-400">{paidRegistrations.filter(r => r.payment_status === "approved").length}</p>
-                <p className="text-sm text-green-400/70">Approved</p>
-              </div>
-              <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-center">
-                <p className="text-2xl font-bold text-yellow-400">{paidRegistrations.filter(r => r.payment_status === "pending").length}</p>
-                <p className="text-sm text-yellow-400/70">Pending</p>
-              </div>
+                    <div className="flex items-center justify-between px-2">
+                      <div className="flex items-center gap-1.5 font-black text-xs text-muted-foreground">
+                        <MapPin size={14} className="text-primary" />
+                        {event.location}
+                      </div>
+                      {event.registration_fee ? (
+                        <div className="text-primary font-black text-lg tracking-tighter">₹{event.registration_fee}</div>
+                      ) : <div className="text-green-500 font-black text-xs uppercase tracking-widest">Free Entry</div>}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
-            
-            {loading ? (
-              <Skeleton className="h-64 rounded-xl" />
-            ) : paidRegistrations.length === 0 ? (
-              <div className="text-center py-12 bg-card rounded-xl border border-border">
-                <IndianRupee className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No paid registrations found</p>
-              </div>
-            ) : (
-              <div className="bg-card rounded-xl border border-border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Registrant</TableHead>
-                      <TableHead>Event</TableHead>
-                      <TableHead>Fee</TableHead>
-                      <TableHead>Receipt</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+          </TabsContent>
+
+          {/* Members/Registrations View */}
+          <TabsContent value="internal" className="mt-8 space-y-4">
+            {filteredInternalRegs.map((reg, idx) => (
+              <motion.div key={reg.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.03 }}
+                className="glass-card rounded-3xl border border-white/5 p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:shadow-xl hover:shadow-primary/5 transition-all group">
+                <div className="flex items-center gap-5">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform">
+                    {reg.attended ? <Check className="text-primary w-6 h-6" /> : <User className="text-muted-foreground w-6 h-6" />}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-foreground tracking-tight group-hover:text-primary transition-colors">
+                      {reg.profiles?.full_name || "Nexus Node Member"}
+                    </h3>
+                    <div className="flex items-center gap-4 mt-1">
+                      <span className="text-xs font-bold text-primary uppercase tracking-tighter">{reg.events?.title}</span>
+                      <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">• IN-RESIDENCE •</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-6">
+                  <div className="hidden xl:flex flex-col items-end">
+                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Authenticated Email</span>
+                    <span className="text-sm font-black text-foreground">{reg.profiles?.email}</span>
+                  </div>
+                  <div className="w-[1px] h-10 bg-white/5 hidden xl:block" />
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      className={`h-11 px-6 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all ${reg.attended ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-white/5 border border-white/10 text-muted-foreground active:scale-95"
+                        }`}
+                      onClick={() => handleToggleAttended(reg.id, reg.attended)}
+                    >
+                      {reg.attended ? "PRESENT" : "MARK PRESENT"}
+                    </Button>
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-muted-foreground opacity-50">
+                      <BarChart3 size={18} />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </TabsContent>
+
+          {/* Ledger - Payments */}
+          <TabsContent value="payments" className="mt-8">
+            <div className="glass-card rounded-[2.5rem] border border-white/5 overflow-hidden">
+              <Table>
+                <TableHeader className="bg-white/5 border-b border-white/5">
+                  <TableRow className="hover:bg-transparent border-white/5">
+                    <TableHead className="py-6 px-8 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Operator</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Deployment Cluster</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Valuation</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Verification</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Status Flag</TableHead>
+                    <TableHead className="text-right px-8 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Operations</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paidRegistrations.map(reg => (
+                    <TableRow key={reg.id} className="hover:bg-white/5 border-white/5 transition-colors group">
+                      <TableCell className="py-6 px-8 font-bold text-foreground">
+                        <div className="flex flex-col">
+                          <span className="text-sm group-hover:text-primary transition-colors">{reg.type === "public" ? reg.full_name : reg.profiles?.full_name}</span>
+                          <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">{reg.type} user</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">{reg.events?.title}</span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-green-500/10 text-green-400 font-black text-sm border border-green-500/20">
+                          <IndianRupee size={12} />
+                          {reg.events?.registration_fee}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {reg.payment_receipt_url ? (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" className="h-9 px-4 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest">
+                                <FileImage size={14} className="mr-2 text-primary" />
+                                SCREENSHOT
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl glass border-white/10">
+                              <img src={reg.payment_receipt_url} alt="Proof" className="w-full rounded-[2rem] border border-white/5 shadow-2xl" />
+                            </DialogContent>
+                          </Dialog>
+                        ) : <span className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.2em]">NO PROOF</span>}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`uppercase tracking-tighter font-black text-[8px] px-3 py-1 rounded-full ${reg.payment_status === "approved" ? "bg-green-500/20 text-green-400 border border-green-500/30" :
+                          reg.payment_status === "rejected" ? "bg-red-500/20 text-red-400 border border-red-500/30" :
+                            "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 animate-pulse"
+                          }`}>
+                          {reg.payment_status || "PENDING"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right px-8">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button size="icon" className="w-10 h-10 rounded-xl bg-green-500/10 hover:bg-green-500 text-green-400 hover:text-white transition-all" onClick={() => updatePaymentStatus(reg.id, reg.type, "approved")}>
+                            <Check size={18} />
+                          </Button>
+                          <Button size="icon" className="w-10 h-10 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white transition-all" onClick={() => updatePaymentStatus(reg.id, reg.type, "rejected")}>
+                            <X size={18} />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paidRegistrations.map(reg => {
-                      const name = reg.type === "public" ? reg.full_name : reg.profiles?.full_name;
-                      const email = reg.type === "public" ? reg.email : reg.profiles?.email;
-                      const fee = reg.events?.registration_fee;
-                      const receiptUrl = reg.payment_receipt_url;
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          {/* Insights - Feedback */}
+          <TabsContent value="feedback" className="mt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Visual Analytics Summary */}
+              <div className="lg:col-span-1 space-y-6">
+                <div className="glass-card rounded-[2.5rem] border border-white/5 p-8 text-center relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mb-4">Satisfaction Index</p>
+                  <div className="text-7xl font-black text-primary tracking-tighter mb-4">{stats.avgRating}</div>
+                  <div className="flex justify-center gap-1 mb-8">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <Star key={i} size={20} className={i <= Math.round(parseFloat(stats.avgRating)) ? "fill-yellow-400 text-yellow-400" : "text-white/10"} />
+                    ))}
+                  </div>
+                  <div className="space-y-3">
+                    {[5, 4, 3, 2, 1].map(r => {
+                      const count = feedbacks.filter(f => f.rating === r).length;
+                      const pct = feedbacks.length > 0 ? (count / feedbacks.length) * 100 : 0;
                       return (
-                        <TableRow key={reg.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                                <User className="w-4 h-4 text-primary" />
-                              </div>
-                              <div>
-                                <p className="font-medium">{name || "N/A"}</p>
-                                <p className="text-xs text-muted-foreground">{email}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <p className="font-medium text-sm">{reg.events?.title}</p>
-                            <Badge variant="outline" className="text-xs">{reg.type === "public" ? "Public" : "Member"}</Badge>
-                          </TableCell>
-                          <TableCell><span className="font-medium">₹{fee}</span></TableCell>
-                          <TableCell>
-                            {receiptUrl ? (
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="sm"><Eye className="w-4 h-4 mr-1" />View</Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-2xl">
-                                  <DialogHeader><DialogTitle>Payment Receipt</DialogTitle></DialogHeader>
-                                  <div className="max-h-[70vh] overflow-auto">
-                                    <img src={receiptUrl} alt="Receipt" className="w-full rounded-lg" />
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                            ) : <span className="text-muted-foreground text-sm">No receipt</span>}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(reg.payment_status)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button size="sm" variant="outline" className="text-green-500 hover:bg-green-500/10"
-                                onClick={() => updatePaymentStatus(reg.id, reg.type, "approved")} disabled={reg.payment_status === "approved"}>
-                                <Check className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" variant="outline" className="text-red-500 hover:bg-red-500/10"
-                                onClick={() => updatePaymentStatus(reg.id, reg.type, "rejected")} disabled={reg.payment_status === "rejected"}>
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                        <div key={r} className="flex items-center gap-4 group/row">
+                          <span className="text-[10px] font-black text-muted-foreground w-4">{r}</span>
+                          <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className="h-full bg-primary" />
+                          </div>
+                          <span className="text-[10px] font-black text-muted-foreground w-8 text-right opacity-40 group-hover/row:opacity-100">{count}</span>
+                        </div>
                       );
                     })}
-                  </TableBody>
-                </Table>
+                  </div>
+                </div>
               </div>
-            )}
-          </TabsContent>
 
-          {/* Feedback Tab */}
-          <TabsContent value="feedback" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-card rounded-xl border border-border p-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
-                    <Star className="w-6 h-6 text-yellow-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{stats.avgRating}</p>
-                    <p className="text-sm text-muted-foreground">Average Rating</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-card rounded-xl border border-border p-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-                    <MessageSquare className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{feedbacks.length}</p>
-                    <p className="text-sm text-muted-foreground">Total Feedback</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-card rounded-xl border border-border p-5">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium mb-2">Rating Distribution</p>
-                  {[5,4,3,2,1].map(star => {
-                    const count = feedbacks.filter(f => f.rating === star).length;
-                    return (
-                      <div key={star} className="flex items-center gap-2 text-xs">
-                        <span className="w-3">{star}</span>
-                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                          <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${feedbacks.length > 0 ? (count / feedbacks.length) * 100 : 0}%` }} />
-                        </div>
-                        <span className="w-6 text-right text-muted-foreground">{count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
-            ) : filteredFeedbacks.length === 0 ? (
-              <div className="text-center py-12 bg-card rounded-xl border border-border">
-                <Star className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No feedback found</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
+              {/* Individual Reports */}
+              <div className="lg:col-span-2 grid gap-4">
                 {filteredFeedbacks.map((fb, idx) => (
                   <motion.div key={fb.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}
-                    className="bg-card rounded-xl border border-border p-5">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex gap-0.5">
-                          {[1,2,3,4,5].map(star => (
-                            <Star key={star} className={`w-5 h-5 ${star <= fb.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
-                          ))}
-                        </div>
-                        <span className="text-sm font-medium">{fb.rating}/5</span>
+                    className="glass-card rounded-[2rem] border border-white/5 p-8 relative group">
+                    <div className="absolute top-8 right-8 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] opacity-30 group-hover:opacity-100 transition-opacity">
+                      {formatDate(fb.created_at)}
+                    </div>
+                    <div className="flex items-center gap-1.5 mb-4">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <Star key={i} size={14} className={i <= fb.rating ? "fill-yellow-400 text-yellow-400" : "text-white/5"} />
+                      ))}
+                    </div>
+                    <p className="text-sm font-black text-primary uppercase tracking-widest mb-3">{fb.events?.title}</p>
+                    <p className="text-lg font-bold text-foreground leading-relaxed italic border-l-4 border-primary/20 pl-6 my-6">"{fb.feedback || "System reported optimal results without text commentary."}"</p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                        <User size={12} className="text-muted-foreground" />
                       </div>
-                      <p className="text-sm text-primary font-medium">{fb.events?.title || "Unknown Event"}</p>
-                      {fb.feedback && <p className="text-muted-foreground">{fb.feedback}</p>}
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1"><User className="w-4 h-4" />{fb.is_anonymous ? "Anonymous" : "Attendee"}</div>
-                        <div className="flex items-center gap-1"><Calendar className="w-4 h-4" />{formatDate(fb.created_at)}</div>
-                      </div>
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">{fb.is_anonymous ? "ANONYMOUS DATA POINT" : "VERIFIED ATTENDEE"}</span>
                     </div>
                   </motion.div>
                 ))}
               </div>
-            )}
+            </div>
+          </TabsContent>
+
+          {/* Fallback for Public Registrations (Not listed above but exists in logic) */}
+          <TabsContent value="public" className="mt-8 space-y-4">
+            {filteredPublicRegs.map((reg, idx) => (
+              <motion.div key={reg.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.03 }}
+                className="glass-card rounded-3xl border border-white/5 p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:shadow-xl hover:shadow-primary/5 transition-all group">
+                <div className="flex items-center gap-5">
+                  <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-105 transition-transform">
+                    <ClipboardList className="text-primary w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-foreground tracking-tight group-hover:text-primary transition-colors">{reg.full_name}</h3>
+                    <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground mt-1">
+                      <Mail className="w-3.5 h-3.5 text-primary" />
+                      {reg.email}
+                      {reg.phone && <span className="opacity-60">• {reg.phone}</span>}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-10">
+                  <div className="flex flex-col text-right">
+                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">Assigned Cluster</span>
+                    <span className="text-sm font-black text-foreground">{reg.events?.title}</span>
+                  </div>
+                  <Button variant="ghost" size="icon" className="w-11 h-11 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all" onClick={() => handleDeletePublicReg(reg.id)}>
+                    <Trash2 size={18} />
+                  </Button>
+                </div>
+              </motion.div>
+            ))}
           </TabsContent>
         </Tabs>
       </div>

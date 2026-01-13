@@ -71,13 +71,12 @@ export function CommunitySection() {
     value: `${stats.students}+`,
     label: "Current Students"
   }];
-  return <section id="community" className="py-20 md:py-32 bg-gradient-to-br from-primary via-primary/95 to-accent/80 relative overflow-hidden">
-      {/* Pattern */}
-      <div className="absolute inset-0 bg-hero-pattern opacity-20" />
+  return <section id="community" className="py-20 md:py-32 bg-background relative overflow-hidden">
+    {/* Pattern - Removed for minimalism */}
 
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Header */}
-        <motion.div initial={{
+    <div className="container mx-auto px-4 relative z-10">
+      {/* Header */}
+      <motion.div initial={{
         opacity: 0,
         y: 30
       }} whileInView={{
@@ -88,20 +87,20 @@ export function CommunitySection() {
       }} transition={{
         duration: 0.5
       }} className="text-center max-w-3xl mx-auto mb-16">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-primary-foreground/10 text-primary-foreground text-sm font-medium mb-4">
-            Community
-          </span>
-          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground mb-4">
-            Join Our Thriving <span className="text-secondary">Community</span>
-          </h2>
-          <p className="text-primary-foreground/80 text-lg">
-            Be part of a supportive network of students, alumni, and industry
-            professionals dedicated to your success.
-          </p>
-        </motion.div>
+        <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+          Community
+        </span>
+        <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+          Join Our Thriving <span className="gradient-text">Community</span>
+        </h2>
+        <p className="text-muted-foreground text-lg">
+          Be part of a supportive network of students, alumni, and industry
+          professionals dedicated to your success.
+        </p>
+      </motion.div>
 
-        {/* Stats */}
-        <motion.div initial={{
+      {/* Stats */}
+      <motion.div initial={{
         opacity: 0,
         y: 30
       }} whileInView={{
@@ -113,7 +112,7 @@ export function CommunitySection() {
         duration: 0.5,
         delay: 0.1
       }} className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
-          {statItems.map((stat, index) => <motion.div key={stat.label} initial={{
+        {statItems.map((stat, index) => <motion.div key={stat.label} initial={{
           opacity: 0,
           scale: 0.8
         }} whileInView={{
@@ -125,18 +124,18 @@ export function CommunitySection() {
           duration: 0.4,
           delay: 0.2 + index * 0.1
         }} className="glass rounded-2xl p-6 text-center">
-              <div className="font-heading text-3xl md:text-4xl font-bold text-primary-foreground mb-1">
-                {stat.value}
-              </div>
-              <div className="text-sm text-primary-foreground/70">
-                {stat.label}
-              </div>
-            </motion.div>)}
-        </motion.div>
+          <div className="font-heading text-3xl md:text-4xl font-bold text-primary mb-1">
+            {stat.value}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {stat.label}
+          </div>
+        </motion.div>)}
+      </motion.div>
 
-        {/* Testimonials */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, index) => <motion.div key={testimonial.name} initial={{
+      {/* Testimonials */}
+      <div className="grid md:grid-cols-3 gap-6">
+        {testimonials.map((testimonial, index) => <motion.div key={testimonial.name} initial={{
           opacity: 0,
           y: 30
         }} whileInView={{
@@ -147,36 +146,36 @@ export function CommunitySection() {
         }} transition={{
           duration: 0.5,
           delay: 0.3 + index * 0.1
-        }} className="rounded-2xl p-6 shadow-xl bg-[sidebar-primary-foreground] bg-slate-950 border-2 border-dotted border-muted opacity-100">
-              {/* Quote Icon */}
-              <Quote className="w-10 h-10 text-primary/20 mb-4" />
+        }} className="rounded-2xl p-6 shadow-xl bg-card border border-border hover:border-primary/50 transition-all duration-300">
+          {/* Quote Icon */}
+          <Quote className="w-10 h-10 text-primary/20 mb-4" />
 
-              {/* Content */}
-              <p className="text-foreground mb-6 leading-relaxed">
-                "{testimonial.content}"
-              </p>
+          {/* Content */}
+          <p className="text-foreground mb-6 leading-relaxed">
+            "{testimonial.content}"
+          </p>
 
-              {/* Rating */}
-              <div className="flex gap-1 mb-4">
-                {Array.from({
+          {/* Rating */}
+          <div className="flex gap-1 mb-4">
+            {Array.from({
               length: testimonial.rating
             }).map((_, i) => <Star key={i} className="w-4 h-4 fill-secondary text-secondary" />)}
-              </div>
+          </div>
 
-              {/* Author */}
-              <div className="flex items-center gap-3">
-                <img src={testimonial.avatar} alt={testimonial.name} className="w-12 h-12 rounded-full object-cover" />
-                <div>
-                  <h4 className="font-medium text-foreground">
-                    {testimonial.name}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {testimonial.role}
-                  </p>
-                </div>
-              </div>
-            </motion.div>)}
-        </div>
+          {/* Author */}
+          <div className="flex items-center gap-3">
+            <img src={testimonial.avatar} alt={testimonial.name} className="w-12 h-12 rounded-full object-cover" />
+            <div>
+              <h4 className="font-medium text-foreground">
+                {testimonial.name}
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                {testimonial.role}
+              </p>
+            </div>
+          </div>
+        </motion.div>)}
       </div>
-    </section>;
+    </div>
+  </section>;
 }

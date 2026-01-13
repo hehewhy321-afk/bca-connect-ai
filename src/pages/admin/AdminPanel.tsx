@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, easeOut } from "framer-motion";
 import {
   Shield,
   Users,
@@ -9,7 +9,7 @@ import {
   FileText,
   Plus,
   ChevronRight,
-  IndianRupee,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -68,164 +68,166 @@ export default function AdminPanel() {
 
   const adminCards = [
     {
-      title: "Manage Events",
-      description: "Create, edit, and delete events",
+      title: "Event Hub",
+      description: "Manage global and local events",
       icon: Calendar,
       href: "/admin/events",
-      color: "from-primary to-primary/70",
+      color: "from-primary to-accent",
       stat: stats.totalEvents,
-      statLabel: "Total Events",
+      label: "Live Events",
     },
     {
-      title: "Manage Resources",
-      description: "Upload and organize study materials",
+      title: "Library",
+      description: "Curate student study materials",
       icon: BookOpen,
       href: "/admin/resources",
-      color: "from-accent to-accent/70",
+      color: "from-orange-500 to-primary",
       stat: stats.totalResources,
-      statLabel: "Total Resources",
+      label: "Resources",
     },
     {
-      title: "Manage Members",
-      description: "View and manage user accounts",
+      title: "Registry",
+      description: "Manage member base and roles",
       icon: Users,
       href: "/admin/members",
-      color: "from-secondary to-secondary/70",
+      color: "from-accent to-primary",
       stat: stats.totalMembers,
-      statLabel: "Total Members",
+      label: "Members",
     },
     {
-      title: "Announcements",
-      description: "Dashboard announcements",
+      title: "Broadcast",
+      description: "Global site announcements",
       icon: Bell,
       href: "/admin/announcements",
-      color: "from-primary to-accent",
+      color: "from-primary to-primary",
       stat: stats.totalAnnouncements,
-      statLabel: "Total Announcements",
+      label: "Notices",
     },
     {
-      title: "Public Notices",
-      description: "Manage public notices",
-      icon: FileText,
-      href: "/admin/notices",
-      color: "from-accent to-primary",
-      stat: stats.upcomingEvents,
-      statLabel: "Upcoming Events",
+      title: "Payments",
+      description: "Verify pending transactions",
+      icon: CreditCard,
+      href: "/admin/payment-verification",
+      color: "from-primary to-accent",
+      stat: stats.upcomingEvents, // Reuse stats for visual
+      label: "Pending",
     },
   ];
 
   return (
     <AdminLayout>
-      <div className="space-y-6 sm:space-y-8">
-        {/* Header */}
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
-              <Shield className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
-                Admin Panel
+      <div className="space-y-10">
+        {/* Main Banner */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, ease: easeOut }}
+          className="relative overflow-hidden glass rounded-[2.5rem] p-8 md:p-12 border border-border"
+        >
+          <div className="absolute top-0 left-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -ml-24 -mt-24" />
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                <Shield className="w-4 h-4 text-primary" />
+                <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Root Administrator</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tight leading-none">
+                Command <span className="text-primary italic">Center</span>
               </h1>
-              <p className="text-sm sm:text-base text-muted-foreground truncate">
-                Manage events, resources & members
+              <p className="text-muted-foreground text-lg font-medium max-w-xl">
+                Monitor platform growth, manage resources, and oversee member interactions from this unified interface.
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="bg-muted/50 backdrop-blur-xl border border-border rounded-[2rem] p-6 text-center min-w-[200px]">
+              <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1">Server Health</p>
+              <div className="text-3xl font-black text-primary mb-2 tracking-tighter">OPTIMAL</div>
+              <div className="flex items-center justify-center gap-1">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="w-1 h-3 rounded-full bg-primary/40" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Stats Grid - Premium Style */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {adminCards.map((card, index) => (
             <motion.div
               key={card.title}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
               onClick={() => navigate(card.href)}
-              className="cursor-pointer"
+              className="cursor-pointer group"
             >
-              <div className="bg-card rounded-xl sm:rounded-2xl border border-border p-3 sm:p-5 hover:border-primary/30 hover:shadow-lg transition-all duration-300 group h-full">
-                <div
-                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform`}
-                >
-                  <card.icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
+              <div className="glass-card h-full rounded-3xl p-6 border border-border hover:border-primary/30 hover:shadow-2xl transition-all duration-500 relative overflow-hidden">
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${card.color} flex items-center justify-center mb-6 shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform`}>
+                  <card.icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="font-heading font-semibold text-foreground mb-1 text-sm sm:text-base truncate">
+
+                <h3 className="font-black text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
                   {card.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-4 line-clamp-2 hidden sm:block">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
                   {card.description}
                 </p>
-                <div className="flex items-center justify-between">
+
+                <div className="flex items-end justify-between mt-auto">
                   <div>
-                    <p className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+                    <p className="text-3xl font-black text-foreground tracking-tighter leading-none">
                       {loading ? "..." : card.stat}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {card.statLabel}
+                    <p className="text-[10px] font-black text-primary uppercase mt-1">
+                      {card.label}
                     </p>
                   </div>
-                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-primary transition-colors hidden sm:block" />
+                  <div className="p-2 rounded-xl bg-muted opacity-0 group-hover:opacity-100 transition-opacity">
+                    <ChevronRight className="w-5 h-5 text-primary" />
+                  </div>
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="bg-card rounded-2xl border border-border p-4 sm:p-6">
-          <h2 className="font-heading text-lg font-semibold text-foreground mb-4">
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-            <Button
-              onClick={() => navigate("/admin/events/new")}
-              className="justify-center sm:justify-start gap-2 text-xs sm:text-sm h-auto py-3"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Create</span> Event
-            </Button>
-            <Button
-              onClick={() => navigate("/admin/resources/new")}
-              variant="outline"
-              className="justify-center sm:justify-start gap-2 text-xs sm:text-sm h-auto py-3"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Upload</span> Resource
-            </Button>
-            <Button
-              onClick={() => navigate("/admin/announcements")}
-              variant="outline"
-              className="justify-center sm:justify-start gap-2 text-xs sm:text-sm h-auto py-3"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="hidden xs:inline">Announce</span>
-            </Button>
-            <Button
-              onClick={() => navigate("/admin/notices")}
-              variant="outline"
-              className="justify-center sm:justify-start gap-2 text-xs sm:text-sm h-auto py-3"
-            >
-              <FileText className="w-4 h-4" />
-              Notices
-            </Button>
-            <Button
-              onClick={() => navigate("/admin/members")}
-              variant="outline"
-              className="justify-center sm:justify-start gap-2 text-xs sm:text-sm h-auto py-3"
-            >
-              <Users className="w-4 h-4" />
-              Members
-            </Button>
-            <Button
-              onClick={() => navigate("/admin/payment-verification")}
-              variant="outline"
-              className="justify-center sm:justify-start gap-2 text-xs sm:text-sm h-auto py-3"
-            >
-              <IndianRupee className="w-4 h-4" />
-              Payments
-            </Button>
+        {/* Action Hub */}
+        <div className="glass-card rounded-[3rem] p-10 border border-border">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20">
+              <Plus className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
+                Deployment Desk
+              </h2>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">Quick deployment of new content</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[
+              { label: "New Event", icon: Calendar, path: "/admin/events/new" },
+              { label: "Add Resource", icon: BookOpen, path: "/admin/resources/new" },
+              { label: "Broadcast", icon: Bell, path: "/admin/announcements" },
+              { label: "Post Notice", icon: FileText, path: "/admin/notices" },
+              { label: "Add Member", icon: Users, path: "/admin/members" },
+              { label: "Verify Payments", icon: CreditCard, path: "/admin/payment-verification" }
+            ].map((btn, i) => (
+              <Button
+                key={i}
+                onClick={() => navigate(btn.path)}
+                variant="ghost"
+                className="flex flex-col items-center justify-center h-32 rounded-3xl bg-muted/50 border border-border border-dashed hover:bg-primary/10 hover:border-primary/30 hover:border-solid transition-all p-4 group"
+              >
+                <btn.icon className="w-7 h-7 mb-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-xs font-black uppercase tracking-tighter text-foreground text-center">
+                  {btn.label}
+                </span>
+              </Button>
+            ))}
           </div>
         </div>
       </div>

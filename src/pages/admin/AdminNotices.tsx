@@ -210,122 +210,110 @@ export default function AdminNotices() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <FileText className="w-6 h-6 text-primary-foreground" />
+      <div className="space-y-10">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-lg shadow-primary/5">
+              <FileText className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="font-heading text-2xl font-bold text-foreground">
-                Manage Notices
+              <h1 className="text-3xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
+                Public Relations
               </h1>
-              <p className="text-muted-foreground">
-                Create and manage public notices
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">
+                Official documentation and public circulars
               </p>
             </div>
           </div>
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => handleOpenDialog()} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add Notice
+              <Button onClick={() => handleOpenDialog()} className="h-12 px-8 rounded-2xl bg-primary text-primary-foreground font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all">
+                <Plus className="w-5 h-5 mr-2" />
+                DRAFT NOTICE
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg glass border-white/10 p-8 rounded-[2.5rem]">
               <DialogHeader>
-                <DialogTitle>
-                  {editingNotice ? "Edit Notice" : "Create Notice"}
+                <DialogTitle className="text-2xl font-black tracking-tight text-foreground underline decoration-primary/30 decoration-4 underline-offset-8 mb-6">
+                  {editingNotice ? "REVISE RECORD" : "ISSUE CIRCULAR"}
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Title</Label>
+              <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Official Title</Label>
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                    placeholder="Notice title"
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="h-11 rounded-xl bg-white/5 border-white/10 focus:ring-primary/20"
+                    placeholder="Reference identification"
                     required
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="content">Content</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="content" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Circular Content</Label>
                   <Textarea
                     id="content"
                     value={formData.content}
-                    onChange={(e) =>
-                      setFormData({ ...formData, content: e.target.value })
-                    }
-                    placeholder="Notice content..."
-                    rows={5}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    className="min-h-[140px] rounded-xl bg-white/5 border-white/10 focus:ring-primary/20"
+                    placeholder="Formal notice text..."
                     required
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="priority">Priority</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="priority" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Urgency Level</Label>
                     <Select
                       value={formData.priority}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, priority: value })
-                      }
+                      onValueChange={(value) => setFormData({ ...formData, priority: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11 rounded-xl bg-white/5 border-white/10">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="normal">Normal</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
+                      <SelectContent className="glass-card">
+                        <SelectItem value="normal">Standard</SelectItem>
+                        <SelectItem value="medium">Elevated</SelectItem>
+                        <SelectItem value="high">Critical</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div>
-                    <Label htmlFor="expires_at">Expires At</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="expires_at" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Validity Node</Label>
                     <Input
                       id="expires_at"
                       type="date"
                       value={formData.expires_at}
-                      onChange={(e) =>
-                        setFormData({ ...formData, expires_at: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
+                      className="h-11 rounded-xl bg-white/5 border-white/10"
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
                   <Switch
                     id="is_pinned"
                     checked={formData.is_pinned}
-                    onCheckedChange={(checked) =>
-                      setFormData({ ...formData, is_pinned: checked })
-                    }
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_pinned: checked })}
+                    className="data-[state=checked]:bg-primary"
                   />
-                  <Label htmlFor="is_pinned">Pin this notice</Label>
+                  <div>
+                    <Label htmlFor="is_pinned" className="text-xs font-black uppercase tracking-widest text-foreground block">Pin Records</Label>
+                    <span className="text-[9px] text-muted-foreground font-bold leading-none">Elevates visibility in public feed</span>
+                  </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setDialogOpen(false)}
-                  >
-                    Cancel
+                <div className="flex gap-3 pt-4">
+                  <Button type="button" variant="ghost" className="flex-1 h-11 rounded-xl font-black text-xs uppercase" onClick={() => setDialogOpen(false)}>
+                    CANCEL
                   </Button>
-                  <Button type="submit" disabled={submitting}>
-                    {submitting
-                      ? "Saving..."
-                      : editingNotice
-                      ? "Update Notice"
-                      : "Create Notice"}
+                  <Button type="submit" disabled={submitting} className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground font-black text-xs uppercase shadow-lg shadow-primary/20">
+                    {submitting ? "PROCESSING..." : editingNotice ? "UPDATE RECORDS" : "POST CIRCULAR"}
                   </Button>
                 </div>
               </form>
@@ -333,111 +321,116 @@ export default function AdminNotices() {
           </Dialog>
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        {/* Archives Search */}
+        <div className="relative group max-w-2xl">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search notices..."
-            className="pl-10"
+            placeholder="Search circulars by keyword..."
+            className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
           />
         </div>
 
-        {/* Notices List */}
+        {/* Notices Archive */}
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="grid gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-32 glass rounded-[2rem] animate-pulse" />
+            ))}
           </div>
         ) : filteredNotices.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-heading text-lg font-semibold text-foreground mb-2">
-              No notices found
-            </h3>
-            <p className="text-muted-foreground">
-              {search
-                ? "Try a different search term"
-                : "Create your first notice"}
+          <div className="text-center py-24 glass-card rounded-[3rem] border border-white/5 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5 pointer-events-none" />
+            <FileText className="w-16 h-16 text-muted-foreground/30 mx-auto mb-6" />
+            <h3 className="text-xl font-black text-foreground tracking-tight mb-2">Archive Vacant</h3>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+              {search ? "No matches found in active protocol." : "Establish your first official circular."}
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid gap-6">
             {filteredNotices.map((notice, index) => (
               <motion.div
                 key={notice.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
-                className="bg-card rounded-xl border border-border p-5 hover:shadow-lg transition-all"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className="glass-card rounded-[2.5rem] border border-white/5 p-8 hover:shadow-2xl hover:shadow-primary/5 transition-all group relative overflow-hidden"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                {/* Visual Flair */}
+                <div className={`absolute -right-6 -top-6 w-32 h-32 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity rounded-full bg-primary blur-3xl`} />
+
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8 relative z-10">
+                  <div className="flex-1 space-y-4">
+                    <div className="flex items-center gap-3 flex-wrap">
                       {notice.is_pinned && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                          <Pin className="w-3 h-3" />
-                          Pinned
-                        </span>
+                        <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
+                          <Pin className="w-3.5 h-3.5 text-primary fill-primary" />
+                        </div>
                       )}
+                      <h3 className="text-xl font-black text-foreground tracking-tight group-hover:text-primary transition-colors leading-tight">
+                        {notice.title}
+                      </h3>
                       {notice.priority === "high" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive text-xs font-medium">
+                        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-500 text-[8px] font-black uppercase tracking-tighter border border-red-500/30">
                           <AlertCircle className="w-3 h-3" />
-                          High Priority
-                        </span>
-                      )}
-                      {notice.priority === "medium" && (
-                        <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium">
-                          Medium
+                          CRITICAL PROTOCOL
                         </span>
                       )}
                     </div>
-                    <h3 className="font-heading font-semibold text-foreground mb-1">
-                      {notice.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+
+                    <p className="text-muted-foreground text-sm font-medium leading-relaxed border-l-4 border-primary/10 pl-6 my-4 line-clamp-2">
                       {notice.content}
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>
-                        Created: {format(new Date(notice.created_at), "MMM d, yyyy")}
-                      </span>
+
+                    <div className="flex flex-wrap items-center gap-6 pt-2">
+                      <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2">
+                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">ID: </span>
+                        <span className="text-[10px] font-black text-primary uppercase">{notice.id.slice(0, 8)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">ISSUED</span>
+                        <span className="text-[10px] font-black text-foreground uppercase tracking-widest">{format(new Date(notice.created_at), "MMM d, yyyy")}</span>
+                      </div>
                       {notice.expires_at && (
-                        <span>
-                          Expires: {format(new Date(notice.expires_at), "MMM d, yyyy")}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">VALID UNTIL</span>
+                          <span className="text-[10px] font-black text-accent uppercase tracking-widest">{format(new Date(notice.expires_at), "MMM d, yyyy")}</span>
+                        </div>
                       )}
                     </div>
                   </div>
+
                   <div className="flex items-center gap-2">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
+                      className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 hover:bg-primary/20 hover:text-primary transition-all shadow-sm"
                       onClick={() => handleOpenDialog(notice)}
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit className="w-5 h-5" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="icon">
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                        <Button variant="ghost" size="icon" className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 hover:bg-red-500/20 hover:text-red-500 transition-all shadow-sm">
+                          <Trash2 className="w-5 h-5" />
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="glass border-white/10 rounded-[2.5rem] p-8">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Notice</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{notice.title}"? This
-                            action cannot be undone.
+                          <AlertDialogTitle className="text-2xl font-black tracking-tight text-foreground underline decoration-primary/30 decoration-4 underline-offset-8">DELETE RECORD</AlertDialogTitle>
+                          <AlertDialogDescription className="text-muted-foreground py-4 text-sm font-medium leading-relaxed">
+                            Are you certain you wish to purge circular <span className="text-primary font-black">"{notice.title}"</span>? This operation is irreversible and will remove all associated logs from the archive.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogFooter className="pt-4 flex gap-3">
+                          <AlertDialogCancel className="rounded-xl font-black text-xs uppercase h-11 flex-1">ABORT</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDelete(notice.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-red-500 text-white hover:bg-red-600 rounded-xl font-black text-xs uppercase h-11 flex-1 shadow-lg shadow-red-500/20"
                           >
-                            Delete
+                            PURGE RECORDS
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import { Settings, Globe, Phone, Mail, Facebook, Twitter, Instagram, Linkedin, Youtube, Loader2, Save, Upload, X, Image } from "lucide-react";
 
 interface SettingsMap {
@@ -82,13 +83,11 @@ const AdminWebsiteSettings = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image file");
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast.error("File size must be less than 2MB");
       return;
@@ -129,7 +128,7 @@ const AdminWebsiteSettings = () => {
   if (isLoading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </AdminLayout>
@@ -138,46 +137,72 @@ const AdminWebsiteSettings = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Website Settings</h1>
-            <p className="text-muted-foreground">Configure your website's global settings</p>
+      <div className="space-y-10 pb-20">
+        {/* Modern Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-lg shadow-primary/5">
+              <Settings className="w-7 h-7" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
+                Global Config
+              </h1>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">
+                Core parameters and branding protocols
+              </p>
+            </div>
           </div>
-          <Button onClick={handleSave} disabled={updateMutation.isPending}>
+          <Button
+            onClick={handleSave}
+            disabled={updateMutation.isPending}
+            className="h-14 px-8 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50"
+          >
             {updateMutation.isPending ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 mr-3 animate-spin" />
             ) : (
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4 mr-3" />
             )}
-            Save Changes
+            Transmit Changes
           </Button>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-8 lg:grid-cols-2">
           {/* Basic Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="glass-card rounded-[3rem] p-8 border border-white/5 relative overflow-hidden group"
+          >
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
+
+            <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
                 <Globe className="h-5 w-5" />
-                Basic Information
-              </CardTitle>
-              <CardDescription>Site name and branding</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="site_name">Site Name</Label>
-                <Input
-                  id="site_name"
-                  value={settings.site_name}
-                  onChange={(e) => handleChange("site_name", e.target.value)}
-                  placeholder="BCA Association"
-                />
               </div>
-              
-              {/* Logo Upload Section */}
+              <div>
+                <h2 className="text-xl font-black text-foreground tracking-tight">Identity Profile</h2>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Platform branding variables</p>
+              </div>
+            </div>
+
+            <div className="space-y-6 relative z-10">
               <div className="space-y-2">
-                <Label>Site Logo</Label>
+                <Label htmlFor="site_name" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Platform Name</Label>
+                <div className="relative group">
+                  <Input
+                    id="site_name"
+                    value={settings.site_name}
+                    onChange={(e) => handleChange("site_name", e.target.value)}
+                    placeholder="BCA Association"
+                    className="h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Visual Signature (Logo)</Label>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -185,197 +210,183 @@ const AdminWebsiteSettings = () => {
                   onChange={handleLogoUpload}
                   className="hidden"
                 />
-                
+
                 {settings.site_logo ? (
-                  <div className="relative p-4 bg-muted rounded-lg">
+                  <div className="relative p-6 glass rounded-[2rem] border border-white/5 group/logo">
                     <img
                       src={settings.site_logo}
                       alt="Logo Preview"
-                      className="max-h-20 object-contain mx-auto"
+                      className="max-h-24 object-contain mx-auto transition-transform group-hover/logo:scale-105 duration-500"
                     />
-                    <div className="flex gap-2 mt-3 justify-center">
+                    <div className="flex gap-3 mt-6 justify-center">
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
+                        className="rounded-xl border border-white/5 hover:bg-white/5"
                       >
                         {isUploading ? (
-                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
-                          <Upload className="h-4 w-4 mr-1" />
+                          <Upload className="h-4 w-4 mr-2 text-primary" />
                         )}
-                        Change
+                        Update
                       </Button>
                       <Button
                         type="button"
-                        variant="destructive"
+                        variant="ghost"
                         size="sm"
                         onClick={handleRemoveLogo}
+                        className="rounded-xl border border-white/5 hover:bg-red-500/10 text-red-500 hover:text-red-500"
                       >
-                        <X className="h-4 w-4 mr-1" />
-                        Remove
+                        <X className="h-4 w-4 mr-2" />
+                        Purge
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div
                     onClick={() => !isUploading && fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
+                    className="border-2 border-dashed border-white/10 rounded-[2rem] p-10 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group/upload"
                   >
                     {isUploading ? (
-                      <Loader2 className="h-10 w-10 mx-auto text-muted-foreground animate-spin" />
+                      <Loader2 className="h-12 w-12 mx-auto text-primary animate-spin" />
                     ) : (
-                      <Image className="h-10 w-10 mx-auto text-muted-foreground" />
+                      <div className="relative">
+                        <Image className="h-12 w-12 mx-auto text-muted-foreground group-hover/upload:text-primary transition-colors" />
+                        <Upload className="absolute -right-2 -bottom-2 h-5 w-5 text-primary opacity-0 group-hover/upload:opacity-100 transition-opacity" />
+                      </div>
                     )}
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {isUploading ? "Uploading..." : "Click to upload logo"}
+                    <p className="mt-4 text-xs font-black uppercase tracking-widest text-muted-foreground group-hover/upload:text-foreground">
+                      {isUploading ? "Uploading Protocol..." : "Upload Vector Data"}
                     </p>
-                    <p className="text-xs text-muted-foreground/70">
-                      PNG, JPG up to 2MB
-                    </p>
+                    <p className="text-[10px] text-muted-foreground/50 font-bold mt-1">PNG, SVG, JPG | MAX 2MB</p>
                   </div>
                 )}
               </div>
 
-              {/* Optional URL input for external logos */}
-              <div className="space-y-2">
-                <Label htmlFor="site_logo" className="text-sm text-muted-foreground">
-                  Or enter logo URL directly
-                </Label>
+              <div className="space-y-2 pt-2">
+                <Label htmlFor="site_logo_url" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Direct URI Link</Label>
                 <Input
-                  id="site_logo"
+                  id="site_logo_url"
                   value={settings.site_logo}
                   onChange={(e) => handleChange("site_logo", e.target.value)}
-                  placeholder="https://example.com/logo.png"
+                  placeholder="https://cdn.bca.ai/logo.png"
+                  className="h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-mono text-[10px] opacity-60 hover:opacity-100 transition-opacity"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
 
           {/* Contact Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="glass-card rounded-[3rem] p-8 border border-white/5 relative overflow-hidden group"
+          >
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
+
+            <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
                 <Phone className="h-5 w-5" />
-                Contact Information
-              </CardTitle>
-              <CardDescription>Phone and email addresses</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-foreground tracking-tight">Nexus Terminals</h2>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Communication link parameters</p>
+              </div>
+            </div>
+
+            <div className="space-y-6 relative z-10">
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={settings.phone}
-                  onChange={(e) => handleChange("phone", e.target.value)}
-                  placeholder="+977-XXXXXXXXXX"
-                />
+                <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Transmission Line</Label>
+                <div className="relative group">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input
+                    id="phone"
+                    value={settings.phone}
+                    onChange={(e) => handleChange("phone", e.target.value)}
+                    placeholder="+977-XXXXXXXXXX"
+                    className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email_primary">
-                  <Mail className="h-4 w-4 inline mr-1" />
-                  Primary Email
-                </Label>
-                <Input
-                  id="email_primary"
-                  type="email"
-                  value={settings.email_primary}
-                  onChange={(e) => handleChange("email_primary", e.target.value)}
-                  placeholder="info@bcaassociation.edu.np"
-                />
+                <Label htmlFor="email_primary" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Primary Archive Link</Label>
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input
+                    id="email_primary"
+                    type="email"
+                    value={settings.email_primary}
+                    onChange={(e) => handleChange("email_primary", e.target.value)}
+                    placeholder="info@bcaassociation.edu.np"
+                    className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email_secondary">
-                  <Mail className="h-4 w-4 inline mr-1" />
-                  Secondary Email
-                </Label>
-                <Input
-                  id="email_secondary"
-                  type="email"
-                  value={settings.email_secondary}
-                  onChange={(e) => handleChange("email_secondary", e.target.value)}
-                  placeholder="support@bcaassociation.edu.np"
-                />
+                <Label htmlFor="email_secondary" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Emergency Frequency</Label>
+                <div className="relative group">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input
+                    id="email_secondary"
+                    type="email"
+                    value={settings.email_secondary}
+                    onChange={(e) => handleChange("email_secondary", e.target.value)}
+                    placeholder="support@bcaassociation.edu.np"
+                    className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
+                  />
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
 
           {/* Social Links */}
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="lg:col-span-2 glass-card rounded-[3rem] p-8 border border-white/5 relative overflow-hidden group"
+          >
+            <div className="absolute -top-12 -right-12 w-64 h-64 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
+
+            <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
                 <Settings className="h-5 w-5" />
-                Social Media Links
-              </CardTitle>
-              <CardDescription>Connect your social media accounts</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="facebook_url" className="flex items-center gap-2">
-                    <Facebook className="h-4 w-4 text-blue-600" />
-                    Facebook
-                  </Label>
-                  <Input
-                    id="facebook_url"
-                    value={settings.facebook_url}
-                    onChange={(e) => handleChange("facebook_url", e.target.value)}
-                    placeholder="https://facebook.com/..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="twitter_url" className="flex items-center gap-2">
-                    <Twitter className="h-4 w-4 text-sky-500" />
-                    Twitter / X
-                  </Label>
-                  <Input
-                    id="twitter_url"
-                    value={settings.twitter_url}
-                    onChange={(e) => handleChange("twitter_url", e.target.value)}
-                    placeholder="https://twitter.com/..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="instagram_url" className="flex items-center gap-2">
-                    <Instagram className="h-4 w-4 text-pink-600" />
-                    Instagram
-                  </Label>
-                  <Input
-                    id="instagram_url"
-                    value={settings.instagram_url}
-                    onChange={(e) => handleChange("instagram_url", e.target.value)}
-                    placeholder="https://instagram.com/..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="linkedin_url" className="flex items-center gap-2">
-                    <Linkedin className="h-4 w-4 text-blue-700" />
-                    LinkedIn
-                  </Label>
-                  <Input
-                    id="linkedin_url"
-                    value={settings.linkedin_url}
-                    onChange={(e) => handleChange("linkedin_url", e.target.value)}
-                    placeholder="https://linkedin.com/company/..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="youtube_url" className="flex items-center gap-2">
-                    <Youtube className="h-4 w-4 text-red-600" />
-                    YouTube
-                  </Label>
-                  <Input
-                    id="youtube_url"
-                    value={settings.youtube_url}
-                    onChange={(e) => handleChange("youtube_url", e.target.value)}
-                    placeholder="https://youtube.com/..."
-                  />
-                </div>
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <h2 className="text-xl font-black text-foreground tracking-tight">Signal Matrix</h2>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">External node connections</p>
+              </div>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 relative z-10">
+              {[
+                { key: "facebook_url", icon: Facebook, label: "Facebook Node", color: "text-blue-500" },
+                { key: "twitter_url", icon: Twitter, label: "X / Twitter Stream", color: "text-sky-400" },
+                { key: "instagram_url", icon: Instagram, label: "Instagram Visuals", color: "text-pink-500" },
+                { key: "linkedin_url", icon: Linkedin, label: "Professional Link", color: "text-blue-600" },
+                { key: "youtube_url", icon: Youtube, label: "YouTube Broadcast", color: "text-red-500" },
+              ].map((social) => (
+                <div key={social.key} className="space-y-2">
+                  <Label htmlFor={social.key} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                    <social.icon className={`h-3 w-3 ${social.color}`} />
+                    {social.label}
+                  </Label>
+                  <Input
+                    id={social.key}
+                    value={settings[social.key]}
+                    onChange={(e) => handleChange(social.key, e.target.value)}
+                    placeholder="https://..."
+                    className="h-11 rounded-xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold text-xs"
+                  />
+                </div>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </div>
     </AdminLayout>
