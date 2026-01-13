@@ -12,9 +12,10 @@ import {
   Loader2,
   Mic,
   MicOff,
-  Volume2,
-  VolumeX,
   ImageIcon,
+  MessageSquare,
+  Zap,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -23,6 +24,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Toggle } from "@/components/ui/toggle";
 
 type ThinkFilterState = {
   inThink: boolean;
@@ -81,6 +84,19 @@ interface Message {
   content: string;
   type?: "text" | "image";
   imageUrl?: string;
+  provider?: string;
+  model?: string;
+  fallback?: boolean;
+  fallbackReason?: string;
+}
+
+interface StreamingStatus {
+  isStreaming: boolean;
+  provider: string;
+  model: string;
+  tokensReceived: number;
+  startTime: number;
+  tokensPerSecond: number;
 }
 
 // Voice recording hook
@@ -133,10 +149,16 @@ export default function AIAssistant() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [imageMode, setImageMode] = useState(false);
+  const [streamingStatus, setStreamingStatus] = useState<StreamingStatus>({
+    isStreaming: false,
+    provider: "",
+    model: "",
+    tokensReceived: 0,
+    startTime: 0,
+    tokensPerSecond: 0,
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const { isRecording, audioBlob, startRecording, stopRecording, setAudioBlob } = useVoiceRecording();
@@ -260,12 +282,20 @@ export default function AIAssistant() {
       id: Date.now().toString(),
       role: "user",
       content: input.trim(),
-      type: "text",
+      type: imageMode ? "image" : "text",
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
+    setStreamingStatus({
+      isStreaming: true,
+      provider: "",
+      model: "",
+      tokensReceived: 0,
+      startTime: Date.now(),
+      tokensPerSecond: 0,
+    });
 
     try {
       // Get the current session to use the user's JWT token
@@ -288,12 +318,45 @@ export default function AIAssistant() {
               role: m.role,
               content: m.content,
             })),
+            mode: imageMode ? "image" : "chat",
           }),
         }
       );
 
+      // Get provider info from headers
+      const provider = response.headers.get("X-AI-Provider") || "unknown";
+      const model = response.headers.get("X-AI-Model") || "unknown";
+      
+      setStreamingStatus(prev => ({
+        ...prev,
+        provider,
+        model,
+      }));
+
       if (!response.ok) {
         const errorData = await response.json();
+        const errorCode = errorData.code;
+        
+        // Show specific error messages based on error code
+        let errorTitle = "Error";
+        let errorDesc = errorData.error || "Failed to get response";
+        
+        if (errorCode === "RATE_LIMITED") {
+          errorTitle = "Rate Limited";
+          errorDesc = "Too many requests. Please wait a moment and try again.";
+        } else if (errorCode === "CREDITS_EXHAUSTED") {
+          errorTitle = "Credits Exhausted";
+          errorDesc = "AI credits exhausted. Please add more credits or switch to a free model in Admin > AI Settings.";
+        } else if (errorCode === "INVALID_API_KEY") {
+          errorTitle = "Invalid API Key";
+          errorDesc = "Please check your API key in Admin > AI Settings.";
+        }
+        
+        toast({
+          title: errorTitle,
+          description: errorDesc,
+          variant: "destructive",
+        });
         throw new Error(errorData.error || "Failed to get response");
       }
 
@@ -310,9 +373,23 @@ export default function AIAssistant() {
             content: `Generated image for: "${jsonData.prompt}"`,
             type: "image",
             imageUrl: typeof imageUrl === "string" ? imageUrl : undefined,
+            provider: jsonData.provider,
+            model: jsonData.model,
+            fallback: jsonData.fallback,
+            fallbackReason: jsonData.fallbackReason,
           };
           setMessages((prev) => [...prev, assistantMessage]);
+          
+          // Show fallback notification if applicable
+          if (jsonData.fallback) {
+            toast({
+              title: "Using fallback provider",
+              description: jsonData.fallbackReason || "Bytez unavailable, using Lovable AI",
+            });
+          }
+          
           setIsLoading(false);
+          setStreamingStatus(prev => ({ ...prev, isStreaming: false }));
           return;
         }
 
@@ -329,6 +406,7 @@ export default function AIAssistant() {
             },
           ]);
           setIsLoading(false);
+          setStreamingStatus(prev => ({ ...prev, isStreaming: false }));
           return;
         }
 
@@ -348,11 +426,12 @@ export default function AIAssistant() {
       // Add empty assistant message
       setMessages((prev) => [
         ...prev,
-        { id: assistantId, role: "assistant", content: "", type: "text" },
+        { id: assistantId, role: "assistant", content: "", type: "text", provider, model },
       ]);
 
       let buffer = "";
       const thinkState: ThinkFilterState = { inThink: false, carry: "" };
+      let tokenCount = 0;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -380,6 +459,16 @@ export default function AIAssistant() {
               const filtered = filterThinkDelta(content, thinkState);
               if (filtered) {
                 assistantContent += filtered;
+                tokenCount += filtered.split(/\s+/).length;
+                
+                // Update streaming status
+                const elapsed = (Date.now() - streamingStatus.startTime) / 1000;
+                setStreamingStatus(prev => ({
+                  ...prev,
+                  tokensReceived: tokenCount,
+                  tokensPerSecond: elapsed > 0 ? Math.round(tokenCount / elapsed) : 0,
+                }));
+                
                 setMessages((prev) =>
                   prev.map((m) =>
                     m.id === assistantId ? { ...m, content: assistantContent } : m
@@ -396,23 +485,33 @@ export default function AIAssistant() {
       }
     } catch (error) {
       console.error("Chat error:", error);
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to get response",
-        variant: "destructive",
-      });
+      // Only show toast if not already shown
+      if (!(error instanceof Error && error.message.includes("Failed to get response"))) {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to get response",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
+      setStreamingStatus(prev => ({ ...prev, isStreaming: false }));
     }
   };
 
-  const suggestedQuestions = [
-    "Explain polymorphism in Java",
-    "What is normalization in databases?",
-    "Write a Python function for binary search",
-    "Generate an image of a futuristic classroom",
-  ];
+  const suggestedQuestions = imageMode 
+    ? [
+        "Generate an image of a futuristic classroom",
+        "Create an image of a beautiful sunset over mountains",
+        "Draw a cute robot studying computer science",
+        "Make an image of Nepal's Himalayan landscape",
+      ]
+    : [
+        "Explain polymorphism in Java",
+        "What is normalization in databases?",
+        "Write a Python function for binary search",
+        "How does recursion work?",
+      ];
 
   return (
     <DashboardLayout>
@@ -433,6 +532,25 @@ export default function AIAssistant() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Image Mode Toggle */}
+            <Toggle
+              pressed={imageMode}
+              onPressedChange={setImageMode}
+              className="gap-2"
+              aria-label="Toggle image mode"
+            >
+              {imageMode ? (
+                <>
+                  <ImageIcon className="w-4 h-4" />
+                  Image Mode
+                </>
+              ) : (
+                <>
+                  <MessageSquare className="w-4 h-4" />
+                  Chat Mode
+                </>
+              )}
+            </Toggle>
             <Link to="/dashboard/image-gallery">
               <Button variant="outline" size="sm">
                 <ImageIcon className="w-4 h-4 mr-2" />
@@ -448,6 +566,34 @@ export default function AIAssistant() {
           </div>
         </div>
 
+        {/* Streaming Status Indicator */}
+        {streamingStatus.isStreaming && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-2 flex items-center gap-3 px-4 py-2 rounded-lg bg-muted/50 border border-border"
+          >
+            <Zap className="w-4 h-4 text-primary animate-pulse" />
+            <span className="text-sm text-muted-foreground">
+              {streamingStatus.provider && (
+                <Badge variant="secondary" className="mr-2">
+                  {streamingStatus.provider}
+                </Badge>
+              )}
+              {streamingStatus.model && (
+                <span className="text-xs opacity-75">{streamingStatus.model}</span>
+              )}
+            </span>
+            <span className="ml-auto text-xs text-muted-foreground">
+              {streamingStatus.tokensPerSecond > 0 && (
+                <span className="font-mono">
+                  ~{streamingStatus.tokensPerSecond} tokens/sec
+                </span>
+              )}
+            </span>
+          </motion.div>
+        )}
+
         {/* Chat Area */}
         <div className="flex-1 bg-card rounded-2xl border border-border overflow-hidden flex flex-col">
           {/* Messages */}
@@ -455,14 +601,20 @@ export default function AIAssistant() {
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-4">
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-4">
-                  <Sparkles className="w-10 h-10 text-primary" />
+                  {imageMode ? (
+                    <ImageIcon className="w-10 h-10 text-primary" />
+                  ) : (
+                    <Sparkles className="w-10 h-10 text-primary" />
+                  )}
                 </div>
                 <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
-                  How can I help you today?
+                  {imageMode ? "Image Generation Mode" : "How can I help you today?"}
                 </h2>
                 <p className="text-muted-foreground mb-6 max-w-md">
-                  Ask me anything about your BCA curriculum, programming
-                  concepts, or even generate images!
+                  {imageMode 
+                    ? "Describe any image you want to create and I'll generate it for you!"
+                    : "Ask me anything about your BCA curriculum, programming concepts, or toggle Image Mode to generate images!"
+                  }
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
                   {suggestedQuestions.map((question) => (
@@ -471,8 +623,8 @@ export default function AIAssistant() {
                       onClick={() => setInput(question)}
                       className="p-3 text-left text-sm rounded-xl bg-muted hover:bg-muted/80 text-foreground transition-colors flex items-center gap-2"
                     >
-                      {question.toLowerCase().includes("image") ? (
-                        <Image className="w-4 h-4 text-primary flex-shrink-0" />
+                      {imageMode ? (
+                        <ImageIcon className="w-4 h-4 text-primary flex-shrink-0" />
                       ) : (
                         <Bot className="w-4 h-4 text-primary flex-shrink-0" />
                       )}
@@ -530,6 +682,19 @@ export default function AIAssistant() {
                                 (e.target as HTMLImageElement).style.display = "none";
                               }}
                             />
+                            {message.provider && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {message.provider}:{message.model}
+                                </Badge>
+                                {message.fallback && (
+                                  <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" />
+                                    Fallback
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="text-sm">
@@ -538,16 +703,23 @@ export default function AIAssistant() {
                         )}
                       </div>
                       {message.role === "assistant" && message.content && (
-                        <button
-                          onClick={() => handleCopy(message.content, message.id)}
-                          className="mt-1 p-1 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          {copiedId === message.id ? (
-                            <Check className="w-4 h-4" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
+                        <div className="flex items-center gap-2 mt-1">
+                          <button
+                            onClick={() => handleCopy(message.content, message.id)}
+                            className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {copiedId === message.id ? (
+                              <Check className="w-4 h-4" />
+                            ) : (
+                              <Copy className="w-4 h-4" />
+                            )}
+                          </button>
+                          {message.provider && message.type !== "image" && (
+                            <span className="text-xs text-muted-foreground">
+                              via {message.provider}
+                            </span>
                           )}
-                        </button>
+                        </div>
                       )}
                     </div>
                   </motion.div>
@@ -555,11 +727,17 @@ export default function AIAssistant() {
                 {isLoading && messages[messages.length - 1]?.role === "user" && (
                   <div className="flex gap-3">
                     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                      <Bot className="w-4 h-4 text-primary-foreground" />
+                      {imageMode ? (
+                        <ImageIcon className="w-4 h-4 text-primary-foreground" />
+                      ) : (
+                        <Bot className="w-4 h-4 text-primary-foreground" />
+                      )}
                     </div>
                     <div className="flex items-center gap-2 p-4 bg-muted rounded-2xl rounded-bl-md">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm text-muted-foreground">Thinking...</span>
+                      <span className="text-sm text-muted-foreground">
+                        {imageMode ? "Generating image..." : "Thinking..."}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -585,14 +763,25 @@ export default function AIAssistant() {
                   <Mic className="w-5 h-5" />
                 )}
               </Button>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={isRecording ? "Recording... Click mic to stop" : "Ask anything or try 'Generate an image of...'"}
-                className="flex-1 px-4 py-3 rounded-xl bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                disabled={isLoading || isRecording}
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={
+                    isRecording 
+                      ? "Recording... Click mic to stop" 
+                      : imageMode 
+                        ? "Describe the image you want to generate..."
+                        : "Ask anything about your studies..."
+                  }
+                  className="w-full px-4 py-3 pr-12 rounded-xl bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  disabled={isLoading || isRecording}
+                />
+                {imageMode && (
+                  <ImageIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                )}
+              </div>
               <Button
                 type="submit"
                 size="icon"
@@ -604,6 +793,7 @@ export default function AIAssistant() {
             </div>
             <p className="text-xs text-muted-foreground mt-2 text-center">
               🎤 Voice Input • 💬 Chat • 🎨 Image Generation
+              {imageMode && <span className="text-primary font-medium"> • IMAGE MODE ON</span>}
             </p>
           </form>
         </div>

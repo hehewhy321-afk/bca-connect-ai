@@ -36,70 +36,78 @@ async function getAISettings(supabaseClient: any): Promise<AISettings | null> {
 // Speech-to-Text using Bytez Whisper
 async function speechToText(audioData: string, apiKey: string): Promise<string> {
   console.log("Processing speech-to-text with Bytez Whisper");
+  console.log("Audio data length:", audioData.length);
   
-  // Process base64 audio in chunks to prevent memory issues
-  const processBase64Chunks = (base64String: string, chunkSize = 32768): Uint8Array => {
-    const chunks: Uint8Array[] = [];
-    let position = 0;
+  try {
+    // Process base64 audio - handle it in one go for simplicity
+    const binaryString = atob(audioData);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
     
-    while (position < base64String.length) {
-      const chunk = base64String.slice(position, position + chunkSize);
-      const binaryChunk = atob(chunk);
-      const bytes = new Uint8Array(binaryChunk.length);
+    console.log("Binary audio size:", bytes.length, "bytes");
+    
+    // Use Whisper model through Bytez OpenAI-compatible endpoint
+    const formData = new FormData();
+    const blob = new Blob([bytes.buffer as ArrayBuffer], { type: 'audio/webm' });
+    formData.append('file', blob, 'audio.webm');
+    formData.append('model', 'whisper-1');
+
+    console.log("Sending to Bytez Whisper API...");
+    
+    const response = await fetch("https://api.bytez.com/models/v2/openai/v1/audio/transcriptions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: formData,
+    });
+
+    console.log("Bytez STT response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Bytez STT error:", response.status, errorText);
       
-      for (let i = 0; i < binaryChunk.length; i++) {
-        bytes[i] = binaryChunk.charCodeAt(i);
+      // Try fallback to direct Whisper endpoint
+      console.log("Trying fallback Whisper endpoint...");
+      const fallbackResponse = await fetch("https://api.bytez.com/models/v2/openai/whisper-large-v3", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: formData,
+      });
+      
+      if (!fallbackResponse.ok) {
+        const fallbackError = await fallbackResponse.text();
+        console.error("Fallback STT error:", fallbackResponse.status, fallbackError);
+        throw new Error(`Failed to transcribe audio: ${fallbackError}`);
       }
       
-      chunks.push(bytes);
-      position += chunkSize;
+      const fallbackResult = await fallbackResponse.json();
+      console.log("Fallback STT result:", fallbackResult);
+      return fallbackResult.text || fallbackResult.output?.text || "";
     }
 
-    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-    const result = new Uint8Array(totalLength);
-    let offset = 0;
-
-    for (const chunk of chunks) {
-      result.set(chunk, offset);
-      offset += chunk.length;
-    }
-
-    return result;
-  };
-
-  const binaryAudio = processBase64Chunks(audioData);
-  
-  // Use Whisper model through Bytez
-  const formData = new FormData();
-  const blob = new Blob([binaryAudio.buffer as ArrayBuffer], { type: 'audio/webm' });
-  formData.append('file', blob, 'audio.webm');
-
-  const response = await fetch("https://api.bytez.com/models/v2/openai/whisper-large-v3", {
-    method: "POST",
-    headers: {
-      Authorization: apiKey,
-    },
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Bytez STT error:", errorText);
-    throw new Error("Failed to transcribe audio");
+    const result = await response.json();
+    console.log("STT result:", result);
+    return result.text || result.output?.text || "";
+  } catch (error) {
+    console.error("STT processing error:", error);
+    throw error;
   }
-
-  const result = await response.json();
-  return result.text || result.output?.text || "";
 }
 
 // Text-to-Speech using Bytez
 async function textToSpeech(text: string, apiKey: string, voice = "alloy"): Promise<ArrayBuffer> {
-  console.log("Processing text-to-speech with Bytez");
+  console.log("Processing text-to-speech with Bytez, voice:", voice);
   
-  const response = await fetch("https://api.bytez.com/models/v2/openai/tts-1", {
+  const response = await fetch("https://api.bytez.com/models/v2/openai/v1/audio/speech", {
     method: "POST",
     headers: {
-      Authorization: apiKey,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -110,10 +118,12 @@ async function textToSpeech(text: string, apiKey: string, voice = "alloy"): Prom
     }),
   });
 
+  console.log("TTS response status:", response.status);
+
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("Bytez TTS error:", errorText);
-    throw new Error("Failed to generate speech");
+    console.error("Bytez TTS error:", response.status, errorText);
+    throw new Error(`Failed to generate speech: ${errorText}`);
   }
 
   return await response.arrayBuffer();
@@ -156,6 +166,7 @@ serve(async (req) => {
     console.log("Authenticated user:", user.id);
 
     const { action, audio, text, voice } = await req.json();
+    console.log("Voice action:", action, "audio length:", audio?.length || 0);
     
     // Create admin client to fetch settings
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -181,7 +192,22 @@ serve(async (req) => {
         );
       }
 
+      if (audio.length < 100) {
+        return new Response(
+          JSON.stringify({ error: "Audio data is too short. Please record a longer message." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const transcription = await speechToText(audio, apiKey);
+      
+      if (!transcription || transcription.trim().length === 0) {
+        return new Response(
+          JSON.stringify({ error: "Could not detect speech. Please try speaking more clearly." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ text: transcription }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -222,7 +248,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Voice function error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error occurred" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
