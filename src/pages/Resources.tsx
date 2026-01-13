@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface Resource {
   id: string;
@@ -52,6 +54,8 @@ export default function Resources() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState("all");
   const [selectedSemester, setSelectedSemester] = useState("all");
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const types = [
     { value: "all", label: "All Types" },
@@ -84,15 +88,47 @@ export default function Resources() {
   };
 
   const handleView = async (resource: Resource) => {
-    // Increment view count
-    await supabase
-      .from("resources")
-      .update({ views: resource.views + 1 })
-      .eq("id", resource.id);
+    try {
+      // Increment view count
+      await supabase
+        .from("resources")
+        .update({ views: resource.views + 1 })
+        .eq("id", resource.id);
 
-    const url = resource.external_url || resource.file_url;
-    if (url) {
-      window.open(url, "_blank");
+      // Track download if user is authenticated
+      if (user) {
+        // Insert into resource_downloads (will trigger achievement check)
+        const { error: downloadError } = await supabase
+          .from("resource_downloads")
+          .insert({
+            resource_id: resource.id,
+            user_id: user.id,
+          });
+
+        // Ignore duplicate key errors (user already downloaded this resource)
+        if (downloadError && !downloadError.message.includes("duplicate")) {
+          console.error("Error tracking download:", downloadError);
+        }
+
+        // Increment downloads count
+        await supabase
+          .from("resources")
+          .update({ downloads: resource.downloads + 1 })
+          .eq("id", resource.id);
+      }
+
+      // Open the resource
+      const url = resource.external_url || resource.file_url;
+      if (url) {
+        window.open(url, "_blank");
+      }
+    } catch (error) {
+      console.error("Error handling resource view:", error);
+      toast({
+        title: "Error",
+        description: "Failed to open resource. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

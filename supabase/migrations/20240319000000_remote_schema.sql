@@ -596,8 +596,10 @@ CREATE POLICY "Admins can delete contact submissions" ON public.contact_submissi
 
 -- NOTIFICATIONS POLICIES
 CREATE POLICY "Users can view own notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Admins can view all notifications" ON public.notifications FOR SELECT USING (has_role(auth.uid(), 'admin') OR has_role(auth.uid(), 'moderator'));
 CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "System can create notifications" ON public.notifications FOR INSERT WITH CHECK (true);
+CREATE POLICY "Admins can delete notifications" ON public.notifications FOR DELETE USING (has_role(auth.uid(), 'admin') OR has_role(auth.uid(), 'moderator'));
 
 -- FORUM POSTS POLICIES
 CREATE POLICY "Forum posts are viewable by authenticated users" ON public.forum_posts FOR SELECT USING (true);

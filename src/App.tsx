@@ -47,7 +47,9 @@ const AdminQRScanner = lazy(() => import("./pages/admin/AdminQRScanner"));
 const AdminAISettings = lazy(() => import("./pages/admin/AdminAISettings"));
 const AdminPaymentVerification = lazy(() => import("./pages/admin/AdminPaymentVerification"));
 const AdminCertificates = lazy(() => import("./pages/admin/AdminCertificates"));
+const SendNotifications = lazy(() => import("./pages/admin/SendNotifications"));
 const Certificates = lazy(() => import("./pages/dashboard/Certificates"));
+const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
 
 // Public pages - lazy load
 const Notice = lazy(() => import("./pages/Notice"));
@@ -145,6 +147,7 @@ const App = () => (
                 <Route path="/dashboard/forum/new" element={<ProtectedRoute><LazyRoute><NewForumPost /></LazyRoute></ProtectedRoute>} />
                 <Route path="/dashboard/forum/:id" element={<ProtectedRoute><LazyRoute><ForumPost /></LazyRoute></ProtectedRoute>} />
                 <Route path="/dashboard/certificates" element={<ProtectedRoute><LazyRoute><Certificates /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/notifications" element={<ProtectedRoute><LazyRoute><NotificationSettings /></LazyRoute></ProtectedRoute>} />
 
                 {/* Admin routes */}
                 <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
@@ -166,6 +169,7 @@ const App = () => (
                 <Route path="/admin/ai-settings" element={<ProtectedRoute><LazyRoute><AdminAISettings /></LazyRoute></ProtectedRoute>} />
                 <Route path="/admin/payment-verification" element={<ProtectedRoute><LazyRoute><AdminPaymentVerification /></LazyRoute></ProtectedRoute>} />
                 <Route path="/admin/certificates" element={<ProtectedRoute><LazyRoute><AdminCertificates /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/send-notifications" element={<ProtectedRoute><LazyRoute><SendNotifications /></LazyRoute></ProtectedRoute>} />
 
                 {/* 404 */}
                 <Route path="*" element={<NotFound />} />

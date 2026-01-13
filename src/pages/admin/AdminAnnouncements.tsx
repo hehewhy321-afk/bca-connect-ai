@@ -8,6 +8,10 @@ import {
   Pin,
   Clock,
   Search,
+  Image as ImageIcon,
+  Paperclip,
+  X,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +47,9 @@ interface Announcement {
   expires_at: string | null;
   created_at: string;
   created_by: string | null;
+  image_url?: string | null;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
 }
 
 export default function AdminAnnouncements() {
@@ -58,7 +65,13 @@ export default function AdminAnnouncements() {
     priority: "normal",
     is_pinned: false,
     expires_at: "",
+    image_url: "",
+    attachment_url: "",
+    attachment_name: "",
   });
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchAnnouncements();
@@ -81,6 +94,69 @@ export default function AdminAnnouncements() {
     }
   };
 
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `announcements/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('public')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('public')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, image_url: data.publicUrl });
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleAttachmentUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `announcements/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('public')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('public')
+        .getPublicUrl(filePath);
+
+      setFormData({ 
+        ...formData, 
+        attachment_url: data.publicUrl,
+        attachment_name: file.name 
+      });
+      toast.success('File uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('Failed to upload file');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -91,6 +167,9 @@ export default function AdminAnnouncements() {
         priority: formData.priority,
         is_pinned: formData.is_pinned,
         expires_at: formData.expires_at || null,
+        image_url: formData.image_url || null,
+        attachment_url: formData.attachment_url || null,
+        attachment_name: formData.attachment_name || null,
         created_by: user?.id,
       };
 
@@ -128,6 +207,9 @@ export default function AdminAnnouncements() {
       priority: announcement.priority || "normal",
       is_pinned: announcement.is_pinned || false,
       expires_at: announcement.expires_at ? announcement.expires_at.split("T")[0] : "",
+      image_url: announcement.image_url || "",
+      attachment_url: announcement.attachment_url || "",
+      attachment_name: announcement.attachment_name || "",
     });
     setIsDialogOpen(true);
   };
@@ -173,8 +255,13 @@ export default function AdminAnnouncements() {
       priority: "normal",
       is_pinned: false,
       expires_at: "",
+      image_url: "",
+      attachment_url: "",
+      attachment_name: "",
     });
     setEditingAnnouncement(null);
+    setImageFile(null);
+    setAttachmentFile(null);
   };
 
   const filteredAnnouncements = announcements.filter(

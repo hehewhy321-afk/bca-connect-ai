@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePushNotifications } from "./usePushNotifications";
 
 interface Notification {
   id: string;
@@ -17,6 +18,7 @@ export function useNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { showNotification, permission } = usePushNotifications();
 
   useEffect(() => {
     if (!user) {
@@ -43,6 +45,45 @@ export function useNotifications() {
           const newNotification = payload.new as Notification;
           setNotifications((prev) => [newNotification, ...prev]);
           setUnreadCount((prev) => prev + 1);
+          
+          // Show browser notification if permission granted
+          if (permission === "granted") {
+            // Use async function to handle the promise
+            (async () => {
+              try {
+                await showNotification(newNotification.title, {
+                  body: newNotification.message,
+                  tag: newNotification.id,
+                  requireInteraction: false,
+                  data: {
+                    link: newNotification.link,
+                  },
+                });
+              } catch (error) {
+                console.error('Error showing notification:', error);
+              }
+            })();
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const updatedNotification = payload.new as Notification;
+          setNotifications((prev) =>
+            prev.map((n) =>
+              n.id === updatedNotification.id ? updatedNotification : n
+            )
+          );
+          if (updatedNotification.is_read) {
+            setUnreadCount((prev) => Math.max(0, prev - 1));
+          }
         }
       )
       .subscribe();
@@ -50,7 +91,7 @@ export function useNotifications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, permission, showNotification]);
 
   const fetchNotifications = async () => {
     if (!user) return;

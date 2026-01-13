@@ -73,15 +73,27 @@ export function NotificationsDropdown() {
                 <h3 className="font-heading font-semibold text-foreground">
                   Notifications
                 </h3>
-                {unreadCount > 0 && (
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                    >
+                      <CheckCheck className="w-3 h-3" />
+                      Mark all read
+                    </button>
+                  )}
                   <button
-                    onClick={markAllAsRead}
-                    className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                    onClick={() => {
+                      setIsOpen(false);
+                      navigate("/dashboard/notifications");
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                   >
-                    <CheckCheck className="w-3 h-3" />
-                    Mark all read
+                    <Bell className="w-3 h-3" />
+                    Settings
                   </button>
-                )}
+                </div>
               </div>
 
               {/* Notifications List */}

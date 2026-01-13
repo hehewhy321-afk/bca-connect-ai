@@ -648,7 +648,9 @@ export type Database = {
           job_title: string | null
           level: number | null
           linkedin_url: string | null
+          notification_preferences: any | null
           phone: string | null
+          push_notifications_enabled: boolean | null
           semester: number | null
           skills: string[] | null
           updated_at: string
@@ -670,7 +672,9 @@ export type Database = {
           job_title?: string | null
           level?: number | null
           linkedin_url?: string | null
+          notification_preferences?: any | null
           phone?: string | null
+          push_notifications_enabled?: boolean | null
           semester?: number | null
           skills?: string[] | null
           updated_at?: string
@@ -692,7 +696,9 @@ export type Database = {
           job_title?: string | null
           level?: number | null
           linkedin_url?: string | null
+          notification_preferences?: any | null
           phone?: string | null
+          push_notifications_enabled?: boolean | null
           semester?: number | null
           skills?: string[] | null
           updated_at?: string

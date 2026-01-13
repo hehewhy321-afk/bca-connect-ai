@@ -19,6 +19,9 @@ import {
   Settings,
   HelpCircle,
   Bot,
+  ChevronLeft,
+  ChevronRight,
+  Megaphone,
 } from "lucide-react";
 import logoImg from "@/assets/logo.jpg";
 import { Button } from "@/components/ui/button";
@@ -34,8 +37,9 @@ const adminLinks = [
   { name: "Certificates", href: "/admin/certificates", icon: Award },
   { name: "Members", href: "/admin/members", icon: Users },
   { name: "Founding Members", href: "/admin/founding-members", icon: Award },
-  { name: "Announcements", href: "/admin/announcements", icon: Bell },
+  { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
   { name: "Notices", href: "/admin/notices", icon: FileText },
+  { name: "Notifications", href: "/admin/send-notifications", icon: Bell },
   { name: "FAQs", href: "/admin/faqs", icon: HelpCircle },
   { name: "AI Settings", href: "/admin/ai-settings", icon: Bot },
   { name: "Website Settings", href: "/admin/settings", icon: Settings },
@@ -49,11 +53,23 @@ interface AdminLayoutProps {
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    // Initialize from localStorage
+    const saved = localStorage.getItem('admin-sidebar-collapsed');
+    return saved === 'true';
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const { isAdmin, isModerator, loading } = useUserRole();
+
+  // Persist collapsed state to localStorage
+  const toggleCollapsed = () => {
+    const newCollapsed = !collapsed;
+    setCollapsed(newCollapsed);
+    localStorage.setItem('admin-sidebar-collapsed', String(newCollapsed));
+  };
 
   useEffect(() => {
     if (!loading && !isAdmin && !isModerator) {
@@ -108,30 +124,44 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar - Refined Glassmorphism */}
       <aside
-        className={`fixed top-0 left-0 z-[70] h-full w-72 glass border-r border-white/10 transition-transform duration-500 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
+        className={`fixed top-0 left-0 z-[70] h-full glass border-r border-white/10 transition-all duration-500 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "w-24" : "w-72"}`}
       >
         {/* Logo Section */}
-        <div className="p-8">
+        <div className={`p-8 ${collapsed ? "px-4" : ""}`}>
           <Link to="/admin" className="flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent p-[1px] shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent p-[1px] shadow-lg shadow-primary/20 transition-transform group-hover:scale-105 flex-shrink-0">
               <div className="w-full h-full rounded-2xl bg-muted flex items-center justify-center overflow-hidden">
                 <img src={logoImg} alt="BCA" className="w-full h-full object-cover" />
               </div>
             </div>
-            <div className="flex flex-col">
-              <span className="font-black text-lg text-foreground tracking-tight leading-none">
-                Admin Center
-              </span>
-              <span className="text-[10px] text-primary font-bold tracking-widest uppercase mt-1.5 px-0.5 opacity-80">
-                MMAMC BCA • Staff
-              </span>
-            </div>
+            {!collapsed && (
+              <div className="flex flex-col">
+                <span className="font-black text-lg text-foreground tracking-tight leading-none">
+                  Admin Center
+                </span>
+                <span className="text-[10px] text-primary font-bold tracking-widest uppercase mt-1.5 px-0.5 opacity-80">
+                  MMAMC BCA • Staff
+                </span>
+              </div>
+            )}
           </Link>
         </div>
 
+        {/* Collapse Toggle Button - Desktop Only */}
+        <button
+          onClick={toggleCollapsed}
+          className="hidden lg:flex absolute -right-3 top-24 w-6 h-6 rounded-full bg-primary border-2 border-background items-center justify-center hover:scale-110 transition-transform z-10"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? (
+            <ChevronRight className="w-3 h-3 text-primary-foreground" />
+          ) : (
+            <ChevronLeft className="w-3 h-3 text-primary-foreground" />
+          )}
+        </button>
+
         {/* Navigation - Scrollable with custom styles */}
-        <nav className="px-4 py-2 space-y-1 overflow-y-auto h-[calc(100vh-280px)] scrollbar-none">
+        <nav className={`px-4 py-2 space-y-1 overflow-y-auto h-[calc(100vh-280px)] scrollbar-none ${collapsed ? "px-2" : ""}`}>
           {adminLinks.map((link) => {
             const isActive = location.pathname === link.href ||
               (link.href !== "/admin" && location.pathname.startsWith(link.href));
@@ -140,14 +170,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 key={link.name}
                 to={link.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-5 py-3.5 rounded-[1.25rem] text-sm font-semibold transition-all duration-300 group relative ${isActive
+                className={`flex items-center gap-3 px-5 py-3.5 rounded-[1.25rem] text-sm font-semibold transition-all duration-300 group relative ${
+                  collapsed ? "justify-center px-3" : ""
+                } ${isActive
                   ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                   }`}
+                title={collapsed ? link.name : ""}
               >
-                <link.icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
-                {link.name}
-                {isActive && (
+                <link.icon className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
+                {!collapsed && link.name}
+                {isActive && !collapsed && (
                   <motion.div
                     layoutId="active-admin-nav"
                     className="absolute right-3 w-1.5 h-1.5 rounded-full bg-primary-foreground"
@@ -159,30 +192,32 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* Footer Actions */}
-        <div className="absolute bottom-6 left-4 right-4 space-y-2">
+        <div className={`absolute bottom-6 left-4 right-4 space-y-2 ${collapsed ? "left-2 right-2" : ""}`}>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-4 h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all font-bold group"
+            className={`w-full justify-start gap-4 h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all font-bold group ${collapsed ? "justify-center px-3" : ""}`}
             onClick={() => navigate("/dashboard")}
+            title={collapsed ? "User View" : ""}
           >
-            <div className="p-2 rounded-lg bg-primary/20 group-hover:bg-primary transition-colors">
+            <div className="p-2 rounded-lg bg-primary/20 group-hover:bg-primary transition-colors flex-shrink-0">
               <LayoutDashboard className="w-4 h-4 text-primary group-hover:text-primary-foreground" />
             </div>
-            User View
+            {!collapsed && "User View"}
           </Button>
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 h-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all font-bold"
+            className={`w-full justify-start gap-3 h-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all font-bold ${collapsed ? "justify-center px-3" : ""}`}
             onClick={handleSignOut}
+            title={collapsed ? "Sign Out" : ""}
           >
-            <LogOut className="w-5 h-5" />
-            Sign Out
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && "Sign Out"}
           </Button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <div className="lg:pl-72 flex flex-col min-h-screen">
+      <div className={`flex flex-col min-h-screen transition-all duration-500 ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
         {/* Top Header - Glassmorphic */}
         <header className="sticky top-0 z-[50] glass-card border-b border-white/5 backdrop-blur-2xl">
           <div className="flex items-center justify-between px-6 h-20">

@@ -12,12 +12,14 @@ import {
   Lock,
   Clock,
   User,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 
 interface ForumPost {
@@ -66,6 +68,7 @@ export default function Forum() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -139,6 +142,43 @@ export default function Forum() {
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleDeletePost = async (postId: string, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation
+    e.stopPropagation();
+
+    if (!user) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this post? This action cannot be undone and will also delete all replies."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from("forum_posts")
+        .delete()
+        .eq("id", postId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Post deleted",
+        description: "Your post has been deleted successfully.",
+      });
+
+      // Refresh posts
+      await fetchPosts();
+    } catch (error: any) {
+      console.error("Error deleting post:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete post. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -299,6 +339,17 @@ export default function Forum() {
                               addSuffix: true,
                             })}
                           </span>
+                          
+                          {/* Delete Button - Only show to post owner */}
+                          {user && post.user_id === user.id && (
+                            <button
+                              onClick={(e) => handleDeletePost(post.id, e)}
+                              className="ml-auto text-destructive hover:text-destructive/80 transition-colors p-1 rounded hover:bg-destructive/10"
+                              title="Delete post"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

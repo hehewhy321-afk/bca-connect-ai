@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, easeOut } from "framer-motion";
-import { LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, ChevronDown, MessageSquare, Shield, GraduationCap, Award } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, MessageSquare, Shield, GraduationCap, Award, ChevronLeft, ChevronRight } from "lucide-react";
 import logoImg from "@/assets/logo.jpg";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,6 +29,11 @@ export function DashboardLayout({
   children
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    // Initialize from localStorage
+    const saved = localStorage.getItem('dashboard-sidebar-collapsed');
+    return saved === 'true';
+  });
   const location = useLocation();
   const navigate = useNavigate();
   const {
@@ -42,6 +47,13 @@ export function DashboardLayout({
     isAdmin,
     isModerator
   } = useUserRole();
+
+  // Persist collapsed state to localStorage
+  const toggleCollapsed = () => {
+    const newCollapsed = !collapsed;
+    setCollapsed(newCollapsed);
+    localStorage.setItem('dashboard-sidebar-collapsed', String(newCollapsed));
+  };
 
 
 
@@ -74,28 +86,43 @@ export function DashboardLayout({
       </AnimatePresence>
 
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 z-[70] h-full w-72 glass border-r border-white/10 transition-transform duration-500 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed top-0 left-0 z-[70] h-full glass border-r border-white/10 transition-all duration-500 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "w-24" : "w-72"}`}>
         {/* Logo Section */}
-        <div className="p-8">
+        <div className={`p-8 ${collapsed ? "px-4" : ""}`}>
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent p-[1px] shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent p-[1px] shadow-lg shadow-primary/20 transition-transform group-hover:scale-105 flex-shrink-0">
               <div className="w-full h-full rounded-2xl bg-muted flex items-center justify-center overflow-hidden">
                 <img src={logoImg} alt="BCA" className="w-full h-full object-cover" />
               </div>
             </div>
-            <div className="flex flex-col">
-              <span className="font-black text-lg text-foreground tracking-tight leading-none">
-                BCA Association
-              </span>
-              <span className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase mt-1.5 px-0.5 opacity-60">
-                MMAMC Biratnagar
-              </span>
-            </div>
+            {!collapsed && (
+              <div className="flex flex-col">
+                <span className="font-black text-lg text-foreground tracking-tight leading-none">
+                  BCA Association
+                </span>
+                <span className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase mt-1.5 px-0.5 opacity-60">
+                  MMAMC Biratnagar
+                </span>
+              </div>
+            )}
           </Link>
         </div>
 
+        {/* Collapse Toggle Button - Desktop Only */}
+        <button
+          onClick={toggleCollapsed}
+          className="hidden lg:flex absolute -right-3 top-24 w-6 h-6 rounded-full bg-primary border-2 border-background items-center justify-center hover:scale-110 transition-transform z-10"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? (
+            <ChevronRight className="w-3 h-3 text-primary-foreground" />
+          ) : (
+            <ChevronLeft className="w-3 h-3 text-primary-foreground" />
+          )}
+        </button>
+
         {/* Navigation */}
-        <nav className="px-4 py-2 space-y-1 overflow-y-auto h-[calc(100vh-220px)] scrollbar-none">
+        <nav className={`px-4 py-2 space-y-1 overflow-y-auto h-[calc(100vh-220px)] scrollbar-none ${collapsed ? "px-2" : ""}`}>
           {sidebarLinks.map((link) => {
             const isActive = link.href === "/dashboard"
               ? location.pathname === "/dashboard"
@@ -105,14 +132,17 @@ export function DashboardLayout({
                 key={link.name}
                 to={link.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-5 py-4 rounded-[1.25rem] text-sm font-semibold transition-all duration-300 group relative ${isActive
+                className={`flex items-center gap-3 px-5 py-4 rounded-[1.25rem] text-sm font-semibold transition-all duration-300 group relative ${
+                  collapsed ? "justify-center px-3" : ""
+                } ${isActive
                   ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                   }`}
+                title={collapsed ? link.name : ""}
               >
-                <link.icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
-                {link.name}
-                {isActive && (
+                <link.icon className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
+                {!collapsed && link.name}
+                {isActive && !collapsed && (
                   <motion.div
                     layoutId="active-nav"
                     className="absolute right-3 w-1.5 h-1.5 rounded-full bg-primary-foreground"
@@ -124,32 +154,34 @@ export function DashboardLayout({
         </nav>
 
         {/* Footer Actions */}
-        <div className="absolute bottom-6 left-4 right-4 space-y-2">
+        <div className={`absolute bottom-6 left-4 right-4 space-y-2 ${collapsed ? "left-2 right-2" : ""}`}>
           {(isAdmin || isModerator) && (
             <Button
               variant="ghost"
-              className="w-full justify-start gap-4 h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all font-bold group"
+              className={`w-full justify-start gap-4 h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all font-bold group ${collapsed ? "justify-center px-3" : ""}`}
               onClick={() => navigate("/admin")}
+              title={collapsed ? "Admin Portal" : ""}
             >
-              <div className="p-2 rounded-lg bg-primary/20 group-hover:bg-primary transition-colors">
+              <div className="p-2 rounded-lg bg-primary/20 group-hover:bg-primary transition-colors flex-shrink-0">
                 <Shield className="w-4 h-4 text-primary group-hover:text-primary-foreground" />
               </div>
-              Admin Portal
+              {!collapsed && "Admin Portal"}
             </Button>
           )}
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 h-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all font-bold"
+            className={`w-full justify-start gap-3 h-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all font-bold ${collapsed ? "justify-center px-3" : ""}`}
             onClick={handleSignOut}
+            title={collapsed ? "Sign Out" : ""}
           >
-            <LogOut className="w-5 h-5" />
-            Sign Out
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && "Sign Out"}
           </Button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <div className="lg:pl-72 flex flex-col min-h-screen">
+      <div className={`flex flex-col min-h-screen transition-all duration-500 ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
         {/* Top Header */}
         <header className="sticky top-0 z-[50] glass-card border-b border-white/5 backdrop-blur-2xl">
           <div className="flex items-center justify-between px-6 h-20">

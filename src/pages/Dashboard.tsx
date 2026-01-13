@@ -87,14 +87,14 @@ export default function Dashboard() {
           .order("start_date", { ascending: true })
           .limit(3);
 
-        // Fetch active announcements
+        // Fetch active announcements (notices)
         const { data: announcementsData } = await supabase
           .from("announcements")
           .select("id, title, content, priority, is_pinned, created_at")
           .or("expires_at.is.null,expires_at.gt.now()")
           .order("is_pinned", { ascending: false })
           .order("created_at", { ascending: false })
-          .limit(3);
+          .limit(5);
 
         setStats({
           eventsCount: eventsCount || 0,
@@ -349,7 +349,7 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
-            {/* Compact Announcements */}
+            {/* Notices Widget */}
             {announcements.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -357,16 +357,23 @@ export default function Dashboard() {
                 transition={{ duration: 0.5, delay: 0.6 }}
                 className="glass-card rounded-[2.5rem] border border-border p-8"
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <Megaphone className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-black text-foreground tracking-tight uppercase tracking-wider">Updates</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <Megaphone className="w-5 h-5 text-primary" />
+                    <h2 className="text-lg font-black text-foreground tracking-tight uppercase tracking-wider">Notices</h2>
+                  </div>
+                  <Link to="../notice">
+                    <Button variant="ghost" size="sm" className="rounded-xl hover:bg-muted font-bold text-xs">
+                      View All
+                    </Button>
+                  </Link>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {announcements.map((ann) => (
                     <div
                       key={ann.id}
-                      className={`p-4 rounded-2xl border-l-[6px] ${getPriorityStyles(ann.priority)} transition-colors`}
+                      className={`p-4 rounded-2xl border-l-[6px] ${getPriorityStyles(ann.priority)} transition-colors hover:shadow-md`}
                     >
                       <h3 className="font-bold text-sm text-foreground mb-1 flex items-center gap-2">
                         {ann.is_pinned && <Pin className="w-3 h-3 text-primary fill-primary" />}
@@ -374,6 +381,9 @@ export default function Dashboard() {
                       </h3>
                       <p className="text-xs text-muted-foreground font-medium line-clamp-2">
                         {ann.content}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-2">
+                        {formatDate(ann.created_at)}
                       </p>
                     </div>
                   ))}

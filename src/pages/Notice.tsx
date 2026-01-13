@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FileText, Calendar, ArrowLeft, Pin, AlertCircle, Info } from "lucide-react";
+import { FileText, Calendar, ArrowLeft, Pin, AlertCircle, Info, Paperclip, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
