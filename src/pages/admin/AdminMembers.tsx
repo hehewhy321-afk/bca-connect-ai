@@ -11,13 +11,22 @@ import {
   UserCheck,
   UserX,
   GraduationCap,
+  Ban,
+  ShieldOff,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { BanUserDialog } from "@/components/admin/BanUserDialog";
 
 interface Member {
   id: string;
@@ -30,6 +39,9 @@ interface Member {
   xp_points: number;
   level: number;
   is_alumni: boolean;
+  is_banned: boolean;
+  ban_expires_at: string | null;
+  ban_reason: string | null;
   role?: string;
 }
 
@@ -37,6 +49,8 @@ export default function AdminMembers() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [banDialogOpen, setBanDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -147,6 +161,69 @@ export default function AdminMembers() {
     }
   };
 
+  const handleBanClick = (member: Member) => {
+    setSelectedMember(member);
+    setBanDialogOpen(true);
+  };
+
+  const handleBanConfirm = async (durationInDays: number | null, reason: string) => {
+    if (!selectedMember) return;
+
+    try {
+      const isBanning = !selectedMember.is_banned;
+      let banExpiresAt: string | null = null;
+
+      if (isBanning && durationInDays !== null) {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + durationInDays);
+        banExpiresAt = expiryDate.toISOString();
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          is_banned: isBanning,
+          ban_expires_at: isBanning ? banExpiresAt : null,
+          ban_reason: isBanning ? reason : null,
+        })
+        .eq("user_id", selectedMember.user_id);
+
+      if (error) throw error;
+
+      setMembers((prev) =>
+        prev.map((m) =>
+          m.user_id === selectedMember.user_id
+            ? {
+                ...m,
+                is_banned: isBanning,
+                ban_expires_at: isBanning ? banExpiresAt : null,
+                ban_reason: isBanning ? reason : null,
+              }
+            : m
+        )
+      );
+
+      toast({
+        title: isBanning ? "User banned" : "User unbanned",
+        description: isBanning
+          ? `${selectedMember.full_name} has been banned${
+              durationInDays ? ` for ${durationInDays} days` : " permanently"
+            }.`
+          : `${selectedMember.full_name} can now access the platform.`,
+      });
+
+      setBanDialogOpen(false);
+      setSelectedMember(null);
+    } catch (error) {
+      console.error("Error updating ban status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update ban status.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredMembers = members.filter(
     (member) =>
       member.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -203,11 +280,12 @@ export default function AdminMembers() {
         </div>
 
         {/* Dynamic Stats View */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
           {[
             { label: "Community", val: members.length, icon: Users, color: "text-primary" },
             { label: "Privileged", val: members.filter(m => m.role === "admin").length, icon: Shield, color: "text-accent" },
-            { label: "Guardians", val: members.filter(m => m.role === "moderator").length, icon: UserCheck, color: "text-primary" }
+            { label: "Guardians", val: members.filter(m => m.role === "moderator").length, icon: UserCheck, color: "text-primary" },
+            { label: "Banned", val: members.filter(m => m.is_banned).length, icon: Ban, color: "text-destructive" }
           ].map((stat, i) => (
             <div key={i} className="glass-card rounded-3xl p-6 border border-white/5 flex items-center justify-between group overflow-hidden relative">
               <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -276,6 +354,29 @@ export default function AdminMembers() {
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${roleColors[member.role || "member"]}`}>
                           {member.role}
                         </span>
+                        {member.is_banned && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-destructive/20 text-destructive border border-destructive/20 cursor-help">
+                                  BANNED
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="font-bold">
+                                  {member.ban_expires_at
+                                    ? `Banned until ${new Date(member.ban_expires_at).toLocaleString()}`
+                                    : "Permanently banned"}
+                                </p>
+                                {member.ban_reason && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Reason: {member.ban_reason}
+                                  </p>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-muted-foreground">
                         <span className="flex items-center gap-1.5">
@@ -284,6 +385,16 @@ export default function AdminMembers() {
                         </span>
                         {member.batch && <span className="bg-white/5 px-2 py-0.5 rounded-lg opacity-80 decoration-accent decoration-2 underline-offset-2">• {member.batch}</span>}
                         {member.semester && <span className="opacity-80 decoration-primary decoration-2 underline-offset-2">• SEMESTER {member.semester}</span>}
+                        {member.is_banned && member.ban_expires_at && (
+                          <span className="flex items-center gap-1.5 text-destructive">
+                            • Banned until {new Date(member.ban_expires_at).toLocaleDateString()}
+                          </span>
+                        )}
+                        {member.is_banned && !member.ban_expires_at && (
+                          <span className="flex items-center gap-1.5 text-destructive">
+                            • Permanently banned
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -319,6 +430,29 @@ export default function AdminMembers() {
                         />
                       </div>
 
+                      <Button
+                        variant={member.is_banned ? "outline" : "destructive"}
+                        size="sm"
+                        onClick={() => handleBanClick(member)}
+                        className={`rounded-xl font-bold ${
+                          member.is_banned
+                            ? "border-green-500/50 text-green-500 hover:bg-green-500/10"
+                            : ""
+                        }`}
+                      >
+                        {member.is_banned ? (
+                          <>
+                            <ShieldOff className="w-4 h-4 mr-2" />
+                            Unban
+                          </>
+                        ) : (
+                          <>
+                            <Ban className="w-4 h-4 mr-2" />
+                            Ban
+                          </>
+                        )}
+                      </Button>
+
                       <select
                         value={member.role}
                         onChange={(e) =>
@@ -338,6 +472,14 @@ export default function AdminMembers() {
           </div>
         )}
       </div>
+
+      <BanUserDialog
+        open={banDialogOpen}
+        onOpenChange={setBanDialogOpen}
+        userName={selectedMember?.full_name || ""}
+        isBanned={selectedMember?.is_banned || false}
+        onConfirm={handleBanConfirm}
+      />
     </AdminLayout>
   );
 }
