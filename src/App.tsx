@@ -65,6 +65,7 @@ const About = lazy(() => import("./pages/About"));
 const PublicEvents = lazy(() => import("./pages/PublicEvents"));
 const EventDetail = lazy(() => import("./pages/EventDetail"));
 const Install = lazy(() => import("./pages/Install"));
+const Documentation = lazy(() => import("./pages/Documentation"));
 
 // Configure QueryClient with production-ready defaults
 const queryClient = new QueryClient({
@@ -136,6 +137,7 @@ const App = () => (
                 <Route path="/events" element={<LazyRoute><PublicEvents /></LazyRoute>} />
                 <Route path="/events/:id" element={<LazyRoute><EventDetail /></LazyRoute>} />
                 <Route path="/install" element={<LazyRoute><Install /></LazyRoute>} />
+                <Route path="/docs" element={<LazyRoute><Documentation /></LazyRoute>} />
 
                 {/* Dashboard routes - eager loaded pages don't need LazyRoute */}
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

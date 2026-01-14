@@ -23,6 +23,7 @@ const footerLinks = {
     { name: "Achievements", href: "/dashboard/achievements" },
   ],
   support: [
+    { name: "Documentation", href: "/docs" },
     { name: "FAQs", href: "/faq" },
     { name: "Contact Us", href: "/contact" },
     { name: "Privacy Policy", href: "/privacy" },
