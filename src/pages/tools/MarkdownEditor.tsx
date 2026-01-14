@@ -212,7 +212,7 @@ export default function MarkdownEditor() {
         <div className="container mx-auto px-6 py-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Link to="/dashboard">
+              <Link to="/">
                 <Button variant="ghost" size="icon" className="rounded-xl">
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
