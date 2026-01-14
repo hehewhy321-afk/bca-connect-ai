@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, easeOut } from "framer-motion";
 import { LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, MessageSquare, Shield, GraduationCap, Award, ChevronLeft, ChevronRight } from "lucide-react";
@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 import { useUserRole } from "@/hooks/useUserRole";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
@@ -34,6 +36,7 @@ export function DashboardLayout({
     const saved = localStorage.getItem('dashboard-sidebar-collapsed');
     return saved === 'true';
   });
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const {
@@ -47,6 +50,25 @@ export function DashboardLayout({
     isAdmin,
     isModerator
   } = useUserRole();
+
+  // Fetch user profile with avatar
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+      
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      }
+    };
+
+    fetchProfile();
+  }, [user?.id]);
 
   // Persist collapsed state to localStorage
   const toggleCollapsed = () => {
@@ -205,9 +227,15 @@ export function DashboardLayout({
               <div className="h-10 w-[1px] bg-white/10 mx-1 hidden sm:block" />
 
               <div className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl bg-white/5 border border-white/5 items-center">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-black text-sm shadow-lg shadow-primary/20">
-                  {user?.email?.charAt(0).toUpperCase() || "U"}
-                </div>
+                <Avatar className="w-10 h-10 shadow-lg shadow-primary/20">
+                  <AvatarImage 
+                    src={avatarUrl || undefined} 
+                    alt={user?.user_metadata?.full_name || user?.email || "User"} 
+                  />
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-black text-sm">
+                    {user?.email?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="hidden sm:block leading-tight">
                   <p className="text-sm font-bold text-foreground truncate max-w-[150px]">
                     {user?.user_metadata?.full_name || user?.email?.split("@")[0]}
