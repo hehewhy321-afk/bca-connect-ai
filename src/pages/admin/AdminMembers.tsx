@@ -13,6 +13,8 @@ import {
   GraduationCap,
   Ban,
   ShieldOff,
+  Filter,
+  X,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -49,6 +58,8 @@ export default function AdminMembers() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [semesterFilter, setSemesterFilter] = useState<string>("all");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const { toast } = useToast();
@@ -78,12 +89,24 @@ export default function AdminMembers() {
         rolesMap[r.user_id] = r.role;
       });
 
-      const membersWithRoles = profiles?.map((p) => ({
-        ...p,
+      const membersWithRoles: Member[] = profiles?.map((p: any) => ({
+        id: p.id,
+        user_id: p.user_id,
+        full_name: p.full_name || "",
+        email: p.email || "",
+        avatar_url: p.avatar_url,
+        batch: p.batch,
+        semester: p.semester,
+        xp_points: p.xp_points || 0,
+        level: p.level || 1,
+        is_alumni: p.is_alumni || false,
+        is_banned: p.is_banned || false,
+        ban_expires_at: p.ban_expires_at || null,
+        ban_reason: p.ban_reason || null,
         role: rolesMap[p.user_id] || "member",
-      }));
+      })) || [];
 
-      setMembers(membersWithRoles || []);
+      setMembers(membersWithRoles);
     } catch (error) {
       console.error("Error fetching members:", error);
     } finally {
@@ -133,18 +156,23 @@ export default function AdminMembers() {
 
   const handleAlumniToggle = async (userId: string, isAlumni: boolean) => {
     try {
+      const updateData: any = {
+        is_alumni: isAlumni,
+      };
+      
+      if (isAlumni) {
+        updateData.semester = null;
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          is_alumni: isAlumni,
-          semester: isAlumni ? null : undefined
-        })
+        .update(updateData)
         .eq("user_id", userId);
 
       if (error) throw error;
 
       setMembers((prev) =>
-        prev.map((m) => (m.user_id === userId ? { ...m, is_alumni: isAlumni } : m))
+        prev.map((m) => (m.user_id === userId ? { ...m, is_alumni: isAlumni, semester: isAlumni ? null : m.semester } : m))
       );
 
       toast({
@@ -179,13 +207,15 @@ export default function AdminMembers() {
         banExpiresAt = expiryDate.toISOString();
       }
 
+      const updateData: any = {
+        is_banned: isBanning,
+        ban_expires_at: isBanning ? banExpiresAt : null,
+        ban_reason: isBanning ? reason : null,
+      };
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          is_banned: isBanning,
-          ban_expires_at: isBanning ? banExpiresAt : null,
-          ban_reason: isBanning ? reason : null,
-        })
+        .update(updateData)
         .eq("user_id", selectedMember.user_id);
 
       if (error) throw error;
@@ -224,12 +254,42 @@ export default function AdminMembers() {
     }
   };
 
-  const filteredMembers = members.filter(
-    (member) =>
+  const filteredMembers = members.filter((member) => {
+    // Search filter
+    const matchesSearch =
       member.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.batch?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      member.batch?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Semester filter
+    const matchesSemester =
+      semesterFilter === "all" ||
+      (semesterFilter === "alumni" && member.is_alumni) ||
+      (semesterFilter !== "alumni" && member.semester?.toString() === semesterFilter);
+
+    // Role filter
+    const matchesRole =
+      roleFilter === "all" || member.role === roleFilter;
+
+    return matchesSearch && matchesSemester && matchesRole;
+  });
+
+  const clearFilters = () => {
+    setSemesterFilter("all");
+    setRoleFilter("all");
+    setSearchQuery("");
+  };
+
+  const hasActiveFilters = semesterFilter !== "all" || roleFilter !== "all" || searchQuery !== "";
+
+  // Get unique semesters from members
+  const uniqueSemesters = Array.from(
+    new Set(
+      members
+        .filter((m) => !m.is_alumni && m.semester)
+        .map((m) => m.semester)
+    )
+  ).sort((a, b) => (a || 0) - (b || 0));
 
   const getInitials = (name: string) => {
     return name
@@ -250,32 +310,91 @@ export default function AdminMembers() {
     <AdminLayout>
       <div className="space-y-10">
         {/* Modern Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <Link
-              to="/admin"
-              className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all active:scale-90"
-            >
-              <ArrowLeft className="w-5 h-5 text-foreground" />
-            </Link>
-            <div>
-              <h1 className="text-3xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
-                Registry
-              </h1>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">
-                User base and role management
-              </p>
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <Link
+                to="/admin"
+                className="p-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all active:scale-90"
+              >
+                <ArrowLeft className="w-5 h-5 text-foreground" />
+              </Link>
+              <div>
+                <h1 className="text-3xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
+                  Registry
+                </h1>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">
+                  User base and role management
+                </p>
+              </div>
+            </div>
+
+            <div className="relative group min-w-[300px]">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input
+                placeholder="Search by name, email or batch..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all"
+              />
             </div>
           </div>
 
-          <div className="relative group min-w-[300px]">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-            <Input
-              placeholder="Search by name, email or batch..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all"
-            />
+          {/* Filters Section */}
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+              <Filter className="w-4 h-4" />
+              <span>Filters:</span>
+            </div>
+
+            {/* Semester Filter */}
+            <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+              <SelectTrigger className="w-[180px] h-10 rounded-xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20">
+                <SelectValue placeholder="All Semesters" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Semesters</SelectItem>
+                <SelectItem value="alumni">Alumni</SelectItem>
+                {uniqueSemesters.map((sem) => (
+                  <SelectItem key={sem} value={sem?.toString() || ""}>
+                    Semester {sem}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Role Filter */}
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-[180px] h-10 rounded-xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20">
+                <SelectValue placeholder="All Roles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="moderator">Moderator</SelectItem>
+                <SelectItem value="member">Member</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-10 rounded-xl text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear Filters
+              </Button>
+            )}
+
+            {/* Active Filter Count */}
+            {hasActiveFilters && (
+              <span className="text-xs font-bold text-primary px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                {filteredMembers.length} of {members.length} members
+              </span>
+            )}
           </div>
         </div>
 
