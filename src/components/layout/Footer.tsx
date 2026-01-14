@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   GraduationCap, Mail, Phone, MapPin,
   Facebook, Instagram, Twitter, Linkedin,
-  Github, ArrowRight, Heart
+  Github, ArrowRight, Heart, Wrench
 } from "lucide-react";
 import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
 
@@ -27,6 +27,9 @@ const footerLinks = {
     { name: "Contact Us", href: "/contact" },
     { name: "Privacy Policy", href: "/privacy" },
     { name: "Terms of Service", href: "/terms" },
+  ],
+  tools: [
+    { name: "Cache Fixer", href: "/clear-cache.html", external: true },
   ],
 };
 
@@ -77,7 +80,7 @@ export function Footer() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 lg:gap-8"
         >
           {/* Brand Column */}
           <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
@@ -127,19 +130,35 @@ export function Footer() {
             { title: "Quick Links", links: footerLinks.quickLinks },
             { title: "Resources", links: footerLinks.resources },
             { title: "Support", links: footerLinks.support },
+            { title: "Tools", links: footerLinks.tools, icon: Wrench },
           ].map((section, idx) => (
             <motion.div variants={itemVariants} key={idx} className="space-y-6">
-              <h4 className="text-foreground font-bold text-sm uppercase tracking-widest">{section.title}</h4>
+              <h4 className="text-foreground font-bold text-sm uppercase tracking-widest flex items-center gap-2">
+                {section.icon && <section.icon className="w-4 h-4 text-primary" />}
+                {section.title}
+              </h4>
               <ul className="space-y-4">
                 {section.links.map((link) => (
                   <li key={link.name}>
-                    <button
-                      onClick={() => handleNavClick(link.href)}
-                      className="group flex items-center text-muted-foreground hover:text-foreground text-sm transition-all duration-300"
-                    >
-                      <ArrowRight className="w-0 h-4 group-hover:w-4 group-hover:mr-2 opacity-0 group-hover:opacity-100 transition-all duration-300 text-primary" />
-                      {link.name}
-                    </button>
+                    {link.external ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center text-muted-foreground hover:text-foreground text-sm transition-all duration-300"
+                      >
+                        <ArrowRight className="w-0 h-4 group-hover:w-4 group-hover:mr-2 opacity-0 group-hover:opacity-100 transition-all duration-300 text-primary" />
+                        {link.name}
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => handleNavClick(link.href)}
+                        className="group flex items-center text-muted-foreground hover:text-foreground text-sm transition-all duration-300"
+                      >
+                        <ArrowRight className="w-0 h-4 group-hover:w-4 group-hover:mr-2 opacity-0 group-hover:opacity-100 transition-all duration-300 text-primary" />
+                        {link.name}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
