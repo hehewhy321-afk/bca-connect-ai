@@ -19,57 +19,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          // Check if user is banned whenever auth state changes
-          try {
-            const { data: banStatus } = await supabase
-              .rpc('check_user_ban_status', { user_id_param: session.user.id });
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-            if (banStatus && banStatus.length > 0 && banStatus[0].is_banned) {
-              // User is banned, sign them out
-              await supabase.auth.signOut();
-              setSession(null);
-              setUser(null);
-              setLoading(false);
-              return;
-            }
-          } catch (err) {
-            // If check fails, allow login (fail open for safety)
-            console.error('Error checking ban status:', err);
-          }
-        }
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        // Check if user is banned on initial load
-        try {
-          const { data: banStatus } = await supabase
-            .rpc('check_user_ban_status', { user_id_param: session.user.id });
-
-          if (banStatus && banStatus.length > 0 && banStatus[0].is_banned) {
-            // User is banned, sign them out
-            await supabase.auth.signOut();
-            setSession(null);
-            setUser(null);
-            setLoading(false);
-            return;
-          }
-        } catch (err) {
-          // If check fails, allow login (fail open for safety)
-          console.error('Error checking ban status:', err);
-        }
-      }
-      
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -96,53 +56,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) {
-        return { 
-          error: new Error('Invalid email or password. Please try again.') 
-        };
-      }
-
-      // Check if user is banned after successful authentication
-      if (data.user) {
-        try {
-          const { data: banStatus, error: banCheckError } = await supabase
-            .rpc('check_user_ban_status', { user_id_param: data.user.id });
-
-          if (banCheckError) {
-            // If ban check fails, allow login (fail open for safety)
-            return { error: null };
-          }
-
-          if (banStatus && banStatus.length > 0) {
-            const status = banStatus[0];
-            
-            if (status.is_banned) {
-              // Sign out the user immediately
-              await supabase.auth.signOut();
-              
-              return { 
-                error: new Error('Your account has been banned. Please contact administration for more information.') 
-              };
-            }
-          }
-        } catch (banCheckErr) {
-          // If ban check fails, allow login (fail open for safety)
-          console.error('Error checking ban status:', banCheckErr);
-        }
-      }
-      
-      return { error: null };
-    } catch (err) {
-      return { 
-        error: new Error('Sign in failed. Invalid email or password. Please try again.') 
-      };
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error) {
+      return { error: new Error('Invalid email or password. Please try again.') };
     }
+    
+    return { error: null };
   };
 
   const signOut = async () => {

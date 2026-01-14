@@ -512,9 +512,6 @@ supabase functions deploy --no-verify-jwt
 **Features:**
 - ✍️ **Live Preview**: See rendered markdown as you type
 - 🎨 **Formatting Toolbar**: Quick buttons for headings, bold, italic, code, links, images, lists, quotes
-- 📊 **Statistics**: Real-time word, character, and line count
-- 📥 **Export Options**: Download as Markdown (.md) or HTML (.html)
-- 📋 **Copy to Clipboard**: One-click copy functionality
 - 📝 **Templates**: Pre-built templates for README, Study Notes, Documentation
 - 👁️ **View Modes**: Split view, edit-only, or preview-only
 - 💾 **Auto-save**: Content automatically saved to localStorage
@@ -527,7 +524,10 @@ supabase functions deploy --no-verify-jwt
 3. Use toolbar for quick formatting
 4. Load templates for common document types
 5. Export your work as MD or HTML
-6. Switch view modes based on your needs
+6. Switch view modes based on your needs📊 **Statistics**: Real-time word, character, and line count
+- 📥 **Export Options**: Download as Markdown (.md) or HTML (.html)
+- 📋 **Copy to Clipboard**: One-click copy functionality
+- 
 
 ### Cache Fixer Tool
 **Location**: Footer > Tools > Cache Fixer  

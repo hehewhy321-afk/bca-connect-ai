@@ -1,7 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { BanCheck } from "./BanCheck";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -32,5 +31,5 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return null;
   }
 
-  return <BanCheck>{children}</BanCheck>;
+  return <>{children}</>;
 }
