@@ -82,6 +82,7 @@ The BCA Association platform is a comprehensive solution for managing student ac
 - 🔔 **Notifications**: Real-time updates
 - ⚙️ **Profile Settings**: Customize your profile
 - 🎯 **Achievement Progress**: Track your badges
+- 🍅 **Productivity Tools**: Access Pomodoro Timer and Markdown Editor
 
 ### 🛠️ For Administrators
 
@@ -179,11 +180,12 @@ The BCA Association platform is a comprehensive solution for managing student ac
 - **QRCode.react**: QR code generation
 - **html5-qrcode**: QR code scanning
 - **html2canvas**: Certificate image generation
-- **React Markdown**: Markdown rendering
+- **React Markdown**: Markdown rendering & live preview (Markdown Editor tool)
 - **React Syntax Highlighter**: Code highlighting
 - **Recharts**: Data visualization
 - **date-fns**: Date manipulation
 - **Sonner**: Toast notifications
+- **Web Audio API**: Audio notifications (Pomodoro Timer)
 
 ### PWA & Performance
 - **Vite PWA Plugin**: Progressive Web App support
@@ -478,6 +480,55 @@ supabase functions deploy --no-verify-jwt
 
 ## 🛠️ Tools & Utilities
 
+### Pomodoro Timer
+**Location**: Footer > Tools > Pomodoro Timer  
+**URL**: `/tools/pomodoro`
+
+**Purpose**: Boost productivity with the Pomodoro Technique
+
+**Features:**
+- ⏱️ **Customizable Sessions**: Adjust work (default 25min), short break (5min), and long break (15min) durations
+- 📊 **Progress Tracking**: Circular progress ring with gradient animation
+- 📈 **Statistics**: Track completed pomodoros, total minutes, current streak, and today's sessions
+- 🔔 **Notifications**: Browser notifications and audio alerts when sessions complete
+- ⚙️ **Auto-start Options**: Automatically start breaks or work sessions
+- 💾 **Persistence**: Stats and settings saved to localStorage
+- 🎨 **Beautiful UI**: Glass-card design with orange gradient theme
+- 📱 **Mobile Friendly**: Fully responsive design
+
+**How to use:**
+1. Click "Start" to begin a 25-minute work session
+2. Take a 5-minute break when the timer completes
+3. After 4 work sessions, take a 15-minute long break
+4. Customize durations and preferences in settings panel
+5. Track your productivity with real-time statistics
+
+### Markdown Editor
+**Location**: Footer > Tools > Markdown Editor  
+**URL**: `/tools/markdown`
+
+**Purpose**: Write and preview markdown documents in real-time
+
+**Features:**
+- ✍️ **Live Preview**: See rendered markdown as you type
+- 🎨 **Formatting Toolbar**: Quick buttons for headings, bold, italic, code, links, images, lists, quotes
+- 📊 **Statistics**: Real-time word, character, and line count
+- 📥 **Export Options**: Download as Markdown (.md) or HTML (.html)
+- 📋 **Copy to Clipboard**: One-click copy functionality
+- 📝 **Templates**: Pre-built templates for README, Study Notes, Documentation
+- 👁️ **View Modes**: Split view, edit-only, or preview-only
+- 💾 **Auto-save**: Content automatically saved to localStorage
+- 🎨 **Custom Styling**: Beautiful markdown preview with syntax highlighting
+- 📱 **Responsive**: Works perfectly on mobile and desktop
+
+**How to use:**
+1. Type markdown in the left editor pane
+2. See live preview on the right
+3. Use toolbar for quick formatting
+4. Load templates for common document types
+5. Export your work as MD or HTML
+6. Switch view modes based on your needs
+
 ### Cache Fixer Tool
 **Location**: Footer > Tools > Cache Fixer  
 **URL**: `/clear-cache.html`
@@ -603,6 +654,8 @@ For issues, questions, or feature requests:
 
 ## 🎯 Roadmap
 
+- [x] Pomodoro Timer tool for productivity
+- [x] Markdown Editor for documentation
 - [ ] Mobile app (React Native)
 - [ ] Advanced analytics dashboard
 - [ ] Video conferencing integration
@@ -611,6 +664,7 @@ For issues, questions, or feature requests:
 - [ ] Attendance tracking
 - [ ] Library management
 - [ ] Hostel management
+- [ ] More productivity tools (Calculator, Unit Converter, etc.)
 
 ---
 

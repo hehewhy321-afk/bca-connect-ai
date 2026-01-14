@@ -30,6 +30,8 @@ const footerLinks = {
   ],
   tools: [
     { name: "Cache Fixer", href: "/clear-cache.html", external: true },
+    { name: "Pomodoro Timer", href: "/tools/pomodoro", external: false },
+    { name: "Markdown Editor", href: "/tools/markdown", external: false },
   ],
 };
 

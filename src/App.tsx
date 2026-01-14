@@ -29,6 +29,10 @@ const Forum = lazy(() => import("./pages/Forum"));
 const ForumPost = lazy(() => import("./pages/ForumPost"));
 const NewForumPost = lazy(() => import("./pages/NewForumPost"));
 
+// Tool pages - lazy load
+const PomodoroTimer = lazy(() => import("./pages/tools/PomodoroTimer"));
+const MarkdownEditor = lazy(() => import("./pages/tools/MarkdownEditor"));
+
 // Admin pages - lazy load as they're less frequently accessed
 import AdminPanel from "./pages/admin/AdminPanel";
 const AdminEventsHub = lazy(() => import("./pages/admin/AdminEventsHub"));
@@ -148,6 +152,10 @@ const App = () => (
                 <Route path="/dashboard/forum/:id" element={<ProtectedRoute><LazyRoute><ForumPost /></LazyRoute></ProtectedRoute>} />
                 <Route path="/dashboard/certificates" element={<ProtectedRoute><LazyRoute><Certificates /></LazyRoute></ProtectedRoute>} />
                 <Route path="/dashboard/notifications" element={<ProtectedRoute><LazyRoute><NotificationSettings /></LazyRoute></ProtectedRoute>} />
+
+                {/* Tool routes */}
+                <Route path="/tools/pomodoro" element={<LazyRoute><PomodoroTimer /></LazyRoute>} />
+                <Route path="/tools/markdown" element={<LazyRoute><MarkdownEditor /></LazyRoute>} />
 
                 {/* Admin routes */}
                 <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
