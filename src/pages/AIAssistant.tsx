@@ -966,25 +966,6 @@ export default function AIAssistant() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {/* Image Mode Toggle */}
-            <Toggle
-              pressed={imageMode}
-              onPressedChange={setImageMode}
-              className="gap-2"
-              aria-label="Toggle image mode"
-            >
-              {imageMode ? (
-                <>
-                  <ImageIcon className="w-4 h-4" />
-                  Image Mode
-                </>
-              ) : (
-                <>
-                  <MessageSquare className="w-4 h-4" />
-                  Chat Mode
-                </>
-              )}
-            </Toggle>
             <Link to="/dashboard/image-gallery">
               <Button variant="outline" size="sm">
                 <ImageIcon className="w-4 h-4 mr-2" />
@@ -1186,6 +1167,7 @@ export default function AIAssistant() {
           {/* Input */}
           <form onSubmit={handleSubmit} className="p-4 border-t border-border">
             <div className="flex items-center gap-2">
+              {/* Voice Button */}
               <Button
                 type="button"
                 size="icon"
@@ -1200,6 +1182,25 @@ export default function AIAssistant() {
                   <Mic className="w-5 h-5" />
                 )}
               </Button>
+              
+              {/* Mode Toggle - Chat/Image */}
+              <Button
+                type="button"
+                size="icon"
+                variant={imageMode ? "default" : "outline"}
+                className={`h-12 w-12 rounded-xl flex-shrink-0 ${imageMode ? 'bg-primary hover:bg-primary/90' : ''}`}
+                onClick={() => setImageMode(!imageMode)}
+                disabled={isLoading}
+                aria-label="Toggle between chat and image mode"
+              >
+                {imageMode ? (
+                  <ImageIcon className="w-5 h-5" />
+                ) : (
+                  <MessageSquare className="w-5 h-5" />
+                )}
+              </Button>
+              
+              {/* Input Field */}
               <div className="relative flex-1">
                 <input
                   type="text"
@@ -1233,6 +1234,8 @@ export default function AIAssistant() {
                   </div>
                 )}
               </div>
+              
+              {/* Send Button */}
               <Button
                 type="submit"
                 size="icon"
