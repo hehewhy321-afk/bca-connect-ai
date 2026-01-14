@@ -116,7 +116,7 @@ export function AboutSection() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            className="grid grid-cols-2 sm:grid-cols-2 gap-3 md:gap-4"
           >
             {values.map((value) => (
               <motion.div
@@ -126,7 +126,7 @@ export function AboutSection() {
                   y: -10,
                   transition: { duration: 0.2 }
                 }}
-                className="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 group relative overflow-hidden"
+                className="p-4 md:p-6 rounded-xl md:rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 group relative overflow-hidden"
               >
                 {/* Subtle Hover Background Glow */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${value.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
@@ -135,15 +135,15 @@ export function AboutSection() {
                   <motion.div
                     whileHover={{ rotate: 360, scale: 1.1 }}
                     transition={{ type: "spring", stiffness: 200 }}
-                    className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-4 text-primary"
+                    className="w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3 md:mb-4 text-primary"
                   >
-                    <value.icon className="w-6 h-6" />
+                    <value.icon className="w-5 h-5 md:w-6 md:h-6" />
                   </motion.div>
 
-                  <h3 className="font-heading font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
+                  <h3 className="font-heading font-semibold text-base md:text-lg text-foreground mb-1.5 md:mb-2 group-hover:text-primary transition-colors">
                     {value.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
+                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
                     {value.description}
                   </p>
                 </div>

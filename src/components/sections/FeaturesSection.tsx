@@ -113,7 +113,7 @@ export function FeaturesSection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
         >
           {features.map((feature) => (
             <motion.div
@@ -122,28 +122,28 @@ export function FeaturesSection() {
               whileHover={{ y: -8 }}
               className="group relative"
             >
-              <div className="relative h-full p-8 rounded-[2.5rem] bg-card border border-border shadow-sm transition-all duration-500 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/10 flex flex-col items-center text-center overflow-hidden">
+              <div className="relative h-full p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] bg-card border border-border shadow-sm transition-all duration-500 hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/10 flex flex-col items-center text-center overflow-hidden">
 
                 {/* Background Shadow Glow */}
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                 {/* Icon Container */}
                 <div
-                  className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 shadow-2xl shadow-primary/20 active:scale-95 transition-transform duration-500`}
+                  className={`w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-3 md:mb-6 shadow-2xl shadow-primary/20 active:scale-95 transition-transform duration-500`}
                 >
-                  <feature.icon className="w-8 h-8 text-white transition-transform duration-500 group-hover:scale-110" />
+                  <feature.icon className="w-6 h-6 md:w-8 md:h-8 text-white transition-transform duration-500 group-hover:scale-110" />
                 </div>
 
                 {/* Content */}
-                <h3 className="text-xl font-bold text-foreground mb-4 group-hover:text-primary transition-colors">
+                <h3 className="text-sm md:text-xl font-bold text-foreground mb-2 md:mb-4 group-hover:text-primary transition-colors">
                   {feature.title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-xs md:text-base text-muted-foreground leading-relaxed">
                   {feature.description}
                 </p>
 
                 {/* Subtle Hover Indicator */}
-                <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity group-hover:animate-ping" />
+                <div className="absolute top-2 right-2 md:top-4 md:right-4 w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity group-hover:animate-ping" />
               </div>
             </motion.div>
           ))}

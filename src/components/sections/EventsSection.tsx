@@ -91,7 +91,7 @@ export function EventsSection() {
 
         {/* Events Grid */}
         {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-80 bg-card rounded-2xl border border-border animate-pulse" />
             ))}
@@ -107,7 +107,7 @@ export function EventsSection() {
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {events.map((event, index) => (
               <motion.div
                 key={event.id}
@@ -117,17 +117,17 @@ export function EventsSection() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="group"
               >
-                <div className="h-full rounded-2xl bg-card border border-border overflow-hidden hover:shadow-xl hover:border-primary/30 transition-all duration-300">
+                <div className="h-full rounded-xl md:rounded-2xl bg-card border border-border overflow-hidden hover:shadow-xl hover:border-primary/30 transition-all duration-300">
                   {/* Image */}
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-40 md:h-48 overflow-hidden">
                     <img
                       src={event.image_url || "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400&h=250&fit=crop"}
                       alt={event.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute top-4 left-4">
+                    <div className="absolute top-3 left-3 md:top-4 md:left-4">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        className={`px-2.5 py-1 md:px-3 md:py-1 rounded-full text-xs font-medium ${
                           event.category === "Workshop"
                             ? "bg-primary text-primary-foreground"
                             : event.category === "Seminar"
@@ -139,8 +139,8 @@ export function EventsSection() {
                       </span>
                     </div>
                     {event.is_featured && (
-                      <div className="absolute top-4 right-4">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                      <div className="absolute top-3 right-3 md:top-4 md:right-4">
+                        <span className="px-2.5 py-1 md:px-3 md:py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
                           Featured
                         </span>
                       </div>
@@ -148,29 +148,29 @@ export function EventsSection() {
                   </div>
 
                   {/* Content */}
-                  <div className="p-5">
-                    <h3 className="font-heading font-semibold text-lg text-foreground mb-3 group-hover:text-primary transition-colors">
+                  <div className="p-4 md:p-5">
+                    <h3 className="font-heading font-semibold text-base md:text-lg text-foreground mb-2 md:mb-3 group-hover:text-primary transition-colors line-clamp-2">
                       {event.title}
                     </h3>
 
-                    <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-primary" />
+                        <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary flex-shrink-0" />
                         <span>{formatDate(event.start_date)}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-primary" />
+                        <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary flex-shrink-0" />
                         <span>{formatTime(event.start_date)}</span>
                       </div>
                       {event.location && (
                         <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-primary" />
-                          <span>{event.location}</span>
+                          <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary flex-shrink-0" />
+                          <span className="line-clamp-1">{event.location}</span>
                         </div>
                       )}
                     </div>
 
-                    <Button variant="default" size="sm" className="w-full mt-4" onClick={() => navigate("/events")}>
+                    <Button variant="default" size="sm" className="w-full mt-3 md:mt-4 text-xs md:text-sm" onClick={() => navigate("/events")}>
                       Register Now
                     </Button>
                   </div>

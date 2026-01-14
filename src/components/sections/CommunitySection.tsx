@@ -134,7 +134,7 @@ export function CommunitySection() {
       </motion.div>
 
       {/* Testimonials */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         {testimonials.map((testimonial, index) => <motion.div key={testimonial.name} initial={{
           opacity: 0,
           y: 30
@@ -146,30 +146,30 @@ export function CommunitySection() {
         }} transition={{
           duration: 0.5,
           delay: 0.3 + index * 0.1
-        }} className="rounded-2xl p-6 shadow-xl bg-card border border-border hover:border-primary/50 transition-all duration-300">
+        }} className="rounded-xl md:rounded-2xl p-4 md:p-6 shadow-xl bg-card border border-border hover:border-primary/50 transition-all duration-300">
           {/* Quote Icon */}
-          <Quote className="w-10 h-10 text-primary/20 mb-4" />
+          <Quote className="w-8 h-8 md:w-10 md:h-10 text-primary/20 mb-3 md:mb-4" />
 
           {/* Content */}
-          <p className="text-foreground mb-6 leading-relaxed">
+          <p className="text-sm md:text-base text-foreground mb-4 md:mb-6 leading-relaxed">
             "{testimonial.content}"
           </p>
 
           {/* Rating */}
-          <div className="flex gap-1 mb-4">
+          <div className="flex gap-1 mb-3 md:mb-4">
             {Array.from({
               length: testimonial.rating
-            }).map((_, i) => <Star key={i} className="w-4 h-4 fill-secondary text-secondary" />)}
+            }).map((_, i) => <Star key={i} className="w-3.5 h-3.5 md:w-4 md:h-4 fill-secondary text-secondary" />)}
           </div>
 
           {/* Author */}
           <div className="flex items-center gap-3">
-            <img src={testimonial.avatar} alt={testimonial.name} className="w-12 h-12 rounded-full object-cover" />
-            <div>
-              <h4 className="font-medium text-foreground">
+            <img src={testimonial.avatar} alt={testimonial.name} className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover flex-shrink-0" />
+            <div className="min-w-0">
+              <h4 className="font-medium text-sm md:text-base text-foreground truncate">
                 {testimonial.name}
               </h4>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs md:text-sm text-muted-foreground truncate">
                 {testimonial.role}
               </p>
             </div>

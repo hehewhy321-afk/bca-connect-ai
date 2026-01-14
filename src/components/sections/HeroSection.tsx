@@ -126,7 +126,7 @@ export function HeroSection() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm">
               <Sparkles className="w-4 h-4 text-primary animate-pulse" />
               <span className="text-sm font-medium text-primary tracking-wide">
-                BCA Association • MMAMC Biratnagar
+                BCA Association • MMAMC
               </span>
             </div>
           </motion.div>
@@ -149,8 +149,8 @@ export function HeroSection() {
             variants={itemVariants}
             className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed"
           >
-            A vibrant community of BCA students at MMAMC, dedicated to fostering innovation,
-            collaboration, and professional growth in the tech industry.
+            A community of BCA students at MMAMC, dedicated to fostering innovation,
+            collaboration, and professional growth.
           </motion.p>
 
           {/* CTAs */}

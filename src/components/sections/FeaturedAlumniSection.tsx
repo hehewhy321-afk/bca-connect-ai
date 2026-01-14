@@ -103,7 +103,7 @@ export const FeaturedAlumniSection = () => {
         </motion.div>
 
         {/* Alumni Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
           {alumni.map((member, index) => (
             <motion.div
               key={member.id}
@@ -111,13 +111,13 @@ export const FeaturedAlumniSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="group bg-card rounded-2xl border border-border p-6 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group bg-card rounded-xl md:rounded-2xl border border-border p-4 md:p-6 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
             >
               {/* Avatar */}
-              <div className="flex justify-center mb-4">
-                <Avatar className="w-20 h-20 ring-4 ring-primary/10 group-hover:ring-primary/20 transition-all">
+              <div className="flex justify-center mb-3 md:mb-4">
+                <Avatar className="w-16 h-16 md:w-20 md:h-20 ring-4 ring-primary/10 group-hover:ring-primary/20 transition-all">
                   <AvatarImage src={member.avatar_url || undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground text-xl font-bold">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground text-lg md:text-xl font-bold">
                     {getInitials(member.full_name)}
                   </AvatarFallback>
                 </Avatar>
@@ -125,32 +125,32 @@ export const FeaturedAlumniSection = () => {
 
               {/* Info */}
               <div className="text-center">
-                <h3 className="font-heading font-semibold text-foreground mb-1">
+                <h3 className="font-heading font-semibold text-sm md:text-base text-foreground mb-1 line-clamp-1">
                   {member.full_name}
                 </h3>
 
                 {member.job_title && (
-                  <p className="text-sm text-primary font-medium flex items-center justify-center gap-1 mb-1">
-                    <Briefcase className="w-3 h-3" />
-                    {member.job_title}
+                  <p className="text-xs md:text-sm text-primary font-medium flex items-center justify-center gap-1 mb-1 line-clamp-1">
+                    <Briefcase className="w-3 h-3 flex-shrink-0" />
+                    <span className="line-clamp-1">{member.job_title}</span>
                   </p>
                 )}
 
                 {member.current_company && (
-                  <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mb-3">
-                    <Building2 className="w-3 h-3" />
-                    {member.current_company}
+                  <p className="text-xs md:text-sm text-muted-foreground flex items-center justify-center gap-1 mb-2 md:mb-3 line-clamp-1">
+                    <Building2 className="w-3 h-3 flex-shrink-0" />
+                    <span className="line-clamp-1">{member.current_company}</span>
                   </p>
                 )}
 
                 {member.graduation_year && (
-                  <span className="inline-block px-3 py-1 bg-accent/10 text-accent rounded-full text-xs font-medium mb-3">
+                  <span className="inline-block px-2.5 py-0.5 md:px-3 md:py-1 bg-accent/10 text-accent rounded-full text-xs font-medium mb-2 md:mb-3">
                     Class of {member.graduation_year}
                   </span>
                 )}
 
                 {member.bio && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-4">
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3 md:mb-4 hidden md:block">
                     {member.bio}
                   </p>
                 )}
@@ -162,9 +162,9 @@ export const FeaturedAlumniSection = () => {
                       href={member.linkedin_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
+                      className="p-1.5 md:p-2 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
                     >
-                      <Linkedin className="w-4 h-4" />
+                      <Linkedin className="w-3.5 h-3.5 md:w-4 md:h-4" />
                     </a>
                   )}
                   {member.github_url && (
@@ -172,9 +172,9 @@ export const FeaturedAlumniSection = () => {
                       href={member.github_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
+                      className="p-1.5 md:p-2 rounded-lg bg-muted hover:bg-primary/10 hover:text-primary transition-colors"
                     >
-                      <Github className="w-4 h-4" />
+                      <Github className="w-3.5 h-3.5 md:w-4 md:h-4" />
                     </a>
                   )}
                 </div>
