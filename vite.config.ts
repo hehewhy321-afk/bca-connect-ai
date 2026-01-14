@@ -15,12 +15,12 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.png", "robots.txt"],
+      includeAssets: ["favicon.png", "robots.txt", "pwa-192x192.png", "pwa-512x512.png"],
       manifest: {
         name: "BCA Association MMAMC",
         short_name: "BCA MMAMC",
         description: "Official BCA Association of MMAMC College, Nepal - Empowering Future Tech Leaders",
-        theme_color: "#6366f1",
+        theme_color: "#ea580c",
         background_color: "#0a0a0f",
         display: "standalone",
         orientation: "portrait",
@@ -41,13 +41,35 @@ export default defineConfig(({ mode }) => ({
             src: "/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "maskable",
+            purpose: "any maskable",
           },
         ],
+        categories: ["education", "productivity", "social"],
+        shortcuts: [
+          {
+            name: "Dashboard",
+            short_name: "Dashboard",
+            description: "Go to your dashboard",
+            url: "/dashboard",
+            icons: [{ src: "/pwa-192x192.png", sizes: "192x192" }]
+          },
+          {
+            name: "AI Assistant",
+            short_name: "AI",
+            description: "Open AI Study Assistant",
+            url: "/dashboard/ai-assistant",
+            icons: [{ src: "/pwa-192x192.png", sizes: "192x192" }]
+          }
+        ]
+      },
+      devOptions: {
+        enabled: true,
+        type: "module",
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
-        navigateFallback: null,
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api/, /^\/auth/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/auth\/.*/i,
