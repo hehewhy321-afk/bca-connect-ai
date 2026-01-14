@@ -54,12 +54,16 @@ const AdminWebsiteSettings = () => {
 
   const updateMutation = useMutation({
     mutationFn: async (newSettings: SettingsMap) => {
-      const updates = Object.entries(newSettings).map(([key, value]) =>
-        supabase
+      // Use upsert to insert or update settings
+      const updates = Object.entries(newSettings).map(async ([key, value]) => {
+        const { error } = await supabase
           .from("website_settings")
-          .update({ setting_value: value })
-          .eq("setting_key", key)
-      );
+          .upsert(
+            { setting_key: key, setting_value: value },
+            { onConflict: "setting_key" }
+          );
+        if (error) throw error;
+      });
       await Promise.all(updates);
     },
     onSuccess: () => {
@@ -67,6 +71,7 @@ const AdminWebsiteSettings = () => {
       toast.success("Settings saved successfully!");
     },
     onError: (error) => {
+      console.error("Failed to save settings:", error);
       toast.error("Failed to save settings: " + error.message);
     },
   });
