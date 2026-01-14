@@ -11,6 +11,7 @@ import {
   Laptop,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { useTypewriter, Cursor } from "react-simple-typewriter";
 
 export function HeroSection() {
@@ -158,14 +159,20 @@ export function HeroSection() {
             variants={itemVariants}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8"
           >
-            <Button
-              size="lg"
+            <ShimmerButton
               onClick={() => navigate("/auth")}
-              className="group h-14 px-8 text-lg font-bold rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all active:scale-95"
+              className="h-14 px-8 text-lg font-bold shadow-xl shadow-primary/20"
+              background="hsl(var(--primary))"
+              shimmerColor="#ffffff"
+              shimmerSize="0.1em"
+              shimmerDuration="2.5s"
+              borderRadius="1rem"
             >
-              Join Our Community
-              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
+              <span className="relative z-10 flex items-center gap-2">
+                Join Our Community
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </ShimmerButton>
             <Button
               size="lg"
               variant="outline"
