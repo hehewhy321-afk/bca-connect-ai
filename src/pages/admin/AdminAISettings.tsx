@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Bot, Key, Sparkles, ExternalLink, Image, Zap, Plus, X, Eye, Mic, Volume2 } from "lucide-react";
+import { Loader2, Bot, Key, Sparkles, ExternalLink, Image, Zap, Plus, X, Eye, Mic, Volume2, ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -25,6 +25,7 @@ interface AISettingsMap {
   bytez_chat_model: string;
   bytez_image_model: string;
   bytez_custom_models: string;
+  pollinations_model: string;
   custom_system_prompt: string;
 }
 
@@ -129,6 +130,15 @@ const BYTEZ_AUDIO_MODELS: ModelInfo[] = [
 const ALL_BYTEZ_CHAT_MODELS = [...BYTEZ_LLM_MODELS, ...BYTEZ_VLM_MODELS];
 const ALL_BYTEZ_IMAGE_MODELS = [...BYTEZ_IMAGE_GEN_MODELS, ...BYTEZ_IMAGE_LORA_MODELS];
 
+// Pollinations.ai models (free, no API key needed)
+const POLLINATIONS_MODELS: ModelInfo[] = [
+  { id: "flux", name: "FLUX (Balanced)", provider: "Pollinations", tier: "free", category: "Image Gen" },
+  { id: "flux-realism", name: "FLUX Realism (Photorealistic)", provider: "Pollinations", tier: "free", category: "Image Gen" },
+  { id: "flux-anime", name: "FLUX Anime (Anime Style)", provider: "Pollinations", tier: "free", category: "Image Gen" },
+  { id: "flux-3d", name: "FLUX 3D (3D Rendered)", provider: "Pollinations", tier: "free", category: "Image Gen" },
+  { id: "turbo", name: "Turbo (Fastest)", provider: "Pollinations", tier: "free", category: "Image Gen" },
+];
+
 interface CustomModel {
   id: string;
   name: string;
@@ -148,6 +158,7 @@ const AdminAISettings = () => {
     bytez_chat_model: "Qwen/Qwen3-4B",
     bytez_image_model: "black-forest-labs/FLUX.1-schnell",
     bytez_custom_models: "[]",
+    pollinations_model: "flux",
     custom_system_prompt: "",
   });
 
@@ -178,6 +189,7 @@ const AdminAISettings = () => {
         bytez_chat_model: "Qwen/Qwen3-4B",
         bytez_image_model: "black-forest-labs/FLUX.1-schnell",
         bytez_custom_models: "[]",
+        pollinations_model: "flux",
         custom_system_prompt: "",
       };
 
@@ -347,19 +359,27 @@ const AdminAISettings = () => {
               <div
                 key={provider.id}
                 onClick={() => setSettings(s => ({ ...s, ai_provider: provider.id }))}
-                className={`cursor-pointer glass-card p-6 rounded-[2rem] border transition-all hover:scale-[1.02] ${settings.ai_provider === provider.id
-                  ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
-                  : "border-white/5 hover:border-primary/20"
+                className={`cursor-pointer glass-card p-6 rounded-[2rem] border transition-all duration-300 ${settings.ai_provider === provider.id
+                  ? "border-primary bg-gradient-to-br from-primary/10 to-primary/5 shadow-2xl shadow-primary/20 scale-[1.02] ring-2 ring-primary/30"
+                  : "border-white/5 hover:border-primary/20 hover:scale-[1.01]"
                   }`}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${settings.ai_provider === provider.id ? "bg-primary text-primary-foreground" : "bg-white/5 text-primary"}`}>
+                  <div className={`p-3 rounded-xl transition-all duration-300 ${settings.ai_provider === provider.id ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-110" : "bg-white/5 text-primary"}`}>
                     <provider.icon className="w-5 h-5" />
                   </div>
-                  <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${settings.ai_provider === provider.id ? "bg-primary/20 text-primary border-primary/30" : "bg-white/5 text-muted-foreground border-white/10"}`}>{provider.badge}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border transition-all ${settings.ai_provider === provider.id ? "bg-primary/20 text-primary border-primary/30 shadow-md" : "bg-white/5 text-muted-foreground border-white/10"}`}>{provider.badge}</span>
                 </div>
-                <h3 className="text-base font-black text-foreground mb-2">{provider.name}</h3>
+                <h3 className={`text-base font-black mb-2 transition-colors ${settings.ai_provider === provider.id ? "text-primary" : "text-foreground"}`}>{provider.name}</h3>
                 <p className="text-xs font-medium text-muted-foreground leading-relaxed">{provider.desc}</p>
+                {settings.ai_provider === provider.id && (
+                  <div className="mt-4 pt-4 border-t border-primary/20">
+                    <div className="flex items-center gap-2 text-primary">
+                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">ACTIVE</span>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -557,6 +577,82 @@ const AdminAISettings = () => {
                 </div>
               </motion.div>
             )}
+
+            {/* Pollinations Free Image Generation Config */}
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 rounded-[3rem] border border-white/5 space-y-8">
+              <div className="flex items-center gap-4 pb-6 border-b border-white/5">
+                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                  <ImageIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-foreground tracking-tight">Pollinations Image Engine</h2>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">
+                    Backup image provider • Free unlimited generation
+                  </p>
+                </div>
+                <Badge className="ml-auto bg-green-500/10 text-green-500 border-green-500/20 font-black uppercase tracking-widest">
+                  100% FREE
+                </Badge>
+              </div>
+
+              <div className="space-y-6">
+                <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-black text-foreground uppercase tracking-widest">Backup Provider</span>
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                    Pollinations.ai is used as a backup when Hugging Face or other primary providers are unavailable. 
+                    It generates high-quality images instantly with no rate limits or API keys required.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                    Default Image Model
+                  </Label>
+                  <Select value={settings.pollinations_model} onValueChange={(v) => setSettings(s => ({ ...s, pollinations_model: v }))}>
+                    <SelectTrigger className="h-14 rounded-2xl bg-white/5 border-white/10 font-black text-xs uppercase tracking-widest focus:ring-primary/20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="glass-card rounded-2xl border-white/10">
+                      <ScrollArea className="h-[250px]">
+                        <div className="p-2 space-y-1">
+                          {POLLINATIONS_MODELS.map(model => (
+                            <SelectItem key={model.id} value={model.id} className="rounded-xl focus:bg-primary/20">
+                              <div className="flex items-center justify-between w-full">
+                                <span className="font-bold">{model.name}</span>
+                                <Badge variant="outline" className="ml-2 text-[8px] opacity-60">FREE</Badge>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[9px] font-medium text-muted-foreground italic ml-1">
+                    This model is used as a backup when Hugging Face or other primary providers are unavailable.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-4">
+                  {[
+                    { label: "Speed", value: "Instant", icon: Zap },
+                    { label: "Quality", value: "High", icon: Sparkles },
+                    { label: "Rate Limit", value: "None", icon: Image },
+                    { label: "Cost", value: "$0", icon: Bot }
+                  ].map((stat) => (
+                    <div key={stat.label} className="p-4 rounded-xl bg-white/5 border border-white/10">
+                      <div className="flex items-center gap-2 mb-1">
+                        <stat.icon className="w-3 h-3 text-primary" />
+                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</span>
+                      </div>
+                      <p className="text-sm font-black text-foreground">{stat.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           </TabsContent>
 
           <TabsContent value="directive" className="animate-in fade-in slide-in-from-bottom-2 duration-300">

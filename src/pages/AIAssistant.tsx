@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Zap,
   AlertCircle,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -275,6 +276,424 @@ export default function AIAssistant() {
     });
   };
 
+  const handleDownloadChat = () => {
+    if (messages.length === 0) {
+      toast({
+        title: "No messages to download",
+        description: "Start a conversation first!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Function to format markdown content to HTML
+    const formatMarkdown = (text: string): string => {
+      let formatted = text;
+      
+      // Code blocks with syntax highlighting
+      formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
+        return `<pre class="code-block"><code class="language-${lang || 'plaintext'}">${code.trim()}</code></pre>`;
+      });
+      
+      // Inline code
+      formatted = formatted.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+      
+      // Bold text
+      formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      
+      // Headers
+      formatted = formatted.replace(/^### (.+)$/gm, '<h3 class="heading-3">$1</h3>');
+      formatted = formatted.replace(/^## (.+)$/gm, '<h2 class="heading-2">$1</h2>');
+      formatted = formatted.replace(/^# (.+)$/gm, '<h1 class="heading-1">$1</h1>');
+      
+      // Horizontal rules
+      formatted = formatted.replace(/^={3,}$/gm, '<hr class="divider">');
+      formatted = formatted.replace(/^-{3,}$/gm, '<hr class="divider">');
+      
+      // Bullet lists
+      formatted = formatted.replace(/^\* (.+)$/gm, '<li class="list-item">$1</li>');
+      formatted = formatted.replace(/^- (.+)$/gm, '<li class="list-item">$1</li>');
+      
+      // Wrap consecutive list items in ul
+      formatted = formatted.replace(/(<li class="list-item">.*<\/li>\n?)+/g, (match) => {
+        return `<ul class="list">${match}</ul>`;
+      });
+      
+      // Line breaks
+      formatted = formatted.replace(/\n/g, '<br>');
+      
+      return formatted;
+    };
+
+    // Create beautiful HTML document
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chat Conversation - ${new Date().toLocaleDateString()}</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 20px;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    
+    .header p {
+      font-size: 14px;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+    
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .stat {
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      display: block;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+    
+    .messages {
+      padding: 40px;
+    }
+    
+    .message {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+      animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.user {
+      flex-direction: row-reverse;
+    }
+    
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 700;
+      font-size: 18px;
+    }
+    
+    .avatar.user {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .avatar.assistant {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    
+    .message-content {
+      flex: 1;
+      max-width: 70%;
+    }
+    
+    .message.user .message-content {
+      text-align: right;
+    }
+    
+    .message-bubble {
+      padding: 16px 20px;
+      border-radius: 16px;
+      display: inline-block;
+      max-width: 100%;
+      word-wrap: break-word;
+      text-align: left;
+    }
+    
+    .message.user .message-bubble {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    
+    .message.assistant .message-bubble {
+      background: #f7f7f8;
+      color: #1a1a1a;
+      border-bottom-left-radius: 4px;
+    }
+    
+    /* Markdown formatting styles */
+    .message-bubble strong {
+      font-weight: 700;
+    }
+    
+    .message-bubble .heading-1 {
+      font-size: 24px;
+      font-weight: 800;
+      margin: 16px 0 12px 0;
+      color: inherit;
+    }
+    
+    .message-bubble .heading-2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 14px 0 10px 0;
+      color: inherit;
+    }
+    
+    .message-bubble .heading-3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 12px 0 8px 0;
+      color: inherit;
+    }
+    
+    .message-bubble .divider {
+      border: none;
+      border-top: 2px solid rgba(0, 0, 0, 0.1);
+      margin: 16px 0;
+    }
+    
+    .message.user .message-bubble .divider {
+      border-top-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .message-bubble .list {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+    
+    .message-bubble .list-item {
+      margin: 6px 0;
+      line-height: 1.6;
+    }
+    
+    .message-bubble .inline-code {
+      background: rgba(0, 0, 0, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+      font-size: 0.9em;
+    }
+    
+    .message.user .message-bubble .inline-code {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .message-bubble .code-block {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 12px 0;
+      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .message-bubble .code-block code {
+      color: #f8f8f2;
+      font-family: inherit;
+    }
+    
+    .message-meta {
+      font-size: 11px;
+      margin-top: 8px;
+      opacity: 0.6;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .message.user .message-meta {
+      justify-content: flex-end;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .badge.image {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    
+    .badge.provider {
+      background: #f0fdf4;
+      color: #15803d;
+    }
+    
+    .message-image {
+      margin-top: 12px;
+      border-radius: 12px;
+      max-width: 100%;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .footer {
+      background: #f7f7f8;
+      padding: 32px 40px;
+      text-align: center;
+      border-top: 1px solid #e5e5e5;
+    }
+    
+    .footer p {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .footer .logo {
+      font-size: 18px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      
+      .container {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 AI Chat Conversation</h1>
+      <p>Exported on ${new Date().toLocaleString()}</p>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-value">${messages.length}</span>
+          <span class="stat-label">Messages</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">${messages.filter(m => m.type === "image").length}</span>
+          <span class="stat-label">Images</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">${user?.email?.split('@')[0] || 'User'}</span>
+          <span class="stat-label">Account</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="messages">
+      ${messages.map((message, index) => `
+        <div class="message ${message.role}">
+          <div class="avatar ${message.role}">
+            ${message.role === "user" ? "👤" : "🤖"}
+          </div>
+          <div class="message-content">
+            <div class="message-bubble">
+              ${formatMarkdown(message.content)}
+              ${message.type === "image" && message.imageUrl ? `
+                <img src="${message.imageUrl}" alt="Generated image" class="message-image" />
+              ` : ''}
+            </div>
+            <div class="message-meta">
+              ${message.type === "image" ? '<span class="badge image">🖼️ Image</span>' : ''}
+              ${message.provider ? `<span class="badge provider">${message.provider}:${message.model}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    
+    <div class="footer">
+      <p class="logo">BCA AI Study Assistant</p>
+      <p>Powered by AI • MMAMC College</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    // Create and download the file
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai-chat-${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Chat downloaded!",
+      description: "Open the HTML file in your browser to view.",
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -367,25 +786,39 @@ export default function AIAssistant() {
         const jsonData = await response.json();
 
         if (jsonData?.type === "image") {
-          const imageUrl = jsonData.output?.url || jsonData.output;
+          // Handle different output formats
+          let imageUrl = "";
+          
+          if (typeof jsonData.output === "string") {
+            // Direct URL string (Pollinations, Hugging Face base64)
+            imageUrl = jsonData.output;
+          } else if (jsonData.output?.url) {
+            // Object with url property
+            imageUrl = jsonData.output.url;
+          } else if (jsonData.output?.image_url) {
+            // Alternative format
+            imageUrl = jsonData.output.image_url;
+          }
+          
           const assistantMessage: Message = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
             content: `Generated image for: "${jsonData.prompt}"`,
             type: "image",
-            imageUrl: typeof imageUrl === "string" ? imageUrl : undefined,
+            imageUrl: imageUrl,
             provider: jsonData.provider,
             model: jsonData.model,
             fallback: jsonData.fallback,
             fallbackReason: jsonData.fallbackReason,
           };
+          
           setMessages((prev) => [...prev, assistantMessage]);
           
           // Show fallback notification if applicable
           if (jsonData.fallback) {
             toast({
               title: "Using fallback provider",
-              description: jsonData.fallbackReason || "Bytez unavailable, using Lovable AI",
+              description: jsonData.fallbackReason || "Primary provider unavailable",
             });
           }
           
@@ -559,10 +992,16 @@ export default function AIAssistant() {
               </Button>
             </Link>
             {messages.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={handleClearChat}>
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear Chat
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={handleDownloadChat}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleClearChat}>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Clear Chat
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -679,9 +1118,6 @@ export default function AIAssistant() {
                               src={message.imageUrl}
                               alt="Generated image"
                               className="rounded-lg max-w-full h-auto"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = "none";
-                              }}
                             />
                             {message.provider && (
                               <div className="flex items-center gap-2 mt-2">

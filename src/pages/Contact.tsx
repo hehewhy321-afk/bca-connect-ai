@@ -151,7 +151,7 @@ export default function Contact() {
                       <Input
                         id="name"
                         name="name"
-                        placeholder="John Doe"
+                        placeholder="full name"
                         value={formData.name}
                         onChange={handleChange}
                         required
@@ -163,7 +163,7 @@ export default function Contact() {
                         id="email"
                         name="email"
                         type="email"
-                        placeholder="john@example.com"
+                        placeholder="ali@example.com"
                         value={formData.email}
                         onChange={handleChange}
                         required

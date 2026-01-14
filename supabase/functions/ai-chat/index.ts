@@ -126,6 +126,114 @@ async function callLovableImageGen(prompt: string) {
   return imageUrl as string;
 }
 
+// Free image generation using Pollinations.ai (completely free, no API key needed)
+// Fetches the image and converts to base64 to avoid CORS issues
+async function callPollinationsImageGen(prompt: string, model: string = "flux") {
+  console.log("Calling Pollinations.ai for image generation with model:", model);
+  
+  // Pollinations.ai supports: flux, flux-realism, flux-anime, flux-3d, turbo
+  const encodedPrompt = encodeURIComponent(prompt);
+  
+  // Generate the Pollinations URL
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=${model}&width=1024&height=1024&nologo=true&enhance=true`;
+  
+  console.log("Generated Pollinations URL:", imageUrl);
+  
+  try {
+    // Fetch the image from Pollinations
+    console.log("Fetching image from Pollinations...");
+    const response = await fetch(imageUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Pollinations returned ${response.status}`);
+    }
+    
+    // Convert to base64 to avoid CORS issues in frontend
+    const imageBlob = await response.blob();
+    const arrayBuffer = await imageBlob.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    let binary = '';
+    const chunkSize = 0x8000;
+    
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    
+    const base64 = btoa(binary);
+    const dataUrl = `data:image/png;base64,${base64}`;
+    
+    console.log("Pollinations image converted to base64, length:", dataUrl.length);
+    return dataUrl;
+  } catch (error) {
+    console.error("Failed to fetch/convert Pollinations image:", error);
+    // Return the direct URL as fallback (may have CORS issues)
+    return imageUrl;
+  }
+}
+
+// Get Pollinations model from settings
+async function getPollinationsModel(supabaseClient: any): Promise<string> {
+  try {
+    const { data, error } = await supabaseClient
+      .from("ai_settings")
+      .select("setting_value")
+      .eq("setting_key", "pollinations_model")
+      .single();
+    
+    if (error || !data) {
+      return "flux"; // Default model
+    }
+    
+    return data.setting_value || "flux";
+  } catch (error) {
+    console.error("Error fetching Pollinations model:", error);
+    return "flux";
+  }
+}
+
+// Free image generation using Hugging Face Inference API
+async function callHuggingFaceImageGen(prompt: string, model: string = "black-forest-labs/FLUX.1-schnell") {
+  console.log("Calling Hugging Face for image generation with model:", model);
+  
+  // Use Hugging Face's free inference API
+  const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      inputs: prompt,
+      parameters: {
+        num_inference_steps: 4,
+        guidance_scale: 0,
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Hugging Face image generation failed: ${response.status} ${errorText}`);
+  }
+
+  // Response is the image blob
+  const imageBlob = await response.blob();
+  
+  // Convert blob to base64 data URL
+  const arrayBuffer = await imageBlob.arrayBuffer();
+  const uint8Array = new Uint8Array(arrayBuffer);
+  let binary = '';
+  const chunkSize = 0x8000;
+  
+  for (let i = 0; i < uint8Array.length; i += chunkSize) {
+    const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  
+  const base64 = btoa(binary);
+  return `data:image/png;base64,${base64}`;
+}
+
 async function callOpenRouter(messages: any[], systemPrompt: string, apiKey: string, model: string) {
   console.log("Calling OpenRouter with model:", model);
 
@@ -347,15 +455,45 @@ serve(async (req) => {
             }
           }
 
-          // Fallback to Lovable image generation if Bytez fails
-          console.log("Falling back to Lovable image generation");
-          const fallbackImageUrl = await callLovableImageGen(requestedPrompt);
+          // Fallback chain: Try Hugging Face (free) → Pollinations (free) → Lovable
+          console.log("Bytez failed, trying free alternatives...");
+          
+          let fallbackImageUrl = "";
+          let fallbackProvider = "";
+          let fallbackModel = "";
+          
+          try {
+            // Try Hugging Face first (more reliable, no promotional images)
+            console.log("Trying Hugging Face (free)...");
+            fallbackImageUrl = await callHuggingFaceImageGen(requestedPrompt, "black-forest-labs/FLUX.1-schnell");
+            fallbackProvider = "huggingface";
+            fallbackModel = "FLUX.1-schnell";
+          } catch (hfError) {
+            console.error("Hugging Face failed:", hfError);
+            
+            try {
+              // Try Pollinations as backup
+              console.log("Trying Pollinations.ai (free)...");
+              const pollinationsModel = await getPollinationsModel(supabaseClient);
+              fallbackImageUrl = await callPollinationsImageGen(requestedPrompt, pollinationsModel);
+              fallbackProvider = "pollinations";
+              fallbackModel = pollinationsModel;
+            } catch (pollinationsError) {
+              console.error("Pollinations failed:", pollinationsError);
+              
+              // Last resort: Lovable
+              console.log("Trying Lovable as last resort...");
+              fallbackImageUrl = await callLovableImageGen(requestedPrompt);
+              fallbackProvider = "lovable";
+              fallbackModel = "gemini-3-pro-image";
+            }
+          }
 
           await supabaseClient.from("ai_generated_images").insert({
             user_id: user.id,
             prompt: requestedPrompt,
             image_url: fallbackImageUrl,
-            model_used: "lovable:google/gemini-3-pro-image-preview",
+            model_used: `${fallbackProvider}:${fallbackModel}`,
           });
 
           return new Response(
@@ -363,10 +501,10 @@ serve(async (req) => {
               type: "image",
               output: fallbackImageUrl,
               prompt: requestedPrompt,
-              model: "google/gemini-3-pro-image-preview",
-              provider: "lovable",
+              model: fallbackModel,
+              provider: fallbackProvider,
               fallback: true,
-              fallbackReason: "Bytez plan limitation - using Lovable AI instead",
+              fallbackReason: `Bytez unavailable - using ${fallbackProvider} (free alternative)`,
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
@@ -380,15 +518,46 @@ serve(async (req) => {
           );
         }
       } else {
-        // Use Lovable for image generation (default or lovable provider)
+        // Use free alternatives first (Hugging Face → Pollinations → Lovable)
         try {
-          const imageUrl = await callLovableImageGen(requestedPrompt);
+          let imageUrl = "";
+          let provider = "";
+          let model = "";
+          
+          try {
+            // Try Hugging Face first (free, more reliable)
+            console.log("Using Hugging Face for image generation (free)...");
+            imageUrl = await callHuggingFaceImageGen(requestedPrompt, "black-forest-labs/FLUX.1-schnell");
+            provider = "huggingface";
+            model = "FLUX.1-schnell";
+            console.log("Hugging Face succeeded, image URL length:", imageUrl.length);
+          } catch (hfError) {
+            console.error("Hugging Face failed with error:", hfError);
+            console.error("HF Error details:", hfError instanceof Error ? hfError.message : String(hfError));
+            
+            try {
+              // Try Pollinations as backup (free, but may show promotional images)
+              console.log("Trying Pollinations.ai (free)...");
+              const pollinationsModel = await getPollinationsModel(supabaseClient);
+              imageUrl = await callPollinationsImageGen(requestedPrompt, pollinationsModel);
+              provider = "pollinations";
+              model = pollinationsModel;
+            } catch (pollinationsError) {
+              console.error("Pollinations failed:", pollinationsError);
+              
+              // Last resort: Lovable
+              console.log("Using Lovable for image generation...");
+              imageUrl = await callLovableImageGen(requestedPrompt);
+              provider = "lovable";
+              model = "gemini-3-pro-image";
+            }
+          }
 
           await supabaseClient.from("ai_generated_images").insert({
             user_id: user.id,
             prompt: requestedPrompt,
             image_url: imageUrl,
-            model_used: "lovable:google/gemini-3-pro-image-preview",
+            model_used: `${provider}:${model}`,
           });
 
           return new Response(
@@ -396,13 +565,13 @@ serve(async (req) => {
               type: "image",
               output: imageUrl,
               prompt: requestedPrompt,
-              model: "google/gemini-3-pro-image-preview",
-              provider: "lovable",
+              model: model,
+              provider: provider,
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } catch (error) {
-          console.error("Lovable image generation error:", error);
+          console.error("Image generation error:", error);
           return new Response(
             JSON.stringify({
               error: "Image generation failed. Please try again.",
