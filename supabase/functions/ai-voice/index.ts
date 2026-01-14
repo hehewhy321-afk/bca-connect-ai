@@ -39,29 +39,18 @@ async function speechToText(audioData: string, apiKey: string): Promise<string> 
   console.log("Audio data length:", audioData.length);
   
   try {
-    // Process base64 audio - handle it in one go for simplicity
-    const binaryString = atob(audioData);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
+    // Bytez expects base64 audio directly in the request body
+    console.log("Sending to Bytez Whisper API with base64 audio...");
     
-    console.log("Binary audio size:", bytes.length, "bytes");
-    
-    // Use Whisper model through Bytez OpenAI-compatible endpoint
-    const formData = new FormData();
-    const blob = new Blob([bytes.buffer as ArrayBuffer], { type: 'audio/webm' });
-    formData.append('file', blob, 'audio.webm');
-    formData.append('model', 'whisper-1');
-
-    console.log("Sending to Bytez Whisper API...");
-    
-    const response = await fetch("https://api.bytez.com/models/v2/openai/v1/audio/transcriptions", {
+    const response = await fetch("https://api.bytez.com/models/v2/openai/whisper-large-v3", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
-      body: formData,
+      body: JSON.stringify({
+        base64: audioData,
+      }),
     });
 
     console.log("Bytez STT response status:", response.status);
@@ -69,31 +58,14 @@ async function speechToText(audioData: string, apiKey: string): Promise<string> 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Bytez STT error:", response.status, errorText);
-      
-      // Try fallback to direct Whisper endpoint
-      console.log("Trying fallback Whisper endpoint...");
-      const fallbackResponse = await fetch("https://api.bytez.com/models/v2/openai/whisper-large-v3", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: formData,
-      });
-      
-      if (!fallbackResponse.ok) {
-        const fallbackError = await fallbackResponse.text();
-        console.error("Fallback STT error:", fallbackResponse.status, fallbackError);
-        throw new Error(`Failed to transcribe audio: ${fallbackError}`);
-      }
-      
-      const fallbackResult = await fallbackResponse.json();
-      console.log("Fallback STT result:", fallbackResult);
-      return fallbackResult.text || fallbackResult.output?.text || "";
+      throw new Error(`Failed to transcribe audio: ${errorText}`);
     }
 
     const result = await response.json();
     console.log("STT result:", result);
-    return result.text || result.output?.text || "";
+    
+    // Bytez returns the transcription in the output field
+    return result.output || result.text || "";
   } catch (error) {
     console.error("STT processing error:", error);
     throw error;

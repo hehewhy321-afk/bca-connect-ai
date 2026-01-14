@@ -99,49 +99,100 @@ interface StreamingStatus {
   tokensPerSecond: number;
 }
 
-// Voice recording hook
-function useVoiceRecording() {
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+// Real-time speech recognition hook using Web Speech API
+function useSpeechRecognition(onTranscript: (text: string, isFinal: boolean) => void) {
+  const [isListening, setIsListening] = useState(false);
+  const [isSupported, setIsSupported] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
-  const startRecording = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+  useEffect(() => {
+    // Check if browser supports Web Speech API
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      setIsSupported(true);
+      const recognition = new SpeechRecognition();
       
-      chunksRef.current = [];
-      mediaRecorderRef.current = mediaRecorder;
-      
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
+      // Configure for real-time continuous recognition
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US'; // You can make this configurable
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = (event: any) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          onTranscript(finalTranscript.trim(), true);
+        } else if (interimTranscript) {
+          onTranscript(interimTranscript.trim(), false);
         }
       };
-      
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        setAudioBlob(blob);
-        stream.getTracks().forEach(track => track.stop());
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'no-speech') {
+          // Restart if no speech detected
+          if (isListening) {
+            recognition.start();
+          }
+        } else if (event.error === 'aborted') {
+          // Ignore aborted errors
+        } else {
+          setIsListening(false);
+        }
       };
-      
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error("Failed to start recording:", error);
-      throw error;
-    }
-  }, []);
 
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  }, [isRecording]);
+      recognition.onend = () => {
+        // Auto-restart if still supposed to be listening
+        if (isListening) {
+          try {
+            recognition.start();
+          } catch (e) {
+            console.error('Failed to restart recognition:', e);
+          }
+        }
+      };
 
-  return { isRecording, audioBlob, startRecording, stopRecording, setAudioBlob };
+      recognitionRef.current = recognition;
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [isListening, onTranscript]);
+
+  const startListening = useCallback(() => {
+    if (recognitionRef.current && !isListening) {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Failed to start recognition:', error);
+      }
+    }
+  }, [isListening]);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  }, [isListening]);
+
+  return { isListening, isSupported, startListening, stopListening };
 }
 
 export default function AIAssistant() {
@@ -150,6 +201,7 @@ export default function AIAssistant() {
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [imageMode, setImageMode] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState("");
   const [streamingStatus, setStreamingStatus] = useState<StreamingStatus>({
     isStreaming: false,
     provider: "",
@@ -161,7 +213,20 @@ export default function AIAssistant() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { isRecording, audioBlob, startRecording, stopRecording, setAudioBlob } = useVoiceRecording();
+
+  // Handle real-time transcription
+  const handleTranscript = useCallback((text: string, isFinal: boolean) => {
+    if (isFinal) {
+      // Add final transcript to input
+      setInput(prev => (prev + ' ' + text).trim());
+      setInterimTranscript("");
+    } else {
+      // Show interim results
+      setInterimTranscript(text);
+    }
+  }, []);
+
+  const { isListening, isSupported, startListening, stopListening } = useSpeechRecognition(handleTranscript);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -171,92 +236,28 @@ export default function AIAssistant() {
     scrollToBottom();
   }, [messages]);
 
-  // Handle voice recording result
-  useEffect(() => {
-    if (audioBlob) {
-      handleVoiceInput(audioBlob);
-      setAudioBlob(null);
-    }
-  }, [audioBlob]);
-
-  const handleVoiceInput = async (blob: Blob) => {
-    setIsLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error("Please log in to use voice features");
-      }
-
-      // Convert blob to base64
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-        reader.onerror = reject;
-      });
-      reader.readAsDataURL(blob);
-      const base64Audio = await base64Promise;
-
-      // Send to speech-to-text
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-voice`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            action: "stt",
-            audio: base64Audio,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to transcribe audio");
-      }
-
-      const { text } = await response.json();
-      if (text) {
-        setInput(text);
-        toast({
-          title: "Voice transcribed",
-          description: "Your speech has been converted to text.",
-        });
-      }
-    } catch (error) {
-      console.error("Voice input error:", error);
+  const handleMicClick = async () => {
+    if (!isSupported) {
       toast({
-        title: "Voice error",
-        description: error instanceof Error ? error.message : "Failed to process voice",
+        title: "Not supported",
+        description: "Your browser doesn't support speech recognition. Try Chrome, Edge, or Safari.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
 
-  const handleMicClick = async () => {
-    if (isRecording) {
-      stopRecording();
+    if (isListening) {
+      stopListening();
+      toast({
+        title: "Stopped listening",
+        description: "Voice input stopped.",
+      });
     } else {
-      try {
-        await startRecording();
-        toast({
-          title: "Recording started",
-          description: "Speak now. Click the mic again to stop.",
-        });
-      } catch (error) {
-        toast({
-          title: "Microphone access denied",
-          description: "Please allow microphone access to use voice input.",
-          variant: "destructive",
-        });
-      }
+      startListening();
+      toast({
+        title: "Listening...",
+        description: "Speak now. Your words will appear in real-time!",
+      });
     }
   };
 
@@ -752,12 +753,12 @@ export default function AIAssistant() {
               <Button
                 type="button"
                 size="icon"
-                variant={isRecording ? "destructive" : "outline"}
-                className="h-12 w-12 rounded-xl flex-shrink-0"
+                variant={isListening ? "destructive" : "outline"}
+                className={`h-12 w-12 rounded-xl flex-shrink-0 ${isListening ? 'animate-pulse' : ''}`}
                 onClick={handleMicClick}
                 disabled={isLoading}
               >
-                {isRecording ? (
+                {isListening ? (
                   <MicOff className="w-5 h-5" />
                 ) : (
                   <Mic className="w-5 h-5" />
@@ -769,31 +770,46 @@ export default function AIAssistant() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={
-                    isRecording 
-                      ? "Recording... Click mic to stop" 
+                    isListening 
+                      ? "Listening... Speak now!" 
                       : imageMode 
                         ? "Describe the image you want to generate..."
                         : "Ask anything about your studies..."
                   }
                   className="w-full px-4 py-3 pr-12 rounded-xl bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  disabled={isLoading || isRecording}
+                  disabled={isLoading}
                 />
-                {imageMode && (
+                {/* Show interim transcript as overlay */}
+                {interimTranscript && (
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60 italic pointer-events-none">
+                    {input && <span className="opacity-0">{input} </span>}
+                    {interimTranscript}
+                  </div>
+                )}
+                {imageMode && !isListening && (
                   <ImageIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                )}
+                {isListening && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <span className="w-1 h-3 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1 h-3 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+                  </div>
                 )}
               </div>
               <Button
                 type="submit"
                 size="icon"
                 className="h-12 w-12 rounded-xl"
-                disabled={!input.trim() || isLoading || isRecording}
+                disabled={!input.trim() || isLoading}
               >
                 <Send className="w-5 h-5" />
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              🎤 Voice Input • 💬 Chat • 🎨 Image Generation
+              🎤 Real-time Voice • 💬 Chat • 🎨 Image Generation
               {imageMode && <span className="text-primary font-medium"> • IMAGE MODE ON</span>}
+              {isListening && <span className="text-red-500 font-medium animate-pulse"> • LISTENING...</span>}
             </p>
           </form>
         </div>

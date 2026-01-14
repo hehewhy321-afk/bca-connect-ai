@@ -623,7 +623,72 @@ const AdminAISettings = () => {
 
       {/* Shared Custom Model Dialog */}
       <Dialog open={customModelDialogOpen} onOpenChange={setCustomModelDialogOpen}>
-        {/* Already handled by triggering logic above, but good to have fallback if needed */}
+        <DialogContent className="glass-card border-white/10 rounded-[2rem]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-foreground">
+              Add Custom {customModelProvider === "openrouter" ? "OpenRouter" : "Bytez"} Model
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="model-id" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Model ID
+              </Label>
+              <Input
+                id="model-id"
+                placeholder={customModelProvider === "openrouter" ? "e.g., anthropic/claude-3-opus" : "e.g., custom-model-name"}
+                value={newCustomModel.id}
+                onChange={(e) => setNewCustomModel(m => ({ ...m, id: e.target.value }))}
+                className="h-11 rounded-xl bg-white/5 border-white/10 font-mono text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="model-name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Display Name
+              </Label>
+              <Input
+                id="model-name"
+                placeholder="e.g., Claude 3 Opus"
+                value={newCustomModel.name}
+                onChange={(e) => setNewCustomModel(m => ({ ...m, name: e.target.value }))}
+                className="h-11 rounded-xl bg-white/5 border-white/10 font-bold"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="model-category" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                Category
+              </Label>
+              <Select
+                value={newCustomModel.category}
+                onValueChange={(v) => setNewCustomModel(m => ({ ...m, category: v }))}
+              >
+                <SelectTrigger className="h-11 rounded-xl bg-white/5 border-white/10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="glass-card rounded-xl border-white/10">
+                  <SelectItem value="LLM">LLM (Chat)</SelectItem>
+                  <SelectItem value="VLM">VLM (Vision)</SelectItem>
+                  <SelectItem value="Image Gen">Image Generation</SelectItem>
+                  <SelectItem value="Audio">Audio</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="ghost" className="rounded-xl">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              onClick={addCustomModel}
+              className="rounded-xl bg-primary text-primary-foreground font-bold"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Model
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </AdminLayout>
   );
