@@ -125,36 +125,45 @@ export function useNotifications() {
         if (data && data.length > 0) {
           const latestNotification = data[0];
           
-          // Check if this is a new notification we haven't seen
-          if (lastNotificationId !== latestNotification.id) {
-            const isNewNotification = !notifications.some(n => n.id === latestNotification.id);
-            
-            if (isNewNotification) {
-              console.log('📬 New notification detected via polling:', latestNotification);
-              setNotifications((prev) => [latestNotification, ...prev]);
-              setUnreadCount((prev) => prev + 1);
-              setLastNotificationId(latestNotification.id);
-              
-              // Show browser notification
-              if (permission === "granted") {
-                try {
-                  await showNotification(latestNotification.title, {
-                    body: latestNotification.message,
-                    tag: latestNotification.id,
-                    requireInteraction: false,
-                    vibrate: [200, 100, 200],
-                    silent: false,
-                    data: {
-                      link: latestNotification.link,
-                    },
-                  });
-                  console.log('✅ Browser notification shown via polling');
-                } catch (error) {
-                  console.error('❌ Error showing notification via polling:', error);
+          // Use a ref to track last notification ID to avoid dependency issues
+          setLastNotificationId((prevId) => {
+            // Check if this is a new notification we haven't seen
+            if (prevId !== latestNotification.id) {
+              setNotifications((prev) => {
+                const isNewNotification = !prev.some(n => n.id === latestNotification.id);
+                
+                if (isNewNotification) {
+                  console.log('📬 New notification detected via polling:', latestNotification);
+                  setUnreadCount((count) => count + 1);
+                  
+                  // Show browser notification
+                  if (permission === "granted") {
+                    (async () => {
+                      try {
+                        await showNotification(latestNotification.title, {
+                          body: latestNotification.message,
+                          tag: latestNotification.id,
+                          requireInteraction: false,
+                          vibrate: [200, 100, 200],
+                          silent: false,
+                          data: {
+                            link: latestNotification.link,
+                          },
+                        });
+                        console.log('✅ Browser notification shown via polling');
+                      } catch (error) {
+                        console.error('❌ Error showing notification via polling:', error);
+                      }
+                    })();
+                  }
+                  
+                  return [latestNotification, ...prev];
                 }
-              }
+                return prev;
+              });
             }
-          }
+            return latestNotification.id;
+          });
         }
       } catch (error) {
         console.error('Error polling for notifications:', error);
@@ -166,7 +175,7 @@ export function useNotifications() {
       clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
-  }, [user, permission, showNotification, lastNotificationId, notifications]);
+  }, [user, permission, showNotification]); // Removed notifications and lastNotificationId from dependencies
 
   const fetchNotifications = async () => {
     if (!user) return;
