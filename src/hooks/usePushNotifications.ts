@@ -31,6 +31,16 @@ export function usePushNotifications() {
     
     if (hasNotificationAPI) {
       setPermission(Notification.permission);
+      
+      // Poll permission status every 2 seconds to catch changes
+      const permissionCheckInterval = setInterval(() => {
+        if (Notification.permission !== permission) {
+          console.log('Permission changed:', Notification.permission);
+          setPermission(Notification.permission);
+        }
+      }, 2000);
+      
+      return () => clearInterval(permissionCheckInterval);
     }
 
     // Register service worker only if supported
@@ -39,7 +49,7 @@ export function usePushNotifications() {
     } else if (!isSecureContext) {
       console.warn('Notifications require HTTPS. Current protocol:', window.location.protocol);
     }
-  }, []);
+  }, [permission]);
 
   const registerServiceWorker = async () => {
     try {
