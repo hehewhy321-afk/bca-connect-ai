@@ -206,41 +206,41 @@ export function DashboardLayout({
       <div className={`flex flex-col min-h-screen transition-all duration-500 ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
         {/* Top Header */}
         <header className="sticky top-0 z-[50] glass-card border-b border-white/5 backdrop-blur-2xl">
-          <div className="flex items-center justify-between px-6 h-20">
+          <div className="flex items-center justify-between px-4 sm:px-6 h-16 sm:h-20">
             {/* Mobile Trigger & Title */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2.5 rounded-xl bg-white/5 border border-white/10 text-foreground active:scale-95 transition-all"
+                className="lg:hidden p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-foreground active:scale-95 transition-all"
               >
-                {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {sidebarOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
               </button>
-              <h1 className="font-black text-xl text-foreground tracking-tight hidden lg:block">
+              <h1 className="font-black text-base sm:text-xl text-foreground tracking-tight hidden sm:block lg:block">
                 {sidebarLinks.find(l => l.href === location.pathname)?.name || "Dashboard"}
               </h1>
             </div>
 
             {/* Actions Area */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <NotificationsDropdown />
 
-              <div className="h-10 w-[1px] bg-white/10 mx-1 hidden sm:block" />
+              <div className="h-8 sm:h-10 w-[1px] bg-white/10 mx-0.5 sm:mx-1 hidden sm:block" />
 
-              <div className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl bg-white/5 border border-white/5 items-center">
-                <Avatar className="w-10 h-10 shadow-lg shadow-primary/20">
+              <div className="flex items-center gap-2 sm:gap-3 p-1 sm:p-1.5 pr-2 sm:pr-4 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 items-center">
+                <Avatar className="w-8 h-8 sm:w-10 sm:h-10 shadow-lg shadow-primary/20">
                   <AvatarImage 
                     src={avatarUrl || undefined} 
                     alt={user?.user_metadata?.full_name || user?.email || "User"} 
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-black text-sm">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-black text-xs sm:text-sm">
                     {user?.email?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden sm:block leading-tight">
-                  <p className="text-sm font-bold text-foreground truncate max-w-[150px]">
+                  <p className="text-xs sm:text-sm font-bold text-foreground truncate max-w-[100px] sm:max-w-[150px]">
                     {user?.user_metadata?.full_name || user?.email?.split("@")[0]}
                   </p>
-                  <p className="text-[10px] font-black text-primary uppercase tracking-widest opacity-80">
+                  <p className="text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-widest opacity-80">
                     {isAdmin ? "Super Admin" : isModerator ? "Moderator" : "Member"}
                   </p>
                 </div>
@@ -250,7 +250,7 @@ export function DashboardLayout({
         </header>
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 p-6 md:p-8 lg:p-10">
+        <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -261,8 +261,8 @@ export function DashboardLayout({
         </main>
 
         {/* Dashboard Footer */}
-        <footer className="p-8 text-center border-t border-white/5">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] opacity-40">
+        <footer className="p-4 sm:p-8 text-center border-t border-white/5">
+          <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40">
             © {new Date().getFullYear()} BCA Connect AI • All Rights Reserved
           </p>
         </footer>

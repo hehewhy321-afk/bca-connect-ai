@@ -185,16 +185,16 @@ export default function Forum() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-foreground">
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
               Discussion Forum
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm sm:text-base">
               Ask questions, share knowledge, and connect with peers.
             </p>
           </div>
-          <Button onClick={() => navigate("/dashboard/forum/new")}>
+          <Button onClick={() => navigate("/dashboard/forum/new")} className="w-full sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             New Discussion
           </Button>
@@ -258,10 +258,10 @@ export default function Forum() {
                 transition={{ duration: 0.2, delay: index * 0.03 }}
               >
                 <Link to={`/dashboard/forum/${post.id}`}>
-                  <div className="p-5 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
-                    <div className="flex gap-4">
-                      {/* Votes */}
-                      <div className="flex flex-col items-center gap-1 text-center">
+                  <div className="p-4 sm:p-5 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
+                    <div className="flex gap-3 sm:gap-4">
+                      {/* Votes - Hidden on mobile, shown on larger screens */}
+                      <div className="hidden sm:flex flex-col items-center gap-1 text-center">
                         <ArrowUp className="w-5 h-5 text-muted-foreground" />
                         <span className="font-medium text-foreground">
                           {post.upvotes}
@@ -272,39 +272,48 @@ export default function Forum() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start gap-2 mb-2">
                           {post.is_pinned && (
-                            <Pin className="w-4 h-4 text-primary flex-shrink-0 mt-1" />
+                            <Pin className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                           )}
                           {post.is_locked && (
-                            <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
+                            <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                           )}
-                          <h3 className="font-heading font-semibold text-foreground hover:text-primary transition-colors line-clamp-1">
+                          <h3 className="font-heading font-semibold text-foreground hover:text-primary transition-colors line-clamp-2 sm:line-clamp-1 text-sm sm:text-base">
                             {post.title}
                           </h3>
                         </div>
 
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                          {post.content.replace(/[#*`]/g, "").slice(0, 200)}...
+                        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-3">
+                          {post.content.replace(/[#*`]/g, "").slice(0, 150)}...
                         </p>
 
-                        <div className="flex flex-wrap items-center gap-3">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                              categoryColors[post.category] || categoryColors.general
-                            }`}
-                          >
-                            {post.category}
-                          </span>
-
-                          {post.tags.slice(0, 3).map((tag) => (
+                        {/* Tags and Stats - Stacked on mobile */}
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span
-                              key={tag}
-                              className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs"
+                              className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                categoryColors[post.category] || categoryColors.general
+                              }`}
                             >
-                              #{tag}
+                              {post.category}
                             </span>
-                          ))}
 
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground ml-auto">
+                            {post.tags.slice(0, 2).map((tag) => (
+                              <span
+                                key={tag}
+                                className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs"
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* Stats - Inline on mobile with votes */}
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground sm:ml-auto">
+                            {/* Mobile-only upvote display */}
+                            <span className="flex sm:hidden items-center gap-1">
+                              <ArrowUp className="w-3 h-3" />
+                              {post.upvotes}
+                            </span>
                             <span className="flex items-center gap-1">
                               <MessageCircle className="w-3 h-3" />
                               {post.reply_count}
@@ -316,9 +325,9 @@ export default function Forum() {
                           </div>
                         </div>
 
-                        {/* Author & Time */}
-                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-xs">
+                        {/* Author & Time - Responsive layout */}
+                        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border">
+                          <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-[10px] sm:text-xs flex-shrink-0">
                             {post.author?.avatar_url ? (
                               <img
                                 src={post.author.avatar_url}
@@ -329,15 +338,22 @@ export default function Forum() {
                               getInitials(post.author?.full_name)
                             )}
                           </div>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground truncate max-w-[100px] sm:max-w-none">
                             {post.author?.full_name || "Anonymous"}
                           </span>
-                          <span className="text-xs text-muted-foreground">•</span>
+                          <span className="text-xs text-muted-foreground hidden sm:inline">•</span>
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            {formatDistanceToNow(new Date(post.created_at), {
-                              addSuffix: true,
-                            })}
+                            <span className="hidden sm:inline">
+                              {formatDistanceToNow(new Date(post.created_at), {
+                                addSuffix: true,
+                              })}
+                            </span>
+                            <span className="sm:hidden">
+                              {formatDistanceToNow(new Date(post.created_at), {
+                                addSuffix: false,
+                              })}
+                            </span>
                           </span>
                           
                           {/* Delete Button - Only show to post owner */}

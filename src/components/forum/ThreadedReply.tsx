@@ -100,7 +100,7 @@ export function ThreadedReply({
   const borderColor = borderColors[depth % borderColors.length];
 
   return (
-    <div className={`${depth > 0 ? "ml-8 mt-3" : ""}`}>
+    <div className={`${depth > 0 ? "ml-3 sm:ml-8 mt-2 sm:mt-3" : ""}`}>
       <motion.div
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -108,41 +108,41 @@ export function ThreadedReply({
           reply.is_solution
             ? "border-green-500/50 bg-green-500/5"
             : "border-border"
-        } p-4 ${depth > 0 ? `border-l-4 ${borderColor}` : ""}`}
+        } p-3 sm:p-4 ${depth > 0 ? `border-l-4 ${borderColor}` : ""}`}
       >
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
           {/* Votes */}
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-0.5 sm:gap-1">
             <button
               onClick={() => onVote(reply.id, 1)}
-              className={`p-1 rounded hover:bg-muted transition-colors ${
+              className={`p-0.5 sm:p-1 rounded hover:bg-muted transition-colors ${
                 userVotes[`reply_${reply.id}`] === 1
                   ? "text-primary"
                   : "text-muted-foreground"
               }`}
             >
-              <ArrowUp className="w-4 h-4" />
+              <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
-            <span className="font-medium text-sm text-foreground">
+            <span className="font-medium text-xs sm:text-sm text-foreground">
               {reply.upvotes}
             </span>
             <button
               onClick={() => onVote(reply.id, -1)}
-              className={`p-1 rounded hover:bg-muted transition-colors ${
+              className={`p-0.5 sm:p-1 rounded hover:bg-muted transition-colors ${
                 userVotes[`reply_${reply.id}`] === -1
                   ? "text-secondary"
                   : "text-muted-foreground"
               }`}
             >
-              <ArrowDown className="w-4 h-4" />
+              <ArrowDown className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            {/* Header */}
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-xs flex-shrink-0">
+            {/* Header - Wrap on mobile */}
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-[10px] sm:text-xs flex-shrink-0">
                 {reply.author?.avatar_url ? (
                   <img
                     src={reply.author.avatar_url}
@@ -153,23 +153,19 @@ export function ThreadedReply({
                   getInitials(reply.author?.full_name)
                 )}
               </div>
-              <span className="font-semibold text-sm text-foreground">
+              <span className="font-semibold text-xs sm:text-sm text-foreground truncate max-w-[80px] sm:max-w-none">
                 {reply.author?.full_name || "Anonymous"}
               </span>
-              <span className="text-xs text-muted-foreground">•</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-[10px] sm:text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(reply.created_at), {
-                  addSuffix: true,
+                  addSuffix: false,
                 })}
               </span>
               {reply.is_solution && (
-                <>
-                  <span className="text-xs text-muted-foreground">•</span>
-                  <div className="flex items-center gap-1 text-green-600">
-                    <CheckCircle className="w-4 h-4" />
-                    <span className="text-xs font-medium">Solution</span>
-                  </div>
-                </>
+                <div className="flex items-center gap-1 text-green-600">
+                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="text-[10px] sm:text-xs font-medium hidden sm:inline">Solution</span>
+                </div>
               )}
               {hasChildren && (
                 <button
@@ -178,32 +174,32 @@ export function ThreadedReply({
                   title={collapsed ? "Expand replies" : "Collapse replies"}
                 >
                   {collapsed ? (
-                    <ChevronDown className="w-4 h-4" />
+                    <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
                   ) : (
-                    <ChevronUp className="w-4 h-4" />
+                    <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4" />
                   )}
                 </button>
               )}
             </div>
 
             {/* Content - Always visible */}
-            <div className="prose prose-sm max-w-none text-foreground mb-3">
+            <div className="prose prose-sm max-w-none text-foreground mb-2 sm:mb-3 text-xs sm:text-sm overflow-x-auto">
               <MarkdownRenderer content={reply.content} />
             </div>
 
             {/* Actions - Always visible */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {currentUserId && depth < maxDepth && (
                 <button
                   onClick={() => setShowReplyForm(!showReplyForm)}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground hover:text-primary transition-colors"
                 >
                   <MessageCircle className="w-3 h-3" />
                   Reply
                 </button>
               )}
               {hasChildren && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-[10px] sm:text-xs text-muted-foreground">
                   {(() => {
                     // Count all nested replies
                     const countNested = (children: Reply[]): number => {
@@ -219,10 +215,10 @@ export function ThreadedReply({
               {currentUserId && reply.user_id === currentUserId && onDelete && (
                 <button
                   onClick={() => onDelete(reply.id)}
-                  className="flex items-center gap-1 text-xs text-destructive hover:text-destructive/80 transition-colors ml-auto"
+                  className="flex items-center gap-1 text-[10px] sm:text-xs text-destructive hover:text-destructive/80 transition-colors ml-auto"
                 >
                   <Trash2 className="w-3 h-3" />
-                  Delete
+                  <span className="hidden sm:inline">Delete</span>
                 </button>
               )}
             </div>

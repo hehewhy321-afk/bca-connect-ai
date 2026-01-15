@@ -408,49 +408,56 @@ export default function ForumPost() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-2xl border border-border p-6"
+          className="bg-card rounded-2xl border border-border p-4 sm:p-6"
         >
-          <div className="flex gap-4">
-            {/* Votes */}
-            <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Votes - Horizontal on mobile, vertical on desktop */}
+            <div className="flex sm:flex-col items-center gap-2 sm:gap-1 order-2 sm:order-1">
               <button
                 onClick={() => handleVote("post", post.id, 1)}
-                className={`p-1 rounded hover:bg-muted transition-colors ${
+                className={`p-1.5 sm:p-1 rounded hover:bg-muted transition-colors ${
                   userVotes[`post_${post.id}`] === 1 ? "text-primary" : "text-muted-foreground"
                 }`}
               >
-                <ArrowUp className="w-6 h-6" />
+                <ArrowUp className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
-              <span className="font-bold text-lg text-foreground">
+              <span className="font-bold text-base sm:text-lg text-foreground min-w-[2rem] text-center">
                 {post.upvotes}
               </span>
               <button
                 onClick={() => handleVote("post", post.id, -1)}
-                className={`p-1 rounded hover:bg-muted transition-colors ${
+                className={`p-1.5 sm:p-1 rounded hover:bg-muted transition-colors ${
                   userVotes[`post_${post.id}`] === -1 ? "text-secondary" : "text-muted-foreground"
                 }`}
               >
-                <ArrowDown className="w-6 h-6" />
+                <ArrowDown className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
+              {/* Mobile stats inline with votes */}
+              <div className="flex sm:hidden items-center gap-3 ml-auto text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  {post.views}
+                </span>
+              </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1">
-              <div className="flex items-start gap-2 mb-4">
-                {post.is_pinned && <Pin className="w-5 h-5 text-primary" />}
-                {post.is_locked && <Lock className="w-5 h-5 text-muted-foreground" />}
-                <h1 className="font-heading text-2xl font-bold text-foreground">
+            <div className="flex-1 min-w-0 order-1 sm:order-2">
+              <div className="flex items-start gap-2 mb-3 sm:mb-4">
+                {post.is_pinned && <Pin className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0 mt-0.5" />}
+                {post.is_locked && <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0 mt-0.5" />}
+                <h1 className="font-heading text-lg sm:text-2xl font-bold text-foreground leading-tight">
                   {post.title}
                 </h1>
               </div>
 
-              <div className="prose prose-sm max-w-none text-foreground mb-6">
+              <div className="prose prose-sm max-w-none text-foreground mb-4 sm:mb-6 overflow-x-auto">
                 <MarkdownRenderer content={post.content} />
               </div>
 
               {/* Tags */}
               <div className="flex flex-wrap gap-2 mb-4">
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                <span className="px-2.5 sm:px-3 py-1 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium">
                   {post.category}
                 </span>
                 {post.tags.map((tag) => (
@@ -463,11 +470,11 @@ export default function ForumPost() {
                 ))}
               </div>
 
-              {/* Meta */}
-              <div className="flex items-center justify-between pt-4 border-t border-border">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              {/* Meta - Stacked on mobile */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-border">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-sm">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-xs sm:text-sm flex-shrink-0">
                       {post.author?.avatar_url ? (
                         <img
                           src={post.author.avatar_url}
@@ -478,15 +485,22 @@ export default function ForumPost() {
                         getInitials(post.author?.full_name)
                       )}
                     </div>
-                    <span>{post.author?.full_name || "Anonymous"}</span>
+                    <span className="truncate max-w-[120px] sm:max-w-none">{post.author?.full_name || "Anonymous"}</span>
                   </div>
                   <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {formatDistanceToNow(new Date(post.created_at), {
-                      addSuffix: true,
-                    })}
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">
+                      {formatDistanceToNow(new Date(post.created_at), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                    <span className="sm:hidden">
+                      {formatDistanceToNow(new Date(post.created_at), {
+                        addSuffix: false,
+                      })}
+                    </span>
                   </span>
-                  <span className="flex items-center gap-1">
+                  <span className="hidden sm:flex items-center gap-1">
                     <Eye className="w-4 h-4" />
                     {post.views} views
                   </span>
@@ -498,7 +512,7 @@ export default function ForumPost() {
                     variant="ghost"
                     size="sm"
                     onClick={handleDeletePost}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 w-full sm:w-auto justify-center"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Delete Post
@@ -543,24 +557,25 @@ export default function ForumPost() {
 
         {/* Reply Form */}
         {!post.is_locked && user && (
-          <div className="bg-card rounded-2xl border border-border p-6">
-            <h3 className="font-heading font-semibold text-foreground mb-4">
+          <div className="bg-card rounded-2xl border border-border p-4 sm:p-6">
+            <h3 className="font-heading font-semibold text-foreground mb-3 sm:mb-4 text-sm sm:text-base">
               Your Reply
             </h3>
             <Textarea
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
               placeholder="Write your reply... (Markdown supported)"
-              rows={5}
-              className="mb-4"
+              rows={4}
+              className="mb-3 sm:mb-4 text-sm"
             />
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-xs text-muted-foreground order-2 sm:order-1">
                 Supports Markdown formatting
               </p>
               <Button
                 onClick={() => handleSubmitReply(null)}
                 disabled={!replyContent.trim() || submitting}
+                className="w-full sm:w-auto order-1 sm:order-2"
               >
                 <Send className="w-4 h-4 mr-2" />
                 {submitting ? "Posting..." : "Post Reply"}
