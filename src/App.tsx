@@ -10,6 +10,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { GlobalNotificationListener } from "@/components/GlobalNotificationListener";
 
 // Eager load critical and frequently accessed pages for instant navigation
 import Index from "./pages/Index";
@@ -122,6 +123,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <PWAInstallPrompt />
+            <GlobalNotificationListener />
             <BrowserRouter>
               <ScrollToTop />
               <Routes>
