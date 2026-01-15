@@ -45,11 +45,13 @@ self.addEventListener('push', (event) => {
       body: data.message || data.body,
       icon: '/pwa-192x192.png',
       badge: '/favicon.png',
+      vibrate: [200, 100, 200], // Vibration pattern
+      silent: false, // Enable sound
+      requireInteraction: false,
+      tag: data.id || 'notification',
       data: {
         link: data.link || '/',
       },
-      requireInteraction: false,
-      tag: data.id || 'notification',
     };
 
     event.waitUntil(

@@ -173,14 +173,6 @@ export function HeroSection() {
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
             </ShimmerButton>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}
-              className="h-14 px-8 text-lg font-semibold rounded-2xl border-2 hover:bg-muted transition-all active:scale-95"
-            >
-              Explore More
-            </Button>
           </motion.div>
         </motion.div>
       </div>

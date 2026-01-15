@@ -51,14 +51,18 @@ export function useNotifications() {
             // Use async function to handle the promise
             (async () => {
               try {
+                console.log('Attempting to show notification:', newNotification);
                 await showNotification(newNotification.title, {
                   body: newNotification.message,
                   tag: newNotification.id,
                   requireInteraction: false,
+                  vibrate: [200, 100, 200],
+                  silent: false,
                   data: {
                     link: newNotification.link,
                   },
                 });
+                console.log('Notification shown successfully');
               } catch (error) {
                 console.error('Error showing notification:', error);
               }
