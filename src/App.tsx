@@ -14,6 +14,7 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 // Eager load critical and frequently accessed pages for instant navigation
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import Events from "./pages/Events";
@@ -128,6 +129,7 @@ const App = () => (
                 {/* Public routes - eager loaded */}
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<AuthRedirect />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
 
                 {/* Public routes - lazy loaded */}
                 <Route path="/notice" element={<LazyRoute><Notice /></LazyRoute>} />
