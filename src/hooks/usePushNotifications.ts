@@ -12,44 +12,18 @@ export function usePushNotifications() {
 
   useEffect(() => {
     // Check if browser supports notifications and service workers
-    // Mobile browsers require HTTPS for notifications
-    const isSecureContext = window.isSecureContext || window.location.protocol === 'https:';
-    const hasNotificationAPI = "Notification" in window;
-    const hasServiceWorker = "serviceWorker" in navigator;
-    
-    const supported = hasNotificationAPI && hasServiceWorker && isSecureContext;
-    
-    console.log('Notification Support Check:', {
-      hasNotificationAPI,
-      hasServiceWorker,
-      isSecureContext,
-      protocol: window.location.protocol,
-      supported
-    });
-    
+    const supported = "Notification" in window && "serviceWorker" in navigator;
     setIsSupported(supported);
     
-    if (hasNotificationAPI) {
+    if ("Notification" in window) {
       setPermission(Notification.permission);
-      
-      // Poll permission status every 2 seconds to catch changes
-      const permissionCheckInterval = setInterval(() => {
-        if (Notification.permission !== permission) {
-          console.log('Permission changed:', Notification.permission);
-          setPermission(Notification.permission);
-        }
-      }, 2000);
-      
-      return () => clearInterval(permissionCheckInterval);
     }
 
-    // Register service worker only if supported
+    // Register service worker
     if (supported) {
       registerServiceWorker();
-    } else if (!isSecureContext) {
-      console.warn('Notifications require HTTPS. Current protocol:', window.location.protocol);
     }
-  }, [permission]);
+  }, []);
 
   const registerServiceWorker = async () => {
     try {
@@ -69,21 +43,11 @@ export function usePushNotifications() {
 
   const requestPermission = async () => {
     if (!isSupported) {
-      const isSecureContext = window.isSecureContext || window.location.protocol === 'https:';
-      
-      if (!isSecureContext) {
-        toast({
-          title: "HTTPS Required",
-          description: "Notifications require a secure connection (HTTPS). Please access the site via HTTPS.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Not Supported",
-          description: "Your browser doesn't support push notifications.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Not Supported",
+        description: "Your browser doesn't support push notifications.",
+        variant: "destructive",
+      });
       return false;
     }
 
@@ -128,55 +92,33 @@ export function usePushNotifications() {
     }
 
     try {
-      const notificationOptions: NotificationOptions = {
-        icon: "/pwa-192x192.png",
-        badge: "/favicon.png",
-        vibrate: [200, 100, 200], // Vibration pattern
-        requireInteraction: false,
-        silent: false, // Enable sound
-        ...options,
-      };
-
       // Use Service Worker to show notification for better reliability
-      if (registration && registration.active) {
-        console.log('Showing notification via Service Worker');
-        await registration.showNotification(title, notificationOptions);
+      if (registration) {
+        await registration.showNotification(title, {
+          icon: "/pwa-192x192.png",
+          badge: "/favicon.png",
+          requireInteraction: false,
+          ...options,
+        });
       } else {
         // Fallback to regular notification
-        console.log('Showing notification via Notification API');
-        const notification = new Notification(title, notificationOptions);
-        
-        // Add click handler for fallback notification
-        notification.onclick = (event) => {
-          event.preventDefault();
-          window.focus();
-          if (options?.data?.link) {
-            window.location.href = options.data.link;
-          }
-          notification.close();
-        };
+        new Notification(title, {
+          icon: "/pwa-192x192.png",
+          badge: "/favicon.png",
+          requireInteraction: false,
+          ...options,
+        });
       }
     } catch (error) {
       console.error("Error showing notification:", error);
       // Fallback to regular notification if service worker fails
       try {
-        const notification = new Notification(title, {
+        new Notification(title, {
           icon: "/pwa-192x192.png",
           badge: "/favicon.png",
-          vibrate: [200, 100, 200],
           requireInteraction: false,
-          silent: false,
           ...options,
         });
-        
-        notification.onclick = (event) => {
-          event.preventDefault();
-          window.focus();
-          if (options?.data?.link) {
-            window.location.href = options.data.link;
-          }
-          notification.close();
-        };
       } catch (fallbackError) {
         console.error("Fallback notification also failed:", fallbackError);
       }

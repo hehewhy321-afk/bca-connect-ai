@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { TestNotification } from "@/components/TestNotification";
 
 interface Profile {
   id: string;
@@ -631,19 +630,6 @@ export default function Settings() {
               {changingPassword ? "Changing..." : "Change Password"}
             </Button>
           </div>
-        </motion.div>
-
-        {/* Test Notifications Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-card rounded-2xl border border-border p-6"
-        >
-          <h2 className="font-heading text-lg font-semibold text-foreground mb-6">
-            Notification Settings
-          </h2>
-          <TestNotification />
         </motion.div>
       </div>
     </DashboardLayout>

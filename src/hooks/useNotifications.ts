@@ -17,7 +17,6 @@ export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [lastNotificationId, setLastNotificationId] = useState<string | null>(null);
   const { user } = useAuth();
   const { showNotification, permission } = usePushNotifications();
 
@@ -31,8 +30,6 @@ export function useNotifications() {
 
     fetchNotifications();
 
-    console.log('Setting up notification subscription for user:', user.id);
-
     // Subscribe to realtime notifications
     const channel = supabase
       .channel("notifications-changes")
@@ -45,36 +42,27 @@ export function useNotifications() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('🔔 New notification received via realtime:', payload);
           const newNotification = payload.new as Notification;
           setNotifications((prev) => [newNotification, ...prev]);
           setUnreadCount((prev) => prev + 1);
-          setLastNotificationId(newNotification.id);
           
           // Show browser notification if permission granted
-          console.log('Permission status:', permission);
           if (permission === "granted") {
             // Use async function to handle the promise
             (async () => {
               try {
-                console.log('Attempting to show browser notification:', newNotification);
                 await showNotification(newNotification.title, {
                   body: newNotification.message,
                   tag: newNotification.id,
                   requireInteraction: false,
-                  vibrate: [200, 100, 200],
-                  silent: false,
                   data: {
                     link: newNotification.link,
                   },
                 });
-                console.log('✅ Browser notification shown successfully');
               } catch (error) {
-                console.error('❌ Error showing browser notification:', error);
+                console.error('Error showing notification:', error);
               }
             })();
-          } else {
-            console.warn('⚠️ Cannot show notification - permission not granted. Current permission:', permission);
           }
         }
       )
@@ -98,84 +86,12 @@ export function useNotifications() {
           }
         }
       )
-      .subscribe((status) => {
-        console.log('Notification channel subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Successfully subscribed to notifications channel');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Error subscribing to notifications channel');
-        }
-      });
-
-    // Fallback: Poll for new notifications every 10 seconds
-    // This ensures notifications work even if realtime fails
-    const pollInterval = setInterval(async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from("notifications")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          const latestNotification = data[0];
-          
-          // Use a ref to track last notification ID to avoid dependency issues
-          setLastNotificationId((prevId) => {
-            // Check if this is a new notification we haven't seen
-            if (prevId !== latestNotification.id) {
-              setNotifications((prev) => {
-                const isNewNotification = !prev.some(n => n.id === latestNotification.id);
-                
-                if (isNewNotification) {
-                  console.log('📬 New notification detected via polling:', latestNotification);
-                  setUnreadCount((count) => count + 1);
-                  
-                  // Show browser notification
-                  if (permission === "granted") {
-                    (async () => {
-                      try {
-                        await showNotification(latestNotification.title, {
-                          body: latestNotification.message,
-                          tag: latestNotification.id,
-                          requireInteraction: false,
-                          vibrate: [200, 100, 200],
-                          silent: false,
-                          data: {
-                            link: latestNotification.link,
-                          },
-                        });
-                        console.log('✅ Browser notification shown via polling');
-                      } catch (error) {
-                        console.error('❌ Error showing notification via polling:', error);
-                      }
-                    })();
-                  }
-                  
-                  return [latestNotification, ...prev];
-                }
-                return prev;
-              });
-            }
-            return latestNotification.id;
-          });
-        }
-      } catch (error) {
-        console.error('Error polling for notifications:', error);
-      }
-    }, 10000); // Poll every 10 seconds
+      .subscribe();
 
     return () => {
-      console.log('Cleaning up notification subscription and polling');
-      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
-  }, [user, permission, showNotification]); // Removed notifications and lastNotificationId from dependencies
+  }, [user, permission, showNotification]);
 
   const fetchNotifications = async () => {
     if (!user) return;
