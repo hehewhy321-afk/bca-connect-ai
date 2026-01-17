@@ -45,7 +45,7 @@ async function getAISettings(supabaseClient: any): Promise<AISettings | null> {
     const { data, error } = await supabaseClient
       .from("ai_settings")
       .select("setting_key, setting_value");
-    
+
     if (error) {
       console.error("Error fetching AI settings:", error);
       return null;
@@ -130,39 +130,39 @@ async function callLovableImageGen(prompt: string) {
 // Fetches the image and converts to base64 to avoid CORS issues
 async function callPollinationsImageGen(prompt: string, model: string = "flux") {
   console.log("Calling Pollinations.ai for image generation with model:", model);
-  
+
   // Pollinations.ai supports: flux, flux-realism, flux-anime, flux-3d, turbo
   const encodedPrompt = encodeURIComponent(prompt);
-  
+
   // Generate the Pollinations URL
   const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=${model}&width=1024&height=1024&nologo=true&enhance=true`;
-  
+
   console.log("Generated Pollinations URL:", imageUrl);
-  
+
   try {
     // Fetch the image from Pollinations
     console.log("Fetching image from Pollinations...");
     const response = await fetch(imageUrl);
-    
+
     if (!response.ok) {
       throw new Error(`Pollinations returned ${response.status}`);
     }
-    
+
     // Convert to base64 to avoid CORS issues in frontend
     const imageBlob = await response.blob();
     const arrayBuffer = await imageBlob.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     let binary = '';
     const chunkSize = 0x8000;
-    
+
     for (let i = 0; i < uint8Array.length; i += chunkSize) {
       const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
       binary += String.fromCharCode.apply(null, Array.from(chunk));
     }
-    
+
     const base64 = btoa(binary);
     const dataUrl = `data:image/png;base64,${base64}`;
-    
+
     console.log("Pollinations image converted to base64, length:", dataUrl.length);
     return dataUrl;
   } catch (error) {
@@ -180,11 +180,11 @@ async function getPollinationsModel(supabaseClient: any): Promise<string> {
       .select("setting_value")
       .eq("setting_key", "pollinations_model")
       .single();
-    
+
     if (error || !data) {
       return "flux"; // Default model
     }
-    
+
     return data.setting_value || "flux";
   } catch (error) {
     console.error("Error fetching Pollinations model:", error);
@@ -195,7 +195,7 @@ async function getPollinationsModel(supabaseClient: any): Promise<string> {
 // Free image generation using Hugging Face Inference API
 async function callHuggingFaceImageGen(prompt: string, model: string = "black-forest-labs/FLUX.1-schnell") {
   console.log("Calling Hugging Face for image generation with model:", model);
-  
+
   // Use Hugging Face's free inference API
   const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
     method: "POST",
@@ -218,18 +218,18 @@ async function callHuggingFaceImageGen(prompt: string, model: string = "black-fo
 
   // Response is the image blob
   const imageBlob = await response.blob();
-  
+
   // Convert blob to base64 data URL
   const arrayBuffer = await imageBlob.arrayBuffer();
   const uint8Array = new Uint8Array(arrayBuffer);
   let binary = '';
   const chunkSize = 0x8000;
-  
+
   for (let i = 0; i < uint8Array.length; i += chunkSize) {
     const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
     binary += String.fromCharCode.apply(null, Array.from(chunk));
   }
-  
+
   const base64 = btoa(binary);
   return `data:image/png;base64,${base64}`;
 }
@@ -257,7 +257,7 @@ async function callOpenRouter(messages: any[], systemPrompt: string, apiKey: str
 
 async function callBytezChat(messages: any[], systemPrompt: string, apiKey: string, model: string) {
   // Ensure model has proper format - if it doesn't have a slash, use a default known working model
-  const modelId = model.includes('/') ? model : `Qwen/Qwen3-4B`;
+  const modelId = model.includes('/') ? model : `Qwen/Qwen2.5-1.5B-Instruct`;
   console.log("Calling Bytez with model:", modelId);
 
   // Use OpenAI-compatible endpoint for proper streaming format
@@ -266,6 +266,7 @@ async function callBytezChat(messages: any[], systemPrompt: string, apiKey: stri
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      "X-Model": modelId, // Some OpenAI proxies use this
     },
     body: JSON.stringify({
       model: modelId,
@@ -341,14 +342,14 @@ serve(async (req) => {
     // Verify JWT and get user
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    
+
     // Create client with user's auth token
     const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
 
     const { data: { user }, error: authError } = await supabaseUserClient.auth.getUser();
-    
+
     if (authError || !user) {
       console.error("Authentication failed:", authError?.message || "No user found");
       return new Response(
@@ -360,28 +361,28 @@ serve(async (req) => {
     console.log("Authenticated user:", user.id);
 
     const { messages, mode } = await req.json();
-    
+
     // Create admin client to fetch settings
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get AI settings from database
     const settings = await getAISettings(supabaseClient);
-    
+
     const provider = settings?.ai_provider || "lovable";
     const systemPrompt = settings?.custom_system_prompt || DEFAULT_SYSTEM_PROMPT;
-    
+
     console.log("Using AI provider:", provider);
     console.log("Processing chat request for user:", user.id, "with", messages.length, "messages");
 
     // Handle explicit image mode or image generation request
     const lastMessage = messages[messages.length - 1];
     const imagePrompt = lastMessage?.role === "user" ? detectImageGenRequest(lastMessage.content) : null;
-    
+
     // If mode is "image" or image prompt detected, generate image
     if (mode === "image" || imagePrompt) {
       const requestedPrompt = imagePrompt || lastMessage.content;
-      
+
       // Determine which provider to use for image generation
       if (provider === "bytez") {
         const apiKey = settings?.bytez_api_key;
@@ -448,7 +449,7 @@ serve(async (req) => {
           } else {
             const errorText = await imageResponse.text();
             console.error("Bytez image generation error:", imageResponse.status, errorText);
-            
+
             // Check if it's a plan limitation error
             if (imageResponse.status === 403 && errorText.includes("upgrade")) {
               console.log("Bytez plan limitation - falling back to Lovable");
@@ -457,11 +458,11 @@ serve(async (req) => {
 
           // Fallback chain: Try Hugging Face (free) → Pollinations (free) → Lovable
           console.log("Bytez failed, trying free alternatives...");
-          
+
           let fallbackImageUrl = "";
           let fallbackProvider = "";
           let fallbackModel = "";
-          
+
           try {
             // Try Hugging Face first (more reliable, no promotional images)
             console.log("Trying Hugging Face (free)...");
@@ -470,7 +471,7 @@ serve(async (req) => {
             fallbackModel = "FLUX.1-schnell";
           } catch (hfError) {
             console.error("Hugging Face failed:", hfError);
-            
+
             try {
               // Try Pollinations as backup
               console.log("Trying Pollinations.ai (free)...");
@@ -480,7 +481,7 @@ serve(async (req) => {
               fallbackModel = pollinationsModel;
             } catch (pollinationsError) {
               console.error("Pollinations failed:", pollinationsError);
-              
+
               // Last resort: Lovable
               console.log("Trying Lovable as last resort...");
               fallbackImageUrl = await callLovableImageGen(requestedPrompt);
@@ -523,7 +524,7 @@ serve(async (req) => {
           let imageUrl = "";
           let provider = "";
           let model = "";
-          
+
           try {
             // Try Hugging Face first (free, more reliable)
             console.log("Using Hugging Face for image generation (free)...");
@@ -534,7 +535,7 @@ serve(async (req) => {
           } catch (hfError) {
             console.error("Hugging Face failed with error:", hfError);
             console.error("HF Error details:", hfError instanceof Error ? hfError.message : String(hfError));
-            
+
             try {
               // Try Pollinations as backup (free, but may show promotional images)
               console.log("Trying Pollinations.ai (free)...");
@@ -544,7 +545,7 @@ serve(async (req) => {
               model = pollinationsModel;
             } catch (pollinationsError) {
               console.error("Pollinations failed:", pollinationsError);
-              
+
               // Last resort: Lovable
               console.log("Using Lovable for image generation...");
               imageUrl = await callLovableImageGen(requestedPrompt);
@@ -588,7 +589,7 @@ serve(async (req) => {
 
     if (provider === "bytez") {
       const apiKey = settings?.bytez_api_key;
-      const model = settings?.bytez_chat_model || "Qwen/Qwen3-4B";
+      const model = settings?.bytez_chat_model || "Qwen/Qwen2.5-1.5B-Instruct";
       providerInfo.model = model;
 
       if (!apiKey) {
@@ -622,7 +623,7 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI provider error:", response.status, errorText);
-      
+
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment.", code: "RATE_LIMITED" }),
@@ -641,7 +642,29 @@ serve(async (req) => {
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
+
+      if (provider === "bytez" && (response.status === 503 || response.status === 504 || (response.status === 500 && errorText.includes("deploying")))) {
+        return new Response(
+          JSON.stringify({
+            error: "The AI model is currently waking up. This usually takes 15-30 seconds on the first use. Please try sending your message again in a few moments.",
+            code: "MODEL_WAKING_UP"
+          }),
+          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // If it's a Specific Bytez error, pass it through to help debugging
+      if (provider === "bytez") {
+        return new Response(
+          JSON.stringify({
+            error: `Bytez Error (${response.status}): ${errorText.length > 100 ? errorText.substring(0, 100) + "..." : errorText}`,
+            code: "BYTEZ_ERROR",
+            details: errorText
+          }),
+          { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
         JSON.stringify({ error: "AI service temporarily unavailable", code: "SERVICE_ERROR" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

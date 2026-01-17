@@ -67,8 +67,8 @@ const ALL_OPENROUTER_MODELS = [...FREE_MODELS, ...PAID_MODELS];
 // Bytez models organized by category - using verified working model IDs
 const BYTEZ_LLM_MODELS: ModelInfo[] = [
   // General-purpose LLMs - verified working models
-  { id: "Qwen/Qwen3-4B", name: "Qwen3 4B", provider: "Qwen", tier: "free", category: "LLM" },
-  { id: "Qwen/Qwen3-8B", name: "Qwen3 8B", provider: "Qwen", tier: "free", category: "LLM" },
+  { id: "Qwen/Qwen2.5-0.5B-Instruct", name: "Qwen2.5 0.5B (Lite/Free)", provider: "Qwen", tier: "free", category: "LLM" },
+  { id: "Qwen/Qwen2.5-1.5B-Instruct", name: "Qwen2.5 1.5B (Fast/Free)", provider: "Qwen", tier: "free", category: "LLM" },
   { id: "Qwen/Qwen2.5-7B-Instruct", name: "Qwen2.5 7B Instruct", provider: "Qwen", tier: "free", category: "LLM" },
   { id: "Qwen/Qwen2.5-14B-Instruct", name: "Qwen2.5 14B Instruct", provider: "Qwen", tier: "free", category: "LLM" },
   { id: "meta-llama/Llama-3.2-3B-Instruct", name: "Llama 3.2 3B Instruct", provider: "Meta", tier: "free", category: "LLM" },
@@ -155,7 +155,7 @@ const AdminAISettings = () => {
     openrouter_model: "meta-llama/llama-3.2-3b-instruct:free",
     openrouter_custom_models: "[]",
     bytez_api_key: "",
-    bytez_chat_model: "Qwen/Qwen3-4B",
+    bytez_chat_model: "Qwen/Qwen2.5-1.5B-Instruct",
     bytez_image_model: "black-forest-labs/FLUX.1-schnell",
     bytez_custom_models: "[]",
     pollinations_model: "flux",
@@ -186,7 +186,7 @@ const AdminAISettings = () => {
         openrouter_model: "meta-llama/llama-3.2-3b-instruct:free",
         openrouter_custom_models: "[]",
         bytez_api_key: "",
-        bytez_chat_model: "Qwen/Qwen3-4B",
+        bytez_chat_model: "Qwen/Qwen2.5-1.5B-Instruct",
         bytez_image_model: "black-forest-labs/FLUX.1-schnell",
         bytez_custom_models: "[]",
         pollinations_model: "flux",
@@ -550,6 +550,17 @@ const AdminAISettings = () => {
                       </Select>
                     </div>
 
+                    <div className="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                      <div className="flex items-center gap-3 mb-2 text-amber-500">
+                        <Zap className="h-4 w-4" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Deployment Note</span>
+                      </div>
+                      <p className="text-[10px] font-medium text-muted-foreground italic leading-relaxed">
+                        Bytez models are served on-demand. Free plans have a size limit (usually models under 4GB).
+                        On first use, a model may take 15-30 seconds to "wake up".
+                      </p>
+                    </div>
+
                     <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10">
                       <div className="flex items-center gap-3 mb-2 text-primary">
                         <Mic className="h-4 w-4" />
@@ -602,7 +613,7 @@ const AdminAISettings = () => {
                     <span className="text-sm font-black text-foreground uppercase tracking-widest">Backup Provider</span>
                   </div>
                   <p className="text-xs font-medium text-muted-foreground leading-relaxed">
-                    Pollinations.ai is used as a backup when Hugging Face or other primary providers are unavailable. 
+                    Pollinations.ai is used as a backup when Hugging Face or other primary providers are unavailable.
                     It generates high-quality images instantly with no rate limits or API keys required.
                   </p>
                 </div>
