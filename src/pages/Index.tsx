@@ -27,11 +27,9 @@ const Index = () => {
       { icon: <ShieldCheck size={18} />, title: 'Secure & Private' },
       { icon: <Cloud size={18} />, title: 'More Tools Coming Soon' },
     ],
-    qrCodeUrl: 'https://ik.imagekit.io/fpxbgsota/Untitled.png',
-    qrCodeAlt: 'BCA Connect App QR Code',
     mainImageUrl: 'https://ik.imagekit.io/otherhope/7fc616f24c9.png',
     mainImageAlt: 'BCA Connect Mobile App Interface',
-    githubDownloadUrl: 'https://github.com/hehewhy321-afk/bca-connect-ai/releases',
+    githubDownloadUrl: 'https://github.com/hehewhy321-afk/bca-connect-ai-app/releases/download/v1.2.0/BCA-Association-v1.2.0.apk',
   };
 
   return (
