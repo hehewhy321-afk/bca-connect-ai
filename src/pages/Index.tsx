@@ -12,7 +12,32 @@ import { Footer } from "@/components/layout/Footer";
 import { AppDownloadSection } from "@/components/ui/app-download-section";
 import { Bell, Network, Layout, Zap, ShieldCheck, Smartphone, Cloud } from "lucide-react";
 
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
 const Index = () => {
+  const { data: settings } = useQuery({
+    queryKey: ["website-settings-public"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("website_settings")
+        .select("*");
+      if (error) throw error;
+
+      const settingsMap: Record<string, string> = {};
+      data.forEach((s) => {
+        settingsMap[s.setting_key] = s.setting_value || "";
+      });
+      return settingsMap;
+    },
+  });
+
+  const ensureProtocol = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    return `https://${url}`;
+  };
+
   const appDownloadProps = {
     title: 'Download BCA Connect App',
     subtitle: 'Stay connected with the BCA community anytime, anywhere. Get real-time updates on events, connectivity, and resources right at your fingertips.',
@@ -29,7 +54,9 @@ const Index = () => {
     ],
     mainImageUrl: 'https://ik.imagekit.io/otherhope/7fc616f24c9.png',
     mainImageAlt: 'BCA Connect Mobile App Interface',
-    githubDownloadUrl: 'https://github.com/hehewhy321-afk/bca-connect-ai-app/releases/download/v1.2.0/BCA-Association-v1.2.0.apk',
+    githubDownloadUrl: settings?.app_download_link
+      ? ensureProtocol(settings.app_download_link)
+      : 'https://github.com/hehewhy321-afk/bca-connect-ai-app/releases/download/v1.2.0/BCA-Association-v1.2.0.apk',
   };
 
   return (

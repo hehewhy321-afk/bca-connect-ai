@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Settings, Globe, Phone, Mail, Facebook, Twitter, Instagram, Linkedin, Youtube, Loader2, Save, Upload, X, Image } from "lucide-react";
+import { Settings, Globe, Phone, Mail, Facebook, Twitter, Instagram, Linkedin, Youtube, Loader2, Save, Upload, X, Image, Smartphone } from "lucide-react";
 
 interface SettingsMap {
   [key: string]: string;
@@ -29,6 +29,7 @@ const AdminWebsiteSettings = () => {
     instagram_url: "",
     linkedin_url: "",
     youtube_url: "",
+    app_download_link: "",
   });
 
   const { data: settingsData, isLoading } = useQuery({
@@ -345,6 +346,43 @@ const AdminWebsiteSettings = () => {
                     className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
                   />
                 </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* App Config */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="glass-card rounded-[3rem] p-8 border border-white/5 relative overflow-hidden group"
+          >
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
+
+            <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                <Smartphone className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-foreground tracking-tight">App Distribution</h2>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Mobile app parameters</p>
+              </div>
+            </div>
+
+            <div className="space-y-6 relative z-10">
+              <div className="space-y-2">
+                <Label htmlFor="app_download_link" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">APK / Download URL</Label>
+                <div className="relative group">
+                  <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input
+                    id="app_download_link"
+                    value={settings.app_download_link}
+                    onChange={(e) => handleChange("app_download_link", e.target.value)}
+                    placeholder="https://github.com/.../app-release.apk"
+                    className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground ml-1">Direct link to the APK file or app store listing.</p>
               </div>
             </div>
           </motion.div>
