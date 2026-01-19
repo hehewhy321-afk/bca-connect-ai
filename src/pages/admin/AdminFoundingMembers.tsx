@@ -243,7 +243,7 @@ export default function AdminFoundingMembers() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
-                className={`glass - card p - 6 rounded - [2.5rem] border border - white / 5 hover: border - primary / 20 transition - all group relative overflow - hidden ${!member.is_active ? "opacity-60 grayscale" : ""} `}
+                className={`glass-card p-6 rounded-[2.5rem] border border-white/5 hover:border-primary/20 transition-all group relative overflow-hidden ${!member.is_active ? "opacity-60 grayscale" : ""} `}
               >
                 <div className="flex items-center gap-6 relative z-10">
                   <div className="text-muted-foreground/30 hover:text-primary transition-colors cursor-grab active:cursor-grabbing">
