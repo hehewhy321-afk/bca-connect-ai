@@ -29,23 +29,24 @@ export default function ResetPassword() {
   const [tokenError, setTokenError] = useState(false);
 
   const navigate = useNavigate();
-  const { updatePassword, session } = useAuth();
+  const { updatePassword, session, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user has a valid session (came from reset link)
-    // Supabase automatically handles the token from the URL hash
-    const checkSession = async () => {
-      // Give Supabase a moment to process the URL hash
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+    // Only check for session errors once authentication state has been initialized
+    if (!authLoading) {
       if (!session) {
         setTokenError(true);
+      } else {
+        setTokenError(false);
       }
-    };
-    
-    checkSession();
-  }, [session]);
+    }
+  }, [session, authLoading]);
+
+  const handleBackToSignIn = async () => {
+    await signOut();
+    navigate("/auth");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +69,7 @@ export default function ResetPassword() {
 
     try {
       const { error } = await updatePassword(password);
-      
+
       if (error) {
         toast({
           title: "Error",
@@ -93,11 +94,23 @@ export default function ResetPassword() {
     }
   };
 
+  if (authLoading && !success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary via-primary/90 to-accent/80 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-hero-pattern opacity-20" />
+        <div className="bg-card rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-4 relative z-10">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-muted-foreground font-medium">Verifying reset link...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (tokenError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/90 to-accent/80 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-hero-pattern opacity-20" />
-        
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -114,9 +127,9 @@ export default function ResetPassword() {
               <p className="text-muted-foreground text-sm">
                 This password reset link is invalid or has expired. Please request a new one.
               </p>
-              <Link to="/auth">
-                <Button className="mt-4">Back to Sign In</Button>
-              </Link>
+              <Button onClick={handleBackToSignIn} className="mt-4">
+                Back to Sign In
+              </Button>
             </div>
           </div>
         </motion.div>
@@ -128,7 +141,7 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary via-primary/90 to-accent/80 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-hero-pattern opacity-20" />
-        
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -158,20 +171,20 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/90 to-accent/80 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-hero-pattern opacity-20" />
-      
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
-        <Link
-          to="/auth"
+        <button
+          onClick={handleBackToSignIn}
           className="inline-flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Sign In
-        </Link>
+        </button>
 
         <div className="bg-card rounded-3xl shadow-2xl p-8">
           <div className="flex items-center justify-center gap-2 mb-6">
