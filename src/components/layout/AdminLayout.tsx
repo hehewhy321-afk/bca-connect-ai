@@ -22,7 +22,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Megaphone,
+  Video,
+  CreditCard,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import logoImg from "@/assets/logo.jpg";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -31,6 +34,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 const adminLinks = [
   { name: "Overview", href: "/admin", icon: Shield },
+  { name: "Courses", href: "/admin/courses", icon: Video },
+  { name: "Enrollments", href: "/admin/enrollments", icon: CreditCard },
   { name: "Events", href: "/admin/events", icon: Calendar },
   { name: "QR Check-in", href: "/admin/qr-scanner", icon: QrCode },
   { name: "Resources", href: "/admin/resources", icon: BookOpen },
@@ -63,6 +68,37 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const { isAdmin, isModerator, loading } = useUserRole();
+  const [pendingEnrollments, setPendingEnrollments] = useState(0);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const fetchPendingCount = async () => {
+      const { count, error } = await supabase
+        .from("course_enrollments")
+        .select("*", { count: 'exact', head: true })
+        .eq("status", "pending");
+
+      if (!error) setPendingEnrollments(count || 0);
+    };
+
+    fetchPendingCount();
+
+    const channel = supabase
+      .channel('enrollment-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'course_enrollments' },
+        () => {
+          fetchPendingCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAdmin]);
 
   // Persist collapsed state to localStorage
   const toggleCollapsed = () => {
@@ -170,15 +206,19 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 key={link.name}
                 to={link.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-5 py-3.5 rounded-[1.25rem] text-sm font-semibold transition-all duration-300 group relative ${
-                  collapsed ? "justify-center px-3" : ""
-                } ${isActive
-                  ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                className={`flex items-center gap-3 px-5 py-3.5 rounded-[1.25rem] text-sm font-semibold transition-all duration-300 group relative ${collapsed ? "justify-center px-3" : ""
+                  } ${isActive
+                    ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                   }`}
                 title={collapsed ? link.name : ""}
               >
-                <link.icon className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
+                <div className="relative">
+                  <link.icon className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
+                  {link.name === "Enrollments" && pendingEnrollments > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-600 animate-pulse ring-2 ring-background z-10 shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+                  )}
+                </div>
                 {!collapsed && link.name}
                 {isActive && !collapsed && (
                   <motion.div

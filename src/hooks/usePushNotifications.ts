@@ -14,7 +14,7 @@ export function usePushNotifications() {
     // Check if browser supports notifications and service workers
     const supported = "Notification" in window && "serviceWorker" in navigator;
     setIsSupported(supported);
-    
+
     if ("Notification" in window) {
       setPermission(Notification.permission);
     }
@@ -30,14 +30,14 @@ export function usePushNotifications() {
       const reg = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',
       });
-      console.log('Service Worker registered:', reg);
       setRegistration(reg);
-      
+
       // Wait for service worker to be ready
       await navigator.serviceWorker.ready;
-      console.log('Service Worker ready');
     } catch (error) {
-      console.error('Service Worker registration failed:', error);
+      if (import.meta.env.DEV) {
+        console.error('Service Worker registration failed:', error);
+      }
     }
   };
 
@@ -60,7 +60,7 @@ export function usePushNotifications() {
           title: "Notifications Enabled",
           description: "You'll now receive real-time notifications.",
         });
-        
+
         // Save preference to database
         if (user) {
           await supabase
@@ -68,7 +68,7 @@ export function usePushNotifications() {
             .update({ push_notifications_enabled: true } as any)
             .eq("user_id", user.id);
         }
-        
+
         return true;
       } else if (result === "denied") {
         toast({
@@ -79,7 +79,9 @@ export function usePushNotifications() {
         return false;
       }
     } catch (error) {
-      console.error("Error requesting notification permission:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error requesting notification permission:", error);
+      }
       return false;
     }
     return false;
@@ -87,7 +89,6 @@ export function usePushNotifications() {
 
   const showNotification = async (title: string, options?: NotificationOptions) => {
     if (permission !== "granted" || !isSupported) {
-      console.log('Cannot show notification: permission not granted or not supported');
       return;
     }
 
@@ -110,7 +111,9 @@ export function usePushNotifications() {
         });
       }
     } catch (error) {
-      console.error("Error showing notification:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error showing notification:", error);
+      }
       // Fallback to regular notification if service worker fails
       try {
         new Notification(title, {
@@ -120,7 +123,9 @@ export function usePushNotifications() {
           ...options,
         });
       } catch (fallbackError) {
-        console.error("Fallback notification also failed:", fallbackError);
+        if (import.meta.env.DEV) {
+          console.error("Fallback notification also failed:", fallbackError);
+        }
       }
     }
   };
@@ -131,7 +136,7 @@ export function usePushNotifications() {
         .from("profiles")
         .update({ push_notifications_enabled: false } as any)
         .eq("user_id", user.id);
-      
+
       toast({
         title: "Notifications Disabled",
         description: "You won't receive browser notifications anymore.",

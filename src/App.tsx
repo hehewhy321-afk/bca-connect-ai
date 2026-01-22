@@ -54,8 +54,14 @@ const AdminAISettings = lazy(() => import("./pages/admin/AdminAISettings"));
 const AdminPaymentVerification = lazy(() => import("./pages/admin/AdminPaymentVerification"));
 const AdminCertificates = lazy(() => import("./pages/admin/AdminCertificates"));
 const SendNotifications = lazy(() => import("./pages/admin/SendNotifications"));
+const AdminCourses = lazy(() => import("./pages/admin/AdminCourses"));
+const AdminCourseBuilder = lazy(() => import("./pages/admin/AdminCourseBuilder"));
+const AdminEnrollments = lazy(() => import("./pages/admin/AdminEnrollments"));
 const Certificates = lazy(() => import("./pages/dashboard/Certificates"));
 const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
+const Courses = lazy(() => import("./pages/Courses"));
+const CourseDetail = lazy(() => import("./pages/CourseDetail"));
+const LearningPlayer = lazy(() => import("./pages/LearningPlayer"));
 
 // Public pages - lazy load
 const Notice = lazy(() => import("./pages/Notice"));
@@ -158,6 +164,9 @@ const App = () => (
                 <Route path="/dashboard/forum/:id" element={<ProtectedRoute><LazyRoute><ForumPost /></LazyRoute></ProtectedRoute>} />
                 <Route path="/dashboard/certificates" element={<ProtectedRoute><LazyRoute><Certificates /></LazyRoute></ProtectedRoute>} />
                 <Route path="/dashboard/notifications" element={<ProtectedRoute><LazyRoute><NotificationSettings /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/courses" element={<ProtectedRoute><LazyRoute><Courses /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/courses/:id" element={<ProtectedRoute><LazyRoute><CourseDetail /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/courses/:id/learn" element={<ProtectedRoute><LazyRoute><LearningPlayer /></LazyRoute></ProtectedRoute>} />
 
                 {/* Tool routes */}
                 <Route path="/tools/pomodoro" element={<LazyRoute><PomodoroTimer /></LazyRoute>} />
@@ -184,6 +193,9 @@ const App = () => (
                 <Route path="/admin/payment-verification" element={<ProtectedRoute><LazyRoute><AdminPaymentVerification /></LazyRoute></ProtectedRoute>} />
                 <Route path="/admin/certificates" element={<ProtectedRoute><LazyRoute><AdminCertificates /></LazyRoute></ProtectedRoute>} />
                 <Route path="/admin/send-notifications" element={<ProtectedRoute><LazyRoute><SendNotifications /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/courses" element={<ProtectedRoute><LazyRoute><AdminCourses /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/courses/:id" element={<ProtectedRoute><LazyRoute><AdminCourseBuilder /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/enrollments" element={<ProtectedRoute><LazyRoute><AdminEnrollments /></LazyRoute></ProtectedRoute>} />
 
                 {/* 404 */}
                 <Route path="*" element={<NotFound />} />

@@ -26,7 +26,7 @@ export function PWAInstallPrompt() {
       const dismissedDate = new Date(dismissed);
       const now = new Date();
       const daysSinceDismissed = (now.getTime() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24);
-      
+
       // Show again after 7 days
       if (daysSinceDismissed < 7) {
         return;
@@ -36,7 +36,7 @@ export function PWAInstallPrompt() {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      
+
       // Show prompt after 30 seconds only if not dismissed
       setTimeout(() => {
         const stillDismissed = localStorage.getItem('pwa-install-dismissed');
@@ -60,7 +60,6 @@ export function PWAInstallPrompt() {
     const { outcome } = await deferredPrompt.userChoice;
 
     if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
       setIsInstalled(true);
     }
 

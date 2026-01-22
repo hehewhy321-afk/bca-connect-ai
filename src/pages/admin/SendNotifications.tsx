@@ -69,7 +69,9 @@ function SendNotificationsContent() {
       if (error) throw error;
       setUsers(data || []);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching users:", error);
+      }
     }
   };
 
@@ -133,7 +135,9 @@ function SendNotificationsContent() {
 
       setSentNotifications(notificationsWithProfiles);
     } catch (error) {
-      console.error("Error fetching sent notifications:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching sent notifications:", error);
+      }
       toast({
         title: "Error",
         description: "Failed to load notifications.",
@@ -165,7 +169,9 @@ function SendNotificationsContent() {
         old: oldRes.count || 0,
       });
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error fetching stats:", error);
+      }
     }
   };
 
@@ -188,7 +194,9 @@ function SendNotificationsContent() {
       fetchStats();
       fetchSentNotifications();
     } catch (error) {
-      console.error("Error cleaning up:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error cleaning up:", error);
+      }
       toast({
         title: "Error",
         description: "Failed to cleanup old notifications.",
@@ -203,20 +211,18 @@ function SendNotificationsContent() {
     if (!confirm("Delete this notification?")) return;
 
     try {
-      console.log("Attempting to delete notification:", id);
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("notifications")
         .delete()
         .eq("id", id)
         .select();
 
       if (error) {
-        console.error("Delete error:", error);
+        if (import.meta.env.DEV) {
+          console.error("Delete error:", error);
+        }
         throw error;
       }
-
-      console.log("Delete successful:", data);
 
       toast({
         title: "Deleted",
@@ -225,12 +231,14 @@ function SendNotificationsContent() {
 
       // Remove from local state immediately
       setSentNotifications(prev => prev.filter(n => n.id !== id));
-      
+
       // Refresh data
       fetchSentNotifications();
       fetchStats();
     } catch (error: any) {
-      console.error("Error deleting notification:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error deleting notification:", error);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to delete notification.",
@@ -259,7 +267,7 @@ function SendNotificationsContent() {
 
   const deleteBulk = async () => {
     if (selectedNotifications.size === 0) return;
-    
+
     if (!confirm(`Delete ${selectedNotifications.size} selected notifications?`)) return;
 
     setDeletingBulk(true);
@@ -280,7 +288,9 @@ function SendNotificationsContent() {
       fetchSentNotifications();
       fetchStats();
     } catch (error) {
-      console.error("Error deleting notifications:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error deleting notifications:", error);
+      }
       toast({
         title: "Error",
         description: "Failed to delete notifications.",
@@ -363,7 +373,9 @@ function SendNotificationsContent() {
         link: "",
       });
     } catch (error) {
-      console.error("Error sending notification:", error);
+      if (import.meta.env.DEV) {
+        console.error("Error sending notification:", error);
+      }
       toast({
         title: "Error",
         description: "Failed to send notification. Please try again.",
@@ -496,11 +508,10 @@ function SendNotificationsContent() {
                   <button
                     key={option.value}
                     onClick={() => setDateFilter(option.value)}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                      dateFilter === option.value
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${dateFilter === option.value
                         ? "bg-primary text-primary-foreground"
                         : "bg-white/5 text-muted-foreground hover:bg-white/10"
-                    }`}
+                      }`}
                   >
                     {option.label}
                   </button>
@@ -581,9 +592,8 @@ function SendNotificationsContent() {
                             </span>
                             <h3 className="font-bold text-foreground">{notification.title}</h3>
                             <span
-                              className={`text-xs px-2 py-1 rounded-full ${
-                                notificationTypes.find((t) => t.value === notification.type)?.color || "text-blue-500"
-                              } bg-white/10`}
+                              className={`text-xs px-2 py-1 rounded-full ${notificationTypes.find((t) => t.value === notification.type)?.color || "text-blue-500"
+                                } bg-white/10`}
                             >
                               {notification.type}
                             </span>
@@ -622,285 +632,274 @@ function SendNotificationsContent() {
       ) : (
         // Send Notifications View (existing form)
         <Card className="p-6 glass border-white/10">
-        <div className="space-y-6">
-          {/* Recipient Type - Enhanced */}
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-3">
-              Send To
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setFormData({ ...formData, recipient_type: "all", user_id: "" })}
-                className={`relative p-6 rounded-xl border-2 transition-all group hover:scale-105 ${
-                  formData.recipient_type === "all"
-                    ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
-                    : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
-                }`}
-              >
-                {/* Selected Indicator */}
-                {formData.recipient_type === "all" && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-primary-foreground" />
-                  </div>
-                )}
-                
-                <Users className={`w-8 h-8 mx-auto mb-3 transition-all group-hover:scale-110 ${
-                  formData.recipient_type === "all" ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                }`} />
-                <p className={`font-bold transition-colors ${
-                  formData.recipient_type === "all" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
-                }`}>
-                  All Users
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Send to everyone
-                </p>
-                
-                {/* Hover Glow Effect */}
-                <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity ${
-                  formData.recipient_type === "all" ? "bg-primary/5" : "bg-white/5"
-                }`} />
-              </button>
-              
-              <button
-                onClick={() => setFormData({ ...formData, recipient_type: "specific" })}
-                className={`relative p-6 rounded-xl border-2 transition-all group hover:scale-105 ${
-                  formData.recipient_type === "specific"
-                    ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
-                    : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
-                }`}
-              >
-                {/* Selected Indicator */}
-                {formData.recipient_type === "specific" && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-primary-foreground" />
-                  </div>
-                )}
-                
-                <User className={`w-8 h-8 mx-auto mb-3 transition-all group-hover:scale-110 ${
-                  formData.recipient_type === "specific" ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                }`} />
-                <p className={`font-bold transition-colors ${
-                  formData.recipient_type === "specific" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
-                }`}>
-                  Specific User
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Choose one user
-                </p>
-                
-                {/* Hover Glow Effect */}
-                <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity ${
-                  formData.recipient_type === "specific" ? "bg-primary/5" : "bg-white/5"
-                }`} />
-              </button>
-            </div>
-          </div>
-
-          {/* User Selection with Search - Improved Dropdown Style */}
-          {formData.recipient_type === "specific" && (
+          <div className="space-y-6">
+            {/* Recipient Type - Enhanced */}
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
-                Select User
+              <label className="block text-sm font-semibold text-foreground mb-3">
+                Send To
               </label>
-              
-              {/* Selected User Display */}
-              {formData.user_id && !searchQuery ? (
-                <div className="relative">
-                  <div className="p-4 rounded-xl bg-primary/10 border-2 border-primary/30 flex items-center gap-3 group hover:bg-primary/15 transition-all">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-sm font-bold shadow-lg">
-                      {users.find(u => u.user_id === formData.user_id)?.full_name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-foreground">
-                        {users.find(u => u.user_id === formData.user_id)?.full_name}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {users.find(u => u.user_id === formData.user_id)?.email}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setFormData({ ...formData, user_id: "" });
-                        setSearchQuery("");
-                      }}
-                      className="p-2 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all"
-                      title="Clear selection"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => setSearchQuery(" ")}
-                    className="absolute right-12 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-foreground transition-colors"
-                    title="Change user"
-                  >
-                    <User className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                /* Search Input */
-                <div className="relative">
-                  <User className="absolute left-3 top-3.5 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by name or email..."
-                    className="pl-10 bg-white/5 border-white/10 h-12"
-                    autoFocus
-                  />
-                  
-                  {/* Dropdown List */}
-                  {searchQuery && (
-                    <div className="absolute top-full left-0 right-0 mt-2 max-h-80 overflow-y-auto rounded-xl border border-white/10 bg-card shadow-2xl z-50 backdrop-blur-xl">
-                      {filteredUsers.length === 0 ? (
-                        <div className="p-8 text-center">
-                          <User className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                          <p className="text-muted-foreground font-medium">No users found</p>
-                          <p className="text-xs text-muted-foreground/60 mt-1">Try a different search term</p>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-white/10 px-4 py-2 z-10">
-                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                              {filteredUsers.length} {filteredUsers.length === 1 ? 'User' : 'Users'} Found
-                            </p>
-                          </div>
-                          <div className="p-2">
-                            {filteredUsers.map((user, index) => (
-                              <button
-                                key={user.user_id}
-                                onClick={() => {
-                                  setFormData({ ...formData, user_id: user.user_id });
-                                  setSearchQuery("");
-                                }}
-                                className="w-full text-left px-3 py-3 rounded-lg hover:bg-primary/10 transition-all border border-transparent hover:border-primary/20 flex items-center gap-3 group"
-                              >
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-sm font-bold shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
-                                  {user.full_name.charAt(0).toUpperCase()}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                                    {user.full_name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {user.email}
-                                  </p>
-                                </div>
-                                <div className="w-2 h-2 rounded-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                              </button>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Notification Type - Enhanced Card Style */}
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-3">
-              Notification Type
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {notificationTypes.map((type) => (
+              <div className="grid grid-cols-2 gap-4">
                 <button
-                  key={type.value}
-                  onClick={() => setFormData({ ...formData, type: type.value })}
-                  className={`relative p-5 rounded-xl border-2 transition-all group hover:scale-105 ${
-                    formData.type === type.value
+                  onClick={() => setFormData({ ...formData, recipient_type: "all", user_id: "" })}
+                  className={`relative p-6 rounded-xl border-2 transition-all group hover:scale-105 ${formData.recipient_type === "all"
                       ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
                       : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
-                  }`}
+                    }`}
                 >
                   {/* Selected Indicator */}
-                  {formData.type === type.value && (
+                  {formData.recipient_type === "all" && (
                     <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center">
                       <div className="w-2 h-2 rounded-full bg-primary-foreground" />
                     </div>
                   )}
-                  
-                  <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">
-                    {type.icon}
-                  </div>
-                  <p className={`text-sm font-bold transition-colors ${
-                    formData.type === type.value ? type.color : "text-muted-foreground group-hover:text-foreground"
-                  }`}>
-                    {type.label}
+
+                  <Users className={`w-8 h-8 mx-auto mb-3 transition-all group-hover:scale-110 ${formData.recipient_type === "all" ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                    }`} />
+                  <p className={`font-bold transition-colors ${formData.recipient_type === "all" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+                    }`}>
+                    All Users
                   </p>
-                  
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Send to everyone
+                  </p>
+
                   {/* Hover Glow Effect */}
-                  <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity ${
-                    formData.type === type.value ? "bg-primary/5" : "bg-white/5"
-                  }`} />
+                  <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity ${formData.recipient_type === "all" ? "bg-primary/5" : "bg-white/5"
+                    }`} />
                 </button>
-              ))}
+
+                <button
+                  onClick={() => setFormData({ ...formData, recipient_type: "specific" })}
+                  className={`relative p-6 rounded-xl border-2 transition-all group hover:scale-105 ${formData.recipient_type === "specific"
+                      ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
+                      : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
+                    }`}
+                >
+                  {/* Selected Indicator */}
+                  {formData.recipient_type === "specific" && (
+                    <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                    </div>
+                  )}
+
+                  <User className={`w-8 h-8 mx-auto mb-3 transition-all group-hover:scale-110 ${formData.recipient_type === "specific" ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                    }`} />
+                  <p className={`font-bold transition-colors ${formData.recipient_type === "specific" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+                    }`}>
+                    Specific User
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Choose one user
+                  </p>
+
+                  {/* Hover Glow Effect */}
+                  <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity ${formData.recipient_type === "specific" ? "bg-primary/5" : "bg-white/5"
+                    }`} />
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
-              Title
-            </label>
-            <Input
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Enter notification title"
-              className="bg-white/5 border-white/10"
-            />
-          </div>
+            {/* User Selection with Search - Improved Dropdown Style */}
+            {formData.recipient_type === "specific" && (
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Select User
+                </label>
 
-          {/* Message */}
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
-              Message
-            </label>
-            <Textarea
-              value={formData.message}
-              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              placeholder="Enter notification message"
-              rows={4}
-              className="bg-white/5 border-white/10"
-            />
-          </div>
+                {/* Selected User Display */}
+                {formData.user_id && !searchQuery ? (
+                  <div className="relative">
+                    <div className="p-4 rounded-xl bg-primary/10 border-2 border-primary/30 flex items-center gap-3 group hover:bg-primary/15 transition-all">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-sm font-bold shadow-lg">
+                        {users.find(u => u.user_id === formData.user_id)?.full_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-foreground">
+                          {users.find(u => u.user_id === formData.user_id)?.full_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {users.find(u => u.user_id === formData.user_id)?.email}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setFormData({ ...formData, user_id: "" });
+                          setSearchQuery("");
+                        }}
+                        className="p-2 rounded-lg hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-all"
+                        title="Clear selection"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => setSearchQuery(" ")}
+                      className="absolute right-12 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-foreground transition-colors"
+                      title="Change user"
+                    >
+                      <User className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  /* Search Input */
+                  <div className="relative">
+                    <User className="absolute left-3 top-3.5 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search by name or email..."
+                      className="pl-10 bg-white/5 border-white/10 h-12"
+                      autoFocus
+                    />
 
-          {/* Link (Optional) */}
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
-              Link (Optional)
-            </label>
-            <Input
-              value={formData.link}
-              onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-              placeholder="/dashboard/events"
-              className="bg-white/5 border-white/10"
-            />
-          </div>
-
-          {/* Send Button */}
-          <Button
-            onClick={sendNotification}
-            disabled={loading}
-            className="w-full h-12 gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Sending...
-              </>
-            ) : (
-              <>
-                <Send className="w-5 h-5" />
-                Send Notification
-              </>
+                    {/* Dropdown List */}
+                    {searchQuery && (
+                      <div className="absolute top-full left-0 right-0 mt-2 max-h-80 overflow-y-auto rounded-xl border border-white/10 bg-card shadow-2xl z-50 backdrop-blur-xl">
+                        {filteredUsers.length === 0 ? (
+                          <div className="p-8 text-center">
+                            <User className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                            <p className="text-muted-foreground font-medium">No users found</p>
+                            <p className="text-xs text-muted-foreground/60 mt-1">Try a different search term</p>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-white/10 px-4 py-2 z-10">
+                              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                {filteredUsers.length} {filteredUsers.length === 1 ? 'User' : 'Users'} Found
+                              </p>
+                            </div>
+                            <div className="p-2">
+                              {filteredUsers.map((user, index) => (
+                                <button
+                                  key={user.user_id}
+                                  onClick={() => {
+                                    setFormData({ ...formData, user_id: user.user_id });
+                                    setSearchQuery("");
+                                  }}
+                                  className="w-full text-left px-3 py-3 rounded-lg hover:bg-primary/10 transition-all border border-transparent hover:border-primary/20 flex items-center gap-3 group"
+                                >
+                                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground text-sm font-bold shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
+                                    {user.full_name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                                      {user.full_name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {user.email}
+                                    </p>
+                                  </div>
+                                  <div className="w-2 h-2 rounded-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
-          </Button>
-        </div>
-      </Card>
+
+            {/* Notification Type - Enhanced Card Style */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-3">
+                Notification Type
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {notificationTypes.map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => setFormData({ ...formData, type: type.value })}
+                    className={`relative p-5 rounded-xl border-2 transition-all group hover:scale-105 ${formData.type === type.value
+                        ? "border-primary bg-primary/10 shadow-lg shadow-primary/20"
+                        : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
+                      }`}
+                  >
+                    {/* Selected Indicator */}
+                    {formData.type === type.value && (
+                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary border-2 border-background flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-primary-foreground" />
+                      </div>
+                    )}
+
+                    <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">
+                      {type.icon}
+                    </div>
+                    <p className={`text-sm font-bold transition-colors ${formData.type === type.value ? type.color : "text-muted-foreground group-hover:text-foreground"
+                      }`}>
+                      {type.label}
+                    </p>
+
+                    {/* Hover Glow Effect */}
+                    <div className={`absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity ${formData.type === type.value ? "bg-primary/5" : "bg-white/5"
+                      }`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                Title
+              </label>
+              <Input
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Enter notification title"
+                className="bg-white/5 border-white/10"
+              />
+            </div>
+
+            {/* Message */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                Message
+              </label>
+              <Textarea
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                placeholder="Enter notification message"
+                rows={4}
+                className="bg-white/5 border-white/10"
+              />
+            </div>
+
+            {/* Link (Optional) */}
+            <div>
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                Link (Optional)
+              </label>
+              <Input
+                value={formData.link}
+                onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                placeholder="/dashboard/events"
+                className="bg-white/5 border-white/10"
+              />
+            </div>
+
+            {/* Send Button */}
+            <Button
+              onClick={sendNotification}
+              disabled={loading}
+              className="w-full h-12 gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5" />
+                  Send Notification
+                </>
+              )}
+            </Button>
+          </div>
+        </Card>
       )}
     </div>
   );

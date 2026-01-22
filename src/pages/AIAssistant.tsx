@@ -147,7 +147,9 @@ function useSpeechRecognition(onTranscript: (text: string, isFinal: boolean) => 
       };
 
       recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
+        if (import.meta.env.DEV) {
+          console.error('Speech recognition error:', event.error);
+        }
         if (event.error === 'no-speech') {
           // Restart if no speech detected
           if (isListening) {
@@ -166,7 +168,9 @@ function useSpeechRecognition(onTranscript: (text: string, isFinal: boolean) => 
           try {
             recognition.start();
           } catch (e) {
-            console.error('Failed to restart recognition:', e);
+            if (import.meta.env.DEV) {
+              console.error('Failed to restart recognition:', e);
+            }
           }
         }
       };
@@ -187,7 +191,9 @@ function useSpeechRecognition(onTranscript: (text: string, isFinal: boolean) => 
         recognitionRef.current.start();
         setIsListening(true);
       } catch (error) {
-        console.error('Failed to start recognition:', error);
+        if (import.meta.env.DEV) {
+          console.error('Failed to start recognition:', error);
+        }
       }
     }
   }, [isListening]);
@@ -230,7 +236,9 @@ export default function AIAssistant() {
         .select("*");
 
       if (error) {
-        console.error("Error fetching AI settings:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error fetching AI settings:", error);
+        }
         return null;
       }
 
@@ -1031,7 +1039,9 @@ export default function AIAssistant() {
         }
       }
     } catch (error) {
-      console.error("Chat error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Chat error:", error);
+      }
       // Only show toast if not already shown
       if (!(error instanceof Error && error.message.includes("Failed to get response"))) {
         toast({

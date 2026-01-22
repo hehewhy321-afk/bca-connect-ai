@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, easeOut } from "framer-motion";
-import { LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, MessageSquare, Shield, GraduationCap, Award, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, MessageSquare, Shield, GraduationCap, Award, ChevronLeft, ChevronRight, Video } from "lucide-react";
 import logoImg from "@/assets/logo.jpg";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,6 +17,7 @@ interface DashboardLayoutProps {
 const sidebarLinks = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Events Hub", href: "/dashboard/events", icon: Calendar },
+  { name: "Courses", href: "/dashboard/courses", icon: Video },
   { name: "Study Library", href: "/dashboard/resources", icon: BookOpen },
   { name: "Certificates", href: "/dashboard/certificates", icon: Award },
   { name: "Alumni Network", href: "/dashboard/alumni", icon: GraduationCap },
@@ -55,13 +56,13 @@ export function DashboardLayout({
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user?.id) return;
-      
+
       const { data } = await supabase
         .from("profiles")
         .select("avatar_url")
         .eq("user_id", user.id)
         .single();
-      
+
       if (data?.avatar_url) {
         setAvatarUrl(data.avatar_url);
       }
@@ -154,11 +155,10 @@ export function DashboardLayout({
                 key={link.name}
                 to={link.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-5 py-4 rounded-[1.25rem] text-sm font-semibold transition-all duration-300 group relative ${
-                  collapsed ? "justify-center px-3" : ""
-                } ${isActive
-                  ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                className={`flex items-center gap-3 px-5 py-4 rounded-[1.25rem] text-sm font-semibold transition-all duration-300 group relative ${collapsed ? "justify-center px-3" : ""
+                  } ${isActive
+                    ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                   }`}
                 title={collapsed ? link.name : ""}
               >
@@ -228,9 +228,9 @@ export function DashboardLayout({
 
               <div className="flex items-center gap-2 sm:gap-3 p-1 sm:p-1.5 pr-2 sm:pr-4 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 items-center">
                 <Avatar className="w-8 h-8 sm:w-10 sm:h-10 shadow-lg shadow-primary/20">
-                  <AvatarImage 
-                    src={avatarUrl || undefined} 
-                    alt={user?.user_metadata?.full_name || user?.email || "User"} 
+                  <AvatarImage
+                    src={avatarUrl || undefined}
+                    alt={user?.user_metadata?.full_name || user?.email || "User"}
                   />
                   <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-primary-foreground font-black text-xs sm:text-sm">
                     {user?.email?.charAt(0).toUpperCase() || "U"}

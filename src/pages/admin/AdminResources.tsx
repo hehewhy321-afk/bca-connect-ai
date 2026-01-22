@@ -27,6 +27,9 @@ interface Resource {
   subject: string | null;
   file_url: string | null;
   external_url: string | null;
+  video_url: string | null;
+  topic: string | null;
+  language: string | null;
   downloads: number;
   views: number;
 }
@@ -88,7 +91,8 @@ export default function AdminResources() {
     (resource) =>
       resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       resource.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.subject?.toLowerCase().includes(searchQuery.toLowerCase())
+      resource.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      resource.topic?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -220,6 +224,11 @@ export default function AdminResources() {
                     {resource.subject && (
                       <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black text-accent uppercase tracking-widest">
                         {resource.subject}
+                      </span>
+                    )}
+                    {resource.topic && (
+                      <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                        {resource.topic}
                       </span>
                     )}
                   </div>

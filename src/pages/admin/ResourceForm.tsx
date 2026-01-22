@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Save, Upload, X, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, Save, Upload, X, Link as LinkIcon, Video, Tag, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ const types = [
   { value: "project", label: "Project" },
   { value: "interview_prep", label: "Interview Prep" },
   { value: "article", label: "Article" },
+  { value: "video", label: "Video Lecture" },
 ];
 
 const semesters = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -37,8 +38,11 @@ export default function ResourceForm() {
     category: "",
     semester: "",
     subject: "",
+    topic: "",
+    language: "",
     file_url: "",
     external_url: "",
+    video_url: "",
   });
 
   useEffect(() => {
@@ -64,8 +68,11 @@ export default function ResourceForm() {
         category: data.category || "",
         semester: data.semester?.toString() || "",
         subject: data.subject || "",
+        topic: data.topic || "",
+        language: data.language || "",
         file_url: data.file_url || "",
         external_url: data.external_url || "",
+        video_url: data.video_url || "",
       });
     } catch (error) {
       console.error("Error fetching resource:", error);
@@ -114,10 +121,10 @@ export default function ResourceForm() {
     e.preventDefault();
     if (!user) return;
 
-    if (!formData.file_url && !formData.external_url) {
+    if (!formData.file_url && !formData.external_url && !formData.video_url) {
       toast({
-        title: "Missing file",
-        description: "Please upload a file or provide an external URL.",
+        title: "Missing content",
+        description: "Please upload a file, provide an external URL, or add a video URL.",
         variant: "destructive",
       });
       return;
@@ -132,8 +139,11 @@ export default function ResourceForm() {
         category: formData.category || null,
         semester: formData.semester ? parseInt(formData.semester) : null,
         subject: formData.subject || null,
+        topic: formData.topic || null,
+        language: formData.language || null,
         file_url: formData.file_url || null,
         external_url: formData.external_url || null,
+        video_url: formData.video_url || null,
         uploaded_by: user.id,
       };
 
@@ -173,7 +183,7 @@ export default function ResourceForm() {
 
   return (
     <AdminLayout>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto pb-20">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <Link
@@ -287,6 +297,40 @@ export default function ResourceForm() {
             </div>
           </div>
 
+          {/* Topic & Language */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="topic">Topic</Label>
+              <div className="relative">
+                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="topic"
+                  value={formData.topic}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, topic: e.target.value }))
+                  }
+                  placeholder="e.g. Arrays, Pointers"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="language">Language</Label>
+              <div className="relative">
+                <Languages className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="language"
+                  value={formData.language}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, language: e.target.value }))
+                  }
+                  placeholder="e.g. English, Nepali"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* File Upload */}
           <div className="space-y-2">
             <Label>Upload File</Label>
@@ -336,6 +380,23 @@ export default function ResourceForm() {
             </div>
           </div>
 
+          {/* Video URL */}
+          <div className="space-y-2">
+            <Label htmlFor="video_url">Video Embed/Source URL</Label>
+            <div className="relative">
+              <Video className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                id="video_url"
+                value={formData.video_url}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, video_url: e.target.value }))
+                }
+                placeholder="https://youtube.com/..."
+                className="pl-10"
+              />
+            </div>
+          </div>
+
           {/* Submit */}
           <div className="flex items-center gap-4 pt-4 border-t border-border">
             <Button type="submit" disabled={loading}>
@@ -343,8 +404,8 @@ export default function ResourceForm() {
               {loading
                 ? "Saving..."
                 : isEditing
-                ? "Update Resource"
-                : "Upload Resource"}
+                  ? "Update Resource"
+                  : "Upload Resource"}
             </Button>
             <Button
               type="button"

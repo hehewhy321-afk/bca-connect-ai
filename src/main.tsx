@@ -7,13 +7,12 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then((registration) => {
-        console.log('SW registered:', registration);
-        
+
         // Check for updates periodically (every hour)
         setInterval(() => {
           registration.update();
         }, 60 * 60 * 1000);
-        
+
         // Handle updates
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
@@ -23,12 +22,12 @@ if ('serviceWorker' in navigator) {
                 // Check if user has dismissed this update
                 const dismissedUpdate = localStorage.getItem('sw-update-dismissed');
                 const currentVersion = localStorage.getItem('app_version');
-                
+
                 if (dismissedUpdate === currentVersion) {
                   // User already dismissed this version update
                   return;
                 }
-                
+
                 // New service worker available, prompt user to reload
                 const shouldReload = confirm('New version available! Reload to update?');
                 if (shouldReload) {
@@ -44,7 +43,9 @@ if ('serviceWorker' in navigator) {
         });
       })
       .catch((error) => {
-        console.error('SW registration failed:', error);
+        if (import.meta.env.DEV) {
+          console.error('SW registration failed:', error);
+        }
       });
   });
 }
@@ -54,8 +55,7 @@ const APP_VERSION = '1.0.1';
 const STORED_VERSION = localStorage.getItem('app_version');
 
 if (STORED_VERSION && STORED_VERSION !== APP_VERSION) {
-  console.log('New version detected, clearing cache...');
-  
+
   // Clear caches
   if ('caches' in window) {
     caches.keys().then((names) => {
@@ -66,7 +66,7 @@ if (STORED_VERSION && STORED_VERSION !== APP_VERSION) {
       });
     });
   }
-  
+
   // Clear the dismissed update flag when version changes
   localStorage.removeItem('sw-update-dismissed');
 }
