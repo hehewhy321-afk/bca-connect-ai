@@ -27,6 +27,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Toggle } from "@/components/ui/toggle";
+import { useQuery } from "@tanstack/react-query";
+
+interface AISettings {
+  ai_provider: string;
+  puter_chat_model: string;
+}
 
 type ThinkFilterState = {
   inThink: boolean;
@@ -109,11 +115,11 @@ function useSpeechRecognition(onTranscript: (text: string, isFinal: boolean) => 
   useEffect(() => {
     // Check if browser supports Web Speech API
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
+
     if (SpeechRecognition) {
       setIsSupported(true);
       const recognition = new SpeechRecognition();
-      
+
       // Configure for real-time continuous recognition
       recognition.continuous = true;
       recognition.interimResults = true;
@@ -203,6 +209,7 @@ export default function AIAssistant() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [imageMode, setImageMode] = useState(false);
   const [interimTranscript, setInterimTranscript] = useState("");
+  const [connectionStatus, setConnectionStatus] = useState<"idle" | "connecting" | "waking_up" | "streaming">("idle");
   const [streamingStatus, setStreamingStatus] = useState<StreamingStatus>({
     isStreaming: false,
     provider: "",
@@ -214,6 +221,27 @@ export default function AIAssistant() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const { data: aiSettings } = useQuery({
+    queryKey: ["ai-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ai_settings")
+        .select("*");
+
+      if (error) {
+        console.error("Error fetching AI settings:", error);
+        return null;
+      }
+
+      const settings: any = {};
+      data.forEach(item => {
+        settings[item.setting_key] = item.setting_value;
+      });
+      return settings as AISettings;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   // Handle real-time transcription
   const handleTranscript = useCallback((text: string, isFinal: boolean) => {
@@ -289,39 +317,39 @@ export default function AIAssistant() {
     // Function to format markdown content to HTML
     const formatMarkdown = (text: string): string => {
       let formatted = text;
-      
+
       // Code blocks with syntax highlighting
       formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
         return `<pre class="code-block"><code class="language-${lang || 'plaintext'}">${code.trim()}</code></pre>`;
       });
-      
+
       // Inline code
       formatted = formatted.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
-      
+
       // Bold text
       formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-      
+
       // Headers
       formatted = formatted.replace(/^### (.+)$/gm, '<h3 class="heading-3">$1</h3>');
       formatted = formatted.replace(/^## (.+)$/gm, '<h2 class="heading-2">$1</h2>');
       formatted = formatted.replace(/^# (.+)$/gm, '<h1 class="heading-1">$1</h1>');
-      
+
       // Horizontal rules
       formatted = formatted.replace(/^={3,}$/gm, '<hr class="divider">');
       formatted = formatted.replace(/^-{3,}$/gm, '<hr class="divider">');
-      
+
       // Bullet lists
       formatted = formatted.replace(/^\* (.+)$/gm, '<li class="list-item">$1</li>');
       formatted = formatted.replace(/^- (.+)$/gm, '<li class="list-item">$1</li>');
-      
+
       // Wrap consecutive list items in ul
       formatted = formatted.replace(/(<li class="list-item">.*<\/li>\n?)+/g, (match) => {
         return `<ul class="list">${match}</ul>`;
       });
-      
+
       // Line breaks
       formatted = formatted.replace(/\n/g, '<br>');
-      
+
       return formatted;
     };
 
@@ -716,11 +744,95 @@ export default function AIAssistant() {
       startTime: Date.now(),
       tokensPerSecond: 0,
     });
+    setConnectionStatus("connecting");
+
+    // Waking up detection
+    const wakeupTimer = setTimeout(() => {
+      setConnectionStatus((prev) => {
+        if (prev === "connecting") {
+          return "waking_up";
+        }
+        return prev;
+      });
+    }, 4000); // Show "Waking up" after 4 seconds
 
     try {
+      // Check if we should use Puter.js (Client-side)
+      if (aiSettings?.ai_provider === "puter" && !imageMode) {
+        setStreamingStatus({
+          isStreaming: true,
+          provider: "Puter.js",
+          model: aiSettings.puter_chat_model || "openrouter:meta-llama/llama-3.1-8b-instruct",
+          tokensReceived: 0,
+          startTime: Date.now(),
+          tokensPerSecond: 0,
+        });
+
+        // Add empty assistant message
+        const assistantId = (Date.now() + 1).toString();
+        let assistantContent = "";
+
+        setMessages((prev) => [
+          ...prev,
+          { id: assistantId, role: "assistant", content: "", type: "text", provider: "Puter.js", model: aiSettings.puter_chat_model },
+        ]);
+
+        const puter = (window as any).puter;
+        if (!puter) {
+          throw new Error("Puter.js not loaded. Please refresh the page.");
+        }
+
+        // Prepare conversation history
+        // Puter.js usually takes the prompt string for simple chat, or an array of messages?
+        // The tutorial showed: puter.ai.chat(prompt, {model: ...})
+        // Let's check if it supports full history. The tutorial didn't explicitly show full history object, 
+        // but typically these wrappers align with OpenAI's format or take a string.
+        // If it only takes a string, we might lose context.
+        // However, looking at standard Puter docs, it maps validation to OpenRouter.
+        // Let's try passing the last message content as prompt for now, 
+        // OR construct a prompt string from history if needed.
+        // Assuming puter.ai.chat takes a prompt string.
+
+        // Construct a prompt from recent messages to maintain some context
+        const contextPrompt = messages.slice(-5).map(m => `${m.role}: ${m.content}`).join("\n") + `\nuser: ${input}`;
+
+        const response = await puter.ai.chat(contextPrompt, {
+          model: aiSettings.puter_chat_model || "openrouter:meta-llama/llama-3.1-8b-instruct",
+          stream: true
+        });
+
+        let tokenCount = 0;
+
+        for await (const part of response) {
+          if (part?.text) {
+            assistantContent += part.text;
+            tokenCount += 1; // Rough estimation
+
+            // Update streaming status logic
+            const elapsed = (Date.now() - streamingStatus.startTime) / 1000;
+            setStreamingStatus(prev => ({
+              ...prev,
+              tokensReceived: tokenCount,
+              tokensPerSecond: elapsed > 0 ? Math.round(tokenCount / elapsed) : 0,
+            }));
+
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId ? { ...m, content: assistantContent } : m
+              )
+            );
+          }
+        }
+
+        setIsLoading(false);
+        setStreamingStatus(prev => ({ ...prev, isStreaming: false }));
+        return;
+      }
+
+      // Fallback to Server-side (Supabase Edge Function) for other providers
       // Get the current session to use the user's JWT token
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session?.access_token) {
         throw new Error("Please log in to use the AI assistant");
       }
@@ -746,7 +858,7 @@ export default function AIAssistant() {
       // Get provider info from headers
       const provider = response.headers.get("X-AI-Provider") || "unknown";
       const model = response.headers.get("X-AI-Model") || "unknown";
-      
+
       setStreamingStatus(prev => ({
         ...prev,
         provider,
@@ -756,11 +868,11 @@ export default function AIAssistant() {
       if (!response.ok) {
         const errorData = await response.json();
         const errorCode = errorData.code;
-        
+
         // Show specific error messages based on error code
         let errorTitle = "Error";
         let errorDesc = errorData.error || "Failed to get response";
-        
+
         if (errorCode === "RATE_LIMITED") {
           errorTitle = "Rate Limited";
           errorDesc = "Too many requests. Please wait a moment and try again.";
@@ -771,7 +883,7 @@ export default function AIAssistant() {
           errorTitle = "Invalid API Key";
           errorDesc = "Please check your API key in Admin > AI Settings.";
         }
-        
+
         toast({
           title: errorTitle,
           description: errorDesc,
@@ -788,7 +900,7 @@ export default function AIAssistant() {
         if (jsonData?.type === "image") {
           // Handle different output formats
           let imageUrl = "";
-          
+
           if (typeof jsonData.output === "string") {
             // Direct URL string (Pollinations, Hugging Face base64)
             imageUrl = jsonData.output;
@@ -799,7 +911,7 @@ export default function AIAssistant() {
             // Alternative format
             imageUrl = jsonData.output.image_url;
           }
-          
+
           const assistantMessage: Message = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
@@ -811,9 +923,9 @@ export default function AIAssistant() {
             fallback: jsonData.fallback,
             fallbackReason: jsonData.fallbackReason,
           };
-          
+
           setMessages((prev) => [...prev, assistantMessage]);
-          
+
           // Show fallback notification if applicable
           if (jsonData.fallback) {
             toast({
@@ -821,7 +933,7 @@ export default function AIAssistant() {
               description: jsonData.fallbackReason || "Primary provider unavailable",
             });
           }
-          
+
           setIsLoading(false);
           setStreamingStatus(prev => ({ ...prev, isStreaming: false }));
           return;
@@ -894,15 +1006,16 @@ export default function AIAssistant() {
               if (filtered) {
                 assistantContent += filtered;
                 tokenCount += filtered.split(/\s+/).length;
-                
+
                 // Update streaming status
                 const elapsed = (Date.now() - streamingStatus.startTime) / 1000;
+                setConnectionStatus("streaming");
                 setStreamingStatus(prev => ({
                   ...prev,
                   tokensReceived: tokenCount,
                   tokensPerSecond: elapsed > 0 ? Math.round(tokenCount / elapsed) : 0,
                 }));
-                
+
                 setMessages((prev) =>
                   prev.map((m) =>
                     m.id === assistantId ? { ...m, content: assistantContent } : m
@@ -928,24 +1041,26 @@ export default function AIAssistant() {
         });
       }
     } finally {
+      clearTimeout(wakeupTimer);
       setIsLoading(false);
       setStreamingStatus(prev => ({ ...prev, isStreaming: false }));
+      setConnectionStatus("idle");
     }
   };
 
-  const suggestedQuestions = imageMode 
+  const suggestedQuestions = imageMode
     ? [
-        "Generate an image of a futuristic classroom",
-        "Create an image of a beautiful sunset over mountains",
-        "Draw a cute robot studying computer science",
-        "Make an image of Nepal's Himalayan landscape",
-      ]
+      "Generate an image of a futuristic classroom",
+      "Create an image of a beautiful sunset over mountains",
+      "Draw a cute robot studying computer science",
+      "Make an image of Nepal's Himalayan landscape",
+    ]
     : [
-        "Explain polymorphism in Java",
-        "What is normalization in databases?",
-        "Write a Python function for binary search",
-        "How does recursion work?",
-      ];
+      "Explain polymorphism in Java",
+      "What is normalization in databases?",
+      "Write a Python function for binary search",
+      "How does recursion work?",
+    ];
 
   return (
     <DashboardLayout>
@@ -1032,7 +1147,7 @@ export default function AIAssistant() {
                   {imageMode ? "Image Generation Mode" : "How can I help you today?"}
                 </h2>
                 <p className="text-muted-foreground mb-6 max-w-md">
-                  {imageMode 
+                  {imageMode
                     ? "Describe any image you want to create and I'll generate it for you!"
                     : "Ask me anything about your BCA curriculum, programming concepts, or toggle Image Mode to generate images!"
                   }
@@ -1061,16 +1176,14 @@ export default function AIAssistant() {
                     key={message.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`flex gap-3 ${
-                      message.role === "user" ? "flex-row-reverse" : ""
-                    }`}
+                    className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""
+                      }`}
                   >
                     <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                        message.role === "user"
-                          ? "bg-primary"
-                          : "bg-gradient-to-br from-primary to-accent"
-                      }`}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${message.role === "user"
+                        ? "bg-primary"
+                        : "bg-gradient-to-br from-primary to-accent"
+                        }`}
                     >
                       {message.role === "user" ? (
                         <User className="w-4 h-4 text-primary-foreground" />
@@ -1081,16 +1194,14 @@ export default function AIAssistant() {
                       )}
                     </div>
                     <div
-                      className={`flex-1 max-w-[80%] ${
-                        message.role === "user" ? "text-right" : ""
-                      }`}
+                      className={`flex-1 max-w-[80%] ${message.role === "user" ? "text-right" : ""
+                        }`}
                     >
                       <div
-                        className={`inline-block p-4 rounded-2xl ${
-                          message.role === "user"
-                            ? "bg-primary text-primary-foreground rounded-br-md"
-                            : "bg-muted text-foreground rounded-bl-md"
-                        }`}
+                        className={`inline-block p-4 rounded-2xl ${message.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-br-md"
+                          : "bg-muted text-foreground rounded-bl-md"
+                          }`}
                       >
                         {message.type === "image" && message.imageUrl ? (
                           <div className="space-y-2">
@@ -1153,8 +1264,11 @@ export default function AIAssistant() {
                     </div>
                     <div className="flex items-center gap-2 p-4 bg-muted rounded-2xl rounded-bl-md">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm text-muted-foreground">
-                        {imageMode ? "Generating image..." : "Thinking..."}
+                      <span className="text-sm text-muted-foreground animate-pulse">
+                        {imageMode ? "Generating image..." :
+                          connectionStatus === "waking_up" ? "Waking up model... (this may take 15-30s)" :
+                            connectionStatus === "connecting" ? "Connecting to server..." :
+                              "Thinking..."}
                       </span>
                     </div>
                   </div>
@@ -1182,7 +1296,7 @@ export default function AIAssistant() {
                   <Mic className="w-5 h-5" />
                 )}
               </Button>
-              
+
               {/* Mode Toggle - Chat/Image */}
               <Button
                 type="button"
@@ -1199,7 +1313,7 @@ export default function AIAssistant() {
                   <MessageSquare className="w-5 h-5" />
                 )}
               </Button>
-              
+
               {/* Input Field */}
               <div className="relative flex-1">
                 <input
@@ -1207,9 +1321,9 @@ export default function AIAssistant() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={
-                    isListening 
-                      ? "Listening... Speak now!" 
-                      : imageMode 
+                    isListening
+                      ? "Listening... Speak now!"
+                      : imageMode
                         ? "Describe the image you want to generate..."
                         : "Ask anything about your studies..."
                   }
@@ -1234,7 +1348,7 @@ export default function AIAssistant() {
                   </div>
                 )}
               </div>
-              
+
               {/* Send Button */}
               <Button
                 type="submit"

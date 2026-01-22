@@ -33,7 +33,7 @@ const AdminWebsiteSettings = () => {
   });
 
   const { data: settingsData, isLoading } = useQuery({
-    queryKey: ["website-settings"],
+    queryKey: ["admin-website-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("website_settings")
@@ -41,6 +41,8 @@ const AdminWebsiteSettings = () => {
       if (error) throw error;
       return data;
     },
+    staleTime: 0,
+    refetchOnMount: true
   });
 
   useEffect(() => {
@@ -68,7 +70,7 @@ const AdminWebsiteSettings = () => {
       await Promise.all(updates);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["website-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-website-settings"] });
       toast.success("Settings saved successfully!");
     },
     onError: (error) => {

@@ -15,6 +15,7 @@ import {
   MessageSquare,
   ChevronRight,
   Zap,
+  Download,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,9 @@ export default function Dashboard() {
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [appDownloadUrl, setAppDownloadUrl] = useState(
+    "https://github.com/hehewhy321-afk/bca-connect-ai-app/releases/download/v1.2.0/BCA-Association-v1.2.0.apk"
+  );
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -67,6 +71,19 @@ export default function Dashboard() {
           .select("xp_points, level")
           .eq("user_id", user.id)
           .maybeSingle();
+
+        // Fetch app download link
+        const { data: settingsData } = await supabase
+          .from("website_settings")
+          .select("setting_value")
+          .eq("setting_key", "app_download_link")
+          .maybeSingle();
+
+        if (settingsData?.setting_value) {
+          const url = settingsData.setting_value;
+          setAppDownloadUrl(url.startsWith("http") ? url : `https://${url}`);
+        }
+
         const { count: eventsCount } = await supabase
           .from("events")
           .select("*", { count: "exact", head: true })
@@ -278,13 +295,25 @@ export default function Dashboard() {
                 You've earned <span className="text-primary font-bold">{stats.xpPoints} XP</span> this week. Keep pushing to reach level {stats.level + 1}!
               </p>
             </div>
-            <Link to="/dashboard/ai-assistant">
-              <Button size="lg" className="h-16 px-10 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 font-black text-lg shadow-2xl shadow-primary/30 transition-all active:scale-95 group">
-                <Bot className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform" />
-                Talk to AI
-                <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-2 transition-transform" />
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <a
+                href={appDownloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button size="lg" className="h-16 px-8 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:opacity-90 font-black text-lg shadow-2xl shadow-orange-500/20 transition-all active:scale-95 group border-0">
+                  <Download className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" />
+                  Get App
+                </Button>
+              </a>
+              <Link to="/dashboard/ai-assistant">
+                <Button size="lg" className="h-16 px-10 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 font-black text-lg shadow-2xl shadow-primary/30 transition-all active:scale-95 group">
+                  <Bot className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform" />
+                  Talk to AI
+                  <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-2 transition-transform" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </motion.div>
 

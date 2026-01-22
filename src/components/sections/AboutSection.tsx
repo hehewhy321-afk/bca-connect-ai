@@ -1,52 +1,81 @@
 import { motion, easeOut } from "framer-motion";
 import { Target, Eye, Heart, Zap } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-const values = [
-  {
-    icon: Target,
-    title: "Mission",
-    description: "To foster a collaborative learning environment that empowers BCA students to excel in technology and innovation.",
-    color: "from-blue-500/20 to-cyan-500/20"
-  },
-  {
-    icon: Eye,
-    title: "Vision",
-    description: "To become Nepal's leading student-driven tech community, producing industry-ready graduates and entrepreneurs.",
-    color: "from-purple-500/20 to-pink-500/20"
-  },
-  {
-    icon: Heart,
-    title: "Values",
-    description: "Collaboration, continuous learning, innovation, inclusivity, and commitment to excellence in all endeavors.",
-    color: "from-red-500/20 to-orange-500/20"
-  },
-  {
-    icon: Zap,
-    title: "Impact",
-    description: "Bridging the gap between academia and industry through practical workshops, mentorship, and real-world projects.",
-    color: "from-yellow-500/20 to-amber-500/20"
-  },
-];
-
-// Animation Variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.2, delayChildren: 0.3 }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring" as const, stiffness: 100 }
-  }
-};
+// Interface removed
 
 export function AboutSection() {
+  const { data: stats } = useQuery({
+    queryKey: ["about-stats"],
+    queryFn: async () => {
+      // Fetch total members count
+      const { count: membersCount, error: membersError } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true });
+
+      if (membersError) throw membersError;
+
+      // Fetch alumni count
+      const { count: alumniCount, error: alumniError } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("is_alumni", true);
+
+      if (alumniError) throw alumniError;
+
+      return {
+        members: membersCount || 0,
+        alumni: alumniCount || 0
+      };
+    },
+  });
+
+  const values = [
+    {
+      icon: Target,
+      title: "Mission",
+      description: "To foster a collaborative learning environment that empowers BCA students to excel in technology and innovation.",
+      color: "from-blue-500/20 to-cyan-500/20"
+    },
+    {
+      icon: Eye,
+      title: "Vision",
+      description: "To become Nepal's leading student-driven tech community, producing industry-ready graduates and entrepreneurs.",
+      color: "from-purple-500/20 to-pink-500/20"
+    },
+    {
+      icon: Heart,
+      title: "Values",
+      description: "Collaboration, continuous learning, innovation, inclusivity, and commitment to excellence in all endeavors.",
+      color: "from-red-500/20 to-orange-500/20"
+    },
+    {
+      icon: Zap,
+      title: "Impact",
+      description: "Bridging the gap between academia and industry through practical workshops, mentorship, and real-world projects.",
+      color: "from-yellow-500/20 to-amber-500/20"
+    },
+  ];
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.2, delayChildren: 0.3 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring" as const, stiffness: 100 }
+    }
+  };
+
+  // function duplication removed
   return (
     <section id="about" className="relative py-20 md:py-32 bg-background overflow-hidden">
       {/* Background Decorative Element */}
@@ -91,8 +120,8 @@ export function AboutSection() {
             <div className="flex flex-wrap gap-8">
               {[
                 { label: "Founded", value: "Est. 2020", color: "text-primary" },
-                { label: "Members", value: "500+", color: "text-secondary" },
-                { label: "Alumni", value: "150+", color: "text-accent" }
+                { label: "Members", value: stats?.members ? `${stats.members}+` : "500+", color: "text-secondary" },
+                { label: "Alumni", value: stats?.alumni ? `${stats.alumni}+` : "150+", color: "text-accent" }
               ].map((stat, i) => (
                 <motion.div
                   key={i}

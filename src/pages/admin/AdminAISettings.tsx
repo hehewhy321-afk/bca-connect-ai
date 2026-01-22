@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, Bot, Key, Sparkles, ExternalLink, Image, Zap, Plus, X, Eye, Mic, Volume2, ImageIcon } from "lucide-react";
+import { Loader2, Bot, Key, Sparkles, ExternalLink, Image, Zap, Plus, X, Eye, Mic, Volume2, ImageIcon, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
@@ -26,6 +26,8 @@ interface AISettingsMap {
   bytez_image_model: string;
   bytez_custom_models: string;
   pollinations_model: string;
+  puter_chat_model: string;
+  puter_custom_models: string;
   custom_system_prompt: string;
 }
 
@@ -139,6 +141,15 @@ const POLLINATIONS_MODELS: ModelInfo[] = [
   { id: "turbo", name: "Turbo (Fastest)", provider: "Pollinations", tier: "free", category: "Image Gen" },
 ];
 
+const PUTER_CHAT_MODELS: ModelInfo[] = [
+  { id: "openrouter:meta-llama/llama-3.1-8b-instruct", name: "Llama 3.1 8B (via Puter)", provider: "Puter", tier: "free", category: "LLM" },
+  { id: "openrouter:meta-llama/llama-3.1-405b-instruct", name: "Llama 3.1 405B (via Puter)", provider: "Puter", tier: "free", category: "LLM" },
+  { id: "openrouter:anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet (via Puter)", provider: "Puter", tier: "free", category: "LLM" },
+  { id: "openrouter:google/gemini-pro-1.5", name: "Gemini Pro 1.5 (via Puter)", provider: "Puter", tier: "free", category: "LLM" },
+  { id: "openrouter:openai/gpt-4o-mini", name: "GPT-4o Mini (via Puter)", provider: "Puter", tier: "free", category: "LLM" },
+  { id: "openrouter:mistralai/mistral-7b-instruct", name: "Mistral 7B (via Puter)", provider: "Puter", tier: "free", category: "LLM" },
+];
+
 interface CustomModel {
   id: string;
   name: string;
@@ -150,7 +161,7 @@ interface CustomModel {
 const AdminAISettings = () => {
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<AISettingsMap>({
-    ai_provider: "lovable",
+    ai_provider: "openrouter",
     openrouter_api_key: "",
     openrouter_model: "meta-llama/llama-3.2-3b-instruct:free",
     openrouter_custom_models: "[]",
@@ -159,12 +170,14 @@ const AdminAISettings = () => {
     bytez_image_model: "black-forest-labs/FLUX.1-schnell",
     bytez_custom_models: "[]",
     pollinations_model: "flux",
+    puter_chat_model: "openrouter:meta-llama/llama-3.1-8b-instruct",
+    puter_custom_models: "[]",
     custom_system_prompt: "",
   });
 
   const [newCustomModel, setNewCustomModel] = useState<CustomModel>({ id: "", name: "", category: "LLM" });
   const [customModelDialogOpen, setCustomModelDialogOpen] = useState(false);
-  const [customModelProvider, setCustomModelProvider] = useState<"openrouter" | "bytez">("bytez");
+  const [customModelProvider, setCustomModelProvider] = useState<"openrouter" | "bytez" | "puter">("bytez");
 
   const { data: aiSettings, isLoading } = useQuery({
     queryKey: ["ai-settings"],
@@ -181,7 +194,7 @@ const AdminAISettings = () => {
   useEffect(() => {
     if (aiSettings) {
       const settingsMap: AISettingsMap = {
-        ai_provider: "lovable",
+        ai_provider: "openrouter",
         openrouter_api_key: "",
         openrouter_model: "meta-llama/llama-3.2-3b-instruct:free",
         openrouter_custom_models: "[]",
@@ -190,15 +203,18 @@ const AdminAISettings = () => {
         bytez_image_model: "black-forest-labs/FLUX.1-schnell",
         bytez_custom_models: "[]",
         pollinations_model: "flux",
+        puter_chat_model: "openrouter:meta-llama/llama-3.1-8b-instruct",
+        puter_custom_models: "[]",
         custom_system_prompt: "",
       };
 
-      aiSettings.forEach((setting) => {
-        if (setting.setting_key in settingsMap) {
-          settingsMap[setting.setting_key as keyof AISettingsMap] = setting.setting_value || "";
-        }
-      });
-
+      if (Array.isArray(aiSettings)) {
+        aiSettings.forEach((setting) => {
+          if (setting.setting_key in settingsMap) {
+            settingsMap[setting.setting_key as keyof AISettingsMap] = setting.setting_value || "";
+          }
+        });
+      }
       setSettings(settingsMap);
     }
   }, [aiSettings]);
@@ -256,6 +272,14 @@ const AdminAISettings = () => {
     }
   };
 
+  const getPuterCustomModels = (): CustomModel[] => {
+    try {
+      return JSON.parse(settings.puter_custom_models || "[]");
+    } catch {
+      return [];
+    }
+  };
+
   const addCustomModel = () => {
     if (!newCustomModel.id.trim() || !newCustomModel.name.trim()) {
       toast.error("Please enter both model ID and name");
@@ -270,7 +294,7 @@ const AdminAISettings = () => {
       }
       const updated = [...current, newCustomModel];
       setSettings(s => ({ ...s, openrouter_custom_models: JSON.stringify(updated) }));
-    } else {
+    } else if (customModelProvider === "bytez") {
       const current = getBytezCustomModels();
       if (current.some(m => m.id === newCustomModel.id)) {
         toast.error("Model with this ID already exists");
@@ -278,6 +302,14 @@ const AdminAISettings = () => {
       }
       const updated = [...current, newCustomModel];
       setSettings(s => ({ ...s, bytez_custom_models: JSON.stringify(updated) }));
+    } else {
+      const current = getPuterCustomModels();
+      if (current.some(m => m.id === newCustomModel.id)) {
+        toast.error("Model with this ID already exists");
+        return;
+      }
+      const updated = [...current, newCustomModel];
+      setSettings(s => ({ ...s, puter_custom_models: JSON.stringify(updated) }));
     }
 
     setNewCustomModel({ id: "", name: "", category: "LLM" });
@@ -285,15 +317,19 @@ const AdminAISettings = () => {
     toast.success("Custom model added");
   };
 
-  const removeCustomModel = (modelId: string, provider: "openrouter" | "bytez") => {
+  const removeCustomModel = (modelId: string, provider: "openrouter" | "bytez" | "puter") => {
     if (provider === "openrouter") {
       const current = getOpenRouterCustomModels();
       const updated = current.filter(m => m.id !== modelId);
       setSettings(s => ({ ...s, openrouter_custom_models: JSON.stringify(updated) }));
-    } else {
+    } else if (provider === "bytez") {
       const current = getBytezCustomModels();
       const updated = current.filter(m => m.id !== modelId);
       setSettings(s => ({ ...s, bytez_custom_models: JSON.stringify(updated) }));
+    } else {
+      const current = getPuterCustomModels();
+      const updated = current.filter(m => m.id !== modelId);
+      setSettings(s => ({ ...s, puter_custom_models: JSON.stringify(updated) }));
     }
     toast.success("Custom model removed");
   };
@@ -310,6 +346,7 @@ const AdminAISettings = () => {
 
   const openRouterCustomModels = getOpenRouterCustomModels();
   const bytezCustomModels = getBytezCustomModels();
+  const puterCustomModels = getPuterCustomModels();
 
   return (
     <AdminLayout>
@@ -329,18 +366,29 @@ const AdminAISettings = () => {
               </p>
             </div>
           </div>
-          <Button
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-            className="h-14 px-8 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-[1.05] transition-all active:scale-95"
-          >
-            {saveMutation.isPending ? (
-              <Loader2 className="h-5 w-5 mr-3 animate-spin" />
-            ) : (
-              <Sparkles className="h-5 w-5 mr-3" />
-            )}
-            SYNC PROTOCOLS
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["ai-settings"] })}
+              className="h-14 px-6 rounded-2xl border-white/10 hover:bg-white/5 font-black text-xs uppercase tracking-widest"
+              title="Refresh Data"
+            >
+              <RefreshCw className="h-5 w-5 mr-2" />
+              REFRESH
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={saveMutation.isPending}
+              className="h-14 px-8 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-[1.05] transition-all active:scale-95"
+            >
+              {saveMutation.isPending ? (
+                <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+              ) : (
+                <Sparkles className="h-5 w-5 mr-3" />
+              )}
+              SYNC PROTOCOLS
+            </Button>
+          </div>
         </div>
 
         {/* AI Provider Matrix */}
@@ -352,9 +400,9 @@ const AdminAISettings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { id: "lovable", name: "Lovable AI", icon: Bot, badge: "Native", desc: "Uses Gemini 1.5 Flash. Reliable & zero config." },
               { id: "openrouter", name: "OpenRouter", icon: Zap, badge: "Extensible", desc: "Access 100+ models via single API key." },
-              { id: "bytez", name: "Bytez", icon: Image, badge: "Multi-Modal", desc: "High-performance chat, image, & voice." }
+              { id: "bytez", name: "Bytez", icon: Image, badge: "Multi-Modal", desc: "High-performance chat, image, & voice." },
+              { id: "puter", name: "Puter.js", icon: Sparkles, badge: "Client-Side", desc: "Fastest response. Uses user's browser connection directly." }
             ].map((provider) => (
               <div
                 key={provider.id}
@@ -573,18 +621,91 @@ const AdminAISettings = () => {
               </motion.div>
             )}
 
-            {/* Lovable Native Logic */}
-            {settings.ai_provider === "lovable" && (
-              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-12 rounded-[3rem] border border-white/5 text-center space-y-6">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto text-primary animate-pulse">
-                  <Bot size={40} />
+            {/* Puter Config */}
+            {settings.ai_provider === "puter" && (
+              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 rounded-[3rem] border border-white/5 space-y-8">
+                <div className="flex items-center gap-4 pb-6 border-b border-white/5">
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-foreground tracking-tight">Puter.js Integration</h2>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">
+                      Direct client-side AI processing via <a href="https://puter.com" target="_blank" className="text-primary hover:underline font-black">PUTER.COM</a>
+                    </p>
+                  </div>
+                  <Badge className="ml-auto bg-green-500/10 text-green-500 border-green-500/20 font-black uppercase tracking-widest">
+                    FASTEST
+                  </Badge>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-black text-foreground tracking-tight">Ethereal Core Active</h2>
-                  <p className="text-sm font-medium text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">The system is currently utilizing the native Lovable AI infrastructure, powered by <span className="text-primary font-bold">Google Gemini 1.5 Flash</span>. No further configuration required.</p>
-                </div>
-                <div className="flex items-center justify-center gap-3 pt-4">
-                  {[1, 2, 3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: `${i * 0.2}s` }} />)}
+
+                <div className="space-y-6">
+                  <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Zap className="h-5 w-5 text-primary" />
+                      <span className="text-sm font-black text-foreground uppercase tracking-widest">Zero Latency Mode</span>
+                    </div>
+                    <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                      Puter.js runs directly in the user's browser, bypassing our server infrastructure.
+                      This results in significantly faster response times and streaming.
+                      No API key is required as it uses free tiers of OpenRouter models.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                        Default Chat Model
+                      </Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setCustomModelProvider("puter"); setCustomModelDialogOpen(true); }}
+                        className="h-8 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-primary hover:bg-primary/10"
+                      >
+                        <Plus className="h-3 w-3 mr-2" /> ADD CORE
+                      </Button>
+                    </div>
+                    <Select value={settings.puter_chat_model} onValueChange={(v) => setSettings(s => ({ ...s, puter_chat_model: v }))}>
+                      <SelectTrigger className="h-14 rounded-2xl bg-white/5 border-white/10 font-black text-xs uppercase tracking-widest focus:ring-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="glass-card rounded-2xl border-white/10">
+                        <ScrollArea className="h-[250px]">
+                          <div className="p-2 space-y-1">
+                            {PUTER_CHAT_MODELS.map(model => (
+                              <SelectItem key={model.id} value={model.id} className="rounded-xl focus:bg-primary/20">
+                                <div className="flex items-center justify-between w-full gap-2">
+                                  <span className="font-bold">{model.name}</span>
+                                  <Badge variant="outline" className="text-[8px] opacity-60">FREE</Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                            {puterCustomModels.length > 0 && (
+                              <>
+                                <p className="px-2 py-1 mt-4 text-[8px] font-black text-accent uppercase tracking-[0.2em] opacity-60">Custom Cores</p>
+                                {puterCustomModels.map(model => (
+                                  <div key={model.id} className="flex items-center justify-between pr-2">
+                                    <SelectItem value={model.id} className="flex-1 rounded-xl focus:bg-accent/20">
+                                      <span className="font-bold">{model.name}</span>
+                                    </SelectItem>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 text-red-500 hover:text-red-600"
+                                      onClick={(e) => { e.stopPropagation(); removeCustomModel(model.id, "puter"); }}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -702,7 +823,8 @@ const AdminAISettings = () => {
               {[
                 "Lovable Core is optimized for latency and stability.",
                 "OpenRouter allows deep customization of LLM nodes.",
-                "Bytez provides first-class support for visual synthesis."
+                "Bytez provides first-class support for visual synthesis.",
+                "Puter.js offers the fastest chat experience via direct connection."
               ].map((tip, i) => (
                 <li key={i} className="flex gap-3 text-xs font-medium text-muted-foreground leading-snug">
                   <span className="text-primary">•</span> {tip}
@@ -733,7 +855,7 @@ const AdminAISettings = () => {
         <DialogContent className="glass-card border-white/10 rounded-[2rem]">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-foreground">
-              Add Custom {customModelProvider === "openrouter" ? "OpenRouter" : "Bytez"} Model
+              Add Custom {customModelProvider === "openrouter" ? "OpenRouter" : customModelProvider === "puter" ? "Puter.js" : "Bytez"} Model
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
