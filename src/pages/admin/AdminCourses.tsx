@@ -15,7 +15,8 @@ import {
     Trash2,
     Eye,
     EyeOff,
-    Video
+    Video,
+    Users
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -142,6 +143,9 @@ const AdminCourses = () => {
                                                 <DropdownMenuItem onClick={() => navigate(`/admin/courses/${course.id}`)}>
                                                     <Edit className="w-4 h-4 mr-2" /> Edit
                                                 </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => navigate(`/admin/enrollments?courseId=${course.id}&tab=approved`)}>
+                                                    <Users className="w-4 h-4 mr-2" /> View Students
+                                                </DropdownMenuItem>
                                                 <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={() => handleDelete(course.id)}>
                                                     <Trash2 className="w-4 h-4 mr-2" /> Delete
                                                 </DropdownMenuItem>
@@ -160,6 +164,14 @@ const AdminCourses = () => {
                                             {course.price && Number(course.price) > 0 ? `NPR ${course.price}` : "Free"}
                                         </span>
                                     </div>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full mt-4 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 font-bold text-xs uppercase tracking-widest h-10"
+                                        onClick={() => navigate(`/admin/enrollments?courseId=${course.id}&tab=approved`)}
+                                    >
+                                        <Users className="w-3 h-3 mr-2" />
+                                        Manage Students
+                                    </Button>
                                 </CardContent>
                             </Card>
                         ))
