@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, ShieldAlert } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowLeft, ShieldAlert, UserPlus } from "lucide-react";
+import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
 import logoImg from "@/assets/logo.jpg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,8 @@ export default function Auth() {
   const navigate = useNavigate();
   const { signUp, signIn } = useAuth();
   const { toast } = useToast();
+  const { data: settings } = useWebsiteSettings();
+  const signupEnabled = settings?.signup_enabled !== "false";
 
   const validateForm = () => {
     try {
@@ -63,9 +66,9 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setLoading(true);
 
     try {
@@ -123,7 +126,7 @@ export default function Auth() {
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary/90 to-accent/80 flex items-center justify-center p-4">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-hero-pattern opacity-20" />
-      
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -163,7 +166,7 @@ export default function Auth() {
           </p>
 
           {/* Form or Contact Admin Message */}
-          {isSignUp ? (
+          {isSignUp && !signupEnabled ? (
             <div className="text-center space-y-4 py-6">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                 <ShieldAlert className="w-8 h-8 text-primary" />
@@ -172,7 +175,7 @@ export default function Auth() {
                 Registration Restricted
               </h2>
               <p className="text-muted-foreground text-sm">
-                New user registration is managed by the administration. Please contact the admin team to request an account.
+                New user registration is currently managed by the administration. Please contact the admin team to request an account.
               </p>
               <Link to="/contact">
                 <Button variant="outline" className="mt-2">
@@ -184,6 +187,27 @@ export default function Auth() {
             <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {isSignUp && (
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <div className="relative">
+                    <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="fullName"
+                      placeholder="Enter your full name"
+                      className="pl-10"
+                      value={formData.fullName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, fullName: e.target.value })
+                      }
+                    />
+                  </div>
+                  {errors.fullName && (
+                    <p className="text-sm text-destructive">{errors.fullName}</p>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -235,15 +259,17 @@ export default function Auth() {
                 )}
               </div>
 
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowForgotPassword(true)}
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot Password?
-                </button>
-              </div>
+              {!isSignUp && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
 
               <Button
                 type="submit"
@@ -251,7 +277,7 @@ export default function Auth() {
                 size="lg"
                 disabled={loading}
               >
-                {loading ? "Please wait..." : "Sign In"}
+                {loading ? "Please wait..." : isSignUp ? "Create Account" : "Sign In"}
               </Button>
             </form>
           )}

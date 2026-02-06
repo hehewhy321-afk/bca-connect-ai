@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Settings, Globe, Phone, Mail, Facebook, Twitter, Instagram, Linkedin, Youtube, Loader2, Save, Upload, X, Image, Smartphone } from "lucide-react";
+import { Settings, Globe, Phone, Mail, Facebook, Twitter, Instagram, Linkedin, Youtube, Loader2, Save, Upload, X, Image, Smartphone, Lock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 interface SettingsMap {
   [key: string]: string;
@@ -30,6 +31,7 @@ const AdminWebsiteSettings = () => {
     linkedin_url: "",
     youtube_url: "",
     app_download_link: "",
+    signup_enabled: "true",
   });
 
   const { data: settingsData, isLoading } = useQuery({
@@ -385,6 +387,45 @@ const AdminWebsiteSettings = () => {
                   />
                 </div>
                 <p className="text-[10px] text-muted-foreground ml-1">Direct link to the APK file or app store listing.</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* System Access Control */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.18 }}
+            className="glass-card rounded-[3rem] p-8 border border-white/5 relative overflow-hidden group"
+          >
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-red-500/5 rounded-full blur-3xl group-hover:bg-red-500/10 transition-colors" />
+
+            <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                <Lock className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-foreground tracking-tight">Access Control</h2>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Gatekeeper protocols</p>
+              </div>
+            </div>
+
+            <div className="space-y-6 relative z-10">
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-white/10 transition-colors">
+                <div className="space-y-1">
+                  <Label className="text-sm font-black uppercase tracking-widest text-foreground">Self Signup</Label>
+                  <p className="text-[10px] text-muted-foreground font-bold">Allow users to create accounts independently</p>
+                </div>
+                <Switch
+                  checked={settings.signup_enabled === 'true'}
+                  onCheckedChange={(checked) => handleChange('signup_enabled', checked ? 'true' : 'false')}
+                />
+              </div>
+              <div className="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20">
+                <p className="text-[10px] text-yellow-500 font-bold leading-relaxed">
+                  <span className="uppercase tracking-widest mr-2">Info:</span>
+                  When disabled, the signup form will be hidden and database-level blocking will be enforced. Admin account creation remains functional.
+                </p>
               </div>
             </div>
           </motion.div>

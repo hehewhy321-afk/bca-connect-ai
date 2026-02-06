@@ -15,6 +15,7 @@ export interface WebsiteSettings {
   linkedin_url: string;
   github_url: string;
   youtube_url: string;
+  signup_enabled: string;
 }
 
 const defaultSettings: WebsiteSettings = {
@@ -31,6 +32,7 @@ const defaultSettings: WebsiteSettings = {
   linkedin_url: "https://linkedin.com",
   github_url: "https://github.com",
   youtube_url: "https://youtube.com",
+  signup_enabled: "true",
 };
 
 export function useWebsiteSettings() {
@@ -44,7 +46,7 @@ export function useWebsiteSettings() {
       if (error) throw error;
 
       const settings = { ...defaultSettings };
-      
+
       data?.forEach((item) => {
         const key = item.setting_key as keyof WebsiteSettings;
         if (key in settings && item.setting_value) {
