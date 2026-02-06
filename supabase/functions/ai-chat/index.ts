@@ -34,9 +34,17 @@ interface AISettings {
   ai_provider?: string;
   openrouter_api_key?: string;
   openrouter_model?: string;
+  groq_api_key?: string;
+  groq_model?: string;
+  cerebras_api_key?: string;
+  cerebras_model?: string;
   bytez_api_key?: string;
   bytez_chat_model?: string;
   bytez_image_model?: string;
+  krea_api_key?: string;
+  krea_model?: string;
+  airforce_api_key?: string;
+  airforce_model?: string;
   custom_system_prompt?: string;
 }
 
@@ -63,67 +71,46 @@ async function getAISettings(supabaseClient: any): Promise<AISettings | null> {
   }
 }
 
-async function callLovableAI(messages: any[], systemPrompt: string) {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+async function callGroq(messages: any[], systemPrompt: string, apiKey: string, model: string) {
+  console.log("Calling Groq with model:", model);
 
-  if (!LOVABLE_API_KEY) {
-    throw new Error("LOVABLE_API_KEY is not configured");
-  }
-
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: model,
       messages: [{ role: "system", content: systemPrompt }, ...messages],
       stream: true,
+      temperature: 0.6,
+      max_completion_tokens: 4096,
     }),
   });
 
   return response;
 }
 
-async function callLovableImageGen(prompt: string) {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+async function callCerebras(messages: any[], systemPrompt: string, apiKey: string, model: string) {
+  console.log("Calling Cerebras with model:", model);
 
-  if (!LOVABLE_API_KEY) {
-    throw new Error("LOVABLE_API_KEY is not configured");
-  }
-
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const response = await fetch("https://api.cerebras.ai/v1/chat/completions", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-3-pro-image-preview",
-      messages: [
-        {
-          role: "user",
-          content: `Generate an image: ${prompt}`,
-        },
-      ],
-      modalities: ["image", "text"],
+      model: model,
+      messages: [{ role: "system", content: systemPrompt }, ...messages],
+      stream: true,
+      temperature: 0.2,
+      max_completion_tokens: 2048,
     }),
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Lovable image generation failed: ${response.status} ${errorText}`);
-  }
-
-  const data = await response.json();
-  const imageUrl = data?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-  if (!imageUrl) {
-    throw new Error("Lovable image generation returned no image");
-  }
-
-  return imageUrl as string;
+  return response;
 }
 
 // Free image generation using Pollinations.ai (completely free, no API key needed)
@@ -131,11 +118,12 @@ async function callLovableImageGen(prompt: string) {
 async function callPollinationsImageGen(prompt: string, model: string = "flux") {
   console.log("Calling Pollinations.ai for image generation with model:", model);
 
-  // Pollinations.ai supports: flux, flux-realism, flux-anime, flux-3d, turbo
+  // Pollinations.ai supports various models like flux, flux-realism, etc.
   const encodedPrompt = encodeURIComponent(prompt);
 
-  // Generate the Pollinations URL
-  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=${model}&width=1024&height=1024&nologo=true&enhance=true`;
+  // Generate the Pollinations URL - using gen.pollinations.ai for better stability if needed
+  // but image.pollinations.ai is the standard for direct image links
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=${model}&width=1024&height=1024&nologo=true&enhance=true&seed=${Math.floor(Math.random() * 1000000)}`;
 
   console.log("Generated Pollinations URL:", imageUrl);
 
@@ -234,6 +222,147 @@ async function callHuggingFaceImageGen(prompt: string, model: string = "black-fo
   return `data:image/png;base64,${base64}`;
 }
 
+async function callKreaImageGen(prompt: string, apiKey: string, model: string = "flux") {
+  console.log("Calling Krea.ai for image generation with model:", model);
+
+  try {
+    const response = await fetch("https://api.krea.ai/v1/image-gen", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        providers: [model],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Krea.ai request failed: ${response.status} ${errorText}`);
+    }
+
+    const data = await response.json();
+    const jobId = data.id;
+    console.log("Krea.ai job started, ID:", jobId);
+
+    // Polling for the result
+    let result = null;
+    let attempts = 0;
+    const maxAttempts = 40; // ~40 seconds timeout
+
+    while (attempts < maxAttempts) {
+      // Wait 1 second between polls
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      attempts++;
+
+      const pollResponse = await fetch(`https://api.krea.ai/v1/image-gen/${jobId}`, {
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+        },
+      });
+
+      if (pollResponse.ok) {
+        const pollData = await pollResponse.json();
+        if (pollData.status === "completed") {
+          result = pollData.uri || (pollData.images && pollData.images[0]?.uri);
+          break;
+        } else if (pollData.status === "error" || pollData.status === "failed") {
+          throw new Error(`Krea.ai generation failed: ${pollData.error || "Unknown error"}`);
+        }
+      }
+    }
+
+    if (!result) {
+      throw new Error("Krea.ai generation timed out");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Krea.ai implementation error:", error);
+    throw error;
+  }
+}
+
+async function callAirforceImageGen(prompt: string, apiKey: string, model: string = "plutogen-o1") {
+  console.log("Calling API Airforce for image generation with model:", model);
+
+  // Default API key from user if none provided in settings
+  const finalApiKey = apiKey || "sk-air-qGzkGvPKeulFnozFsw3nbIvFyZpZSBvxiXhrLkKWgUnJ0d1sJ8U7ssM8ajuWTc19";
+
+  try {
+    const response = await fetch("https://api.airforce/v1/images/generations", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${finalApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: model,
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        response_format: "url",
+        sse: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API Airforce request failed: ${response.status} ${errorText}`);
+    }
+
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let accumulatedData = '';
+    let resultUrl = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      accumulatedData += decoder.decode(value, { stream: true });
+      const lines = accumulatedData.split('\n\n');
+      accumulatedData = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('data: ')) {
+          const dataStr = trimmedLine.slice(6).trim();
+          if (dataStr === '[DONE]') continue;
+          if (dataStr === ': keepalive') continue;
+
+          try {
+            const data = JSON.parse(dataStr);
+            console.log("Airforce SSE Data:", data);
+            // Check for potential URL locations
+            if (data.data && Array.isArray(data.data) && data.data[0]?.url) {
+              resultUrl = data.data[0].url;
+              break;
+            } else if (data.url) {
+              resultUrl = data.url;
+              break;
+            }
+          } catch (e) {
+            // Ignore parse errors for non-json data
+          }
+        }
+      }
+      if (resultUrl) break;
+    }
+
+    if (!resultUrl) {
+      throw new Error("API Airforce generation failed: No image URL found in response");
+    }
+
+    return resultUrl;
+  } catch (error) {
+    console.error("API Airforce implementation error:", error);
+    throw error;
+  }
+}
+
 async function callOpenRouter(messages: any[], systemPrompt: string, apiKey: string, model: string) {
   console.log("Calling OpenRouter with model:", model);
 
@@ -242,7 +371,7 @@ async function callOpenRouter(messages: any[], systemPrompt: string, apiKey: str
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": Deno.env.get("SUPABASE_URL") || "https://lovable.dev",
+      "HTTP-Referer": Deno.env.get("SUPABASE_URL") || "https://bca-connect-ai.vercel.app",
       "X-Title": "BCA Study Assistant",
     },
     body: JSON.stringify({
@@ -369,7 +498,7 @@ serve(async (req) => {
     // Get AI settings from database
     const settings = await getAISettings(supabaseClient);
 
-    const provider = settings?.ai_provider || "lovable";
+    const provider = settings?.ai_provider || "openrouter";
     const systemPrompt = settings?.custom_system_prompt || DEFAULT_SYSTEM_PROMPT;
 
     console.log("Using AI provider:", provider);
@@ -382,6 +511,65 @@ serve(async (req) => {
     // If mode is "image" or image prompt detected, generate image
     if (mode === "image" || imagePrompt) {
       const requestedPrompt = imagePrompt || lastMessage.content;
+
+      // Determine which provider to use for image generation - Prioritize API Airforce then Krea.ai
+      const airforceApiKey = settings?.airforce_api_key || "";
+      try {
+        const airforceModel = settings?.airforce_model || "plutogen-o1";
+        const imageUrl = await callAirforceImageGen(requestedPrompt, airforceApiKey, airforceModel);
+
+        if (imageUrl) {
+          await supabaseClient.from("ai_generated_images").insert({
+            user_id: user.id,
+            prompt: requestedPrompt,
+            image_url: imageUrl,
+            model_used: `airforce:${airforceModel}`,
+          });
+
+          return new Response(
+            JSON.stringify({
+              type: "image",
+              output: imageUrl,
+              prompt: requestedPrompt,
+              model: airforceModel,
+              provider: "airforce",
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } catch (error) {
+        console.error("API Airforce failed, falling back to Krea.ai...", error);
+      }
+
+      const kreaApiKey = settings?.krea_api_key;
+      if (kreaApiKey) {
+        try {
+          const kreaModel = settings?.krea_model || "flux";
+          const imageUrl = await callKreaImageGen(requestedPrompt, kreaApiKey, kreaModel);
+
+          if (imageUrl) {
+            await supabaseClient.from("ai_generated_images").insert({
+              user_id: user.id,
+              prompt: requestedPrompt,
+              image_url: imageUrl,
+              model_used: `krea:${kreaModel}`,
+            });
+
+            return new Response(
+              JSON.stringify({
+                type: "image",
+                output: imageUrl,
+                prompt: requestedPrompt,
+                model: kreaModel,
+                provider: "krea",
+              }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        } catch (error) {
+          console.error("Krea.ai failed, falling back...", error);
+        }
+      }
 
       // Determine which provider to use for image generation
       if (provider === "bytez") {
@@ -452,11 +640,11 @@ serve(async (req) => {
 
             // Check if it's a plan limitation error
             if (imageResponse.status === 403 && errorText.includes("upgrade")) {
-              console.log("Bytez plan limitation - falling back to Lovable");
+              console.log("Bytez plan limitation - falling back to Pollinations");
             }
           }
 
-          // Fallback chain: Try Hugging Face (free) → Pollinations (free) → Lovable
+          // Fallback chain: Try Hugging Face (free) → Pollinations (free)
           console.log("Bytez failed, trying free alternatives...");
 
           let fallbackImageUrl = "";
@@ -481,12 +669,7 @@ serve(async (req) => {
               fallbackModel = pollinationsModel;
             } catch (pollinationsError) {
               console.error("Pollinations failed:", pollinationsError);
-
-              // Last resort: Lovable
-              console.log("Trying Lovable as last resort...");
-              fallbackImageUrl = await callLovableImageGen(requestedPrompt);
-              fallbackProvider = "lovable";
-              fallbackModel = "gemini-3-pro-image";
+              throw new Error("All image generation providers failed");
             }
           }
 
@@ -519,7 +702,7 @@ serve(async (req) => {
           );
         }
       } else {
-        // Use free alternatives first (Hugging Face → Pollinations → Lovable)
+        // Use free alternatives first (Hugging Face → Pollinations)
         try {
           let imageUrl = "";
           let provider = "";
@@ -545,12 +728,7 @@ serve(async (req) => {
               model = pollinationsModel;
             } catch (pollinationsError) {
               console.error("Pollinations failed:", pollinationsError);
-
-              // Last resort: Lovable
-              console.log("Using Lovable for image generation...");
-              imageUrl = await callLovableImageGen(requestedPrompt);
-              provider = "lovable";
-              model = "gemini-3-pro-image";
+              throw new Error("All image generation providers failed");
             }
           }
 
@@ -600,24 +778,47 @@ serve(async (req) => {
       }
 
       response = await callBytezChat(messages, systemPrompt, apiKey, model);
-    } else if (provider === "openrouter") {
-      // Get API key from database settings
-      const apiKey = settings?.openrouter_api_key;
-      const model = settings?.openrouter_model || "meta-llama/llama-3.2-3b-instruct:free";
+    } else if (provider === "groq") {
+      const apiKey = settings?.groq_api_key;
+      const model = settings?.groq_model || "llama-3.3-70b-versatile";
       providerInfo.model = model;
 
       if (!apiKey) {
         return new Response(
-          JSON.stringify({ error: "OpenRouter API key not configured. Please set it in Admin > AI Settings." }),
+          JSON.stringify({ error: "Groq API key not configured. Please set it in Admin > AI Settings." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      response = await callGroq(messages, systemPrompt, apiKey, model);
+    } else if (provider === "cerebras") {
+      const apiKey = settings?.cerebras_api_key;
+      const model = settings?.cerebras_model || "llama-3.3-70b";
+      providerInfo.model = model;
+
+      if (!apiKey) {
+        return new Response(
+          JSON.stringify({ error: "Cerebras API key not configured. Please set it in Admin > AI Settings." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      response = await callCerebras(messages, systemPrompt, apiKey, model);
+    } else {
+      // Default to OpenRouter if provider is unknown or was lovable
+      const apiKey = settings?.openrouter_api_key;
+      const model = settings?.openrouter_model || "meta-llama/llama-3.2-3b-instruct:free";
+      providerInfo.provider = "openrouter";
+      providerInfo.model = model;
+
+      if (!apiKey) {
+        return new Response(
+          JSON.stringify({ error: "AI provider not correctly configured. Please check Admin > AI Settings." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       response = await callOpenRouter(messages, systemPrompt, apiKey, model);
-    } else {
-      providerInfo.provider = "lovable";
-      providerInfo.model = "google/gemini-2.5-flash";
-      response = await callLovableAI(messages, systemPrompt);
     }
 
     if (!response.ok) {

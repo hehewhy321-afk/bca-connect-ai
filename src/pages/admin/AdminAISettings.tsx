@@ -21,6 +21,12 @@ interface AISettingsMap {
   openrouter_api_key: string;
   openrouter_model: string;
   openrouter_custom_models: string;
+  groq_api_key: string;
+  groq_model: string;
+  groq_custom_models: string;
+  cerebras_api_key: string;
+  cerebras_model: string;
+  cerebras_custom_models: string;
   bytez_api_key: string;
   bytez_chat_model: string;
   bytez_image_model: string;
@@ -28,6 +34,10 @@ interface AISettingsMap {
   pollinations_model: string;
   puter_chat_model: string;
   puter_custom_models: string;
+  krea_api_key: string;
+  krea_model: string;
+  airforce_api_key: string;
+  airforce_model: string;
   custom_system_prompt: string;
 }
 
@@ -150,6 +160,21 @@ const PUTER_CHAT_MODELS: ModelInfo[] = [
   { id: "openrouter:mistralai/mistral-7b-instruct", name: "Mistral 7B (via Puter)", provider: "Puter", tier: "free", category: "LLM" },
 ];
 
+const GROQ_MODELS: ModelInfo[] = [
+  { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B Versatile", provider: "Meta", tier: "free", category: "LLM" },
+  { id: "llama-3.1-70b-versatile", name: "Llama 3.1 70B Versatile", provider: "Meta", tier: "free", category: "LLM" },
+  { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B Instant", provider: "Meta", tier: "free", category: "LLM" },
+  { id: "mixtral-8x7b-32768", name: "Mixtral 8x7B", provider: "Mistral AI", tier: "free", category: "LLM" },
+  { id: "gemma2-9b-it", name: "Gemma 2 9B", provider: "Google", tier: "free", category: "LLM" },
+  { id: "qwen-2.5-32b", name: "Qwen 2.5 32B", provider: "Alibaba", tier: "free", category: "LLM" },
+];
+
+const CEREBRAS_MODELS: ModelInfo[] = [
+  { id: "llama-3.3-70b", name: "Llama 3.3 70B", provider: "Meta", tier: "free", category: "LLM" },
+  { id: "llama-3.1-70b", name: "Llama 3.1 70B", provider: "Meta", tier: "free", category: "LLM" },
+  { id: "llama-3.1-8b", name: "Llama 3.1 8B", provider: "Meta", tier: "free", category: "LLM" },
+];
+
 interface CustomModel {
   id: string;
   name: string;
@@ -165,6 +190,12 @@ const AdminAISettings = () => {
     openrouter_api_key: "",
     openrouter_model: "meta-llama/llama-3.2-3b-instruct:free",
     openrouter_custom_models: "[]",
+    groq_api_key: "",
+    groq_model: "llama-3.3-70b-versatile",
+    groq_custom_models: "[]",
+    cerebras_api_key: "",
+    cerebras_model: "llama-3.3-70b",
+    cerebras_custom_models: "[]",
     bytez_api_key: "",
     bytez_chat_model: "Qwen/Qwen2.5-1.5B-Instruct",
     bytez_image_model: "black-forest-labs/FLUX.1-schnell",
@@ -172,12 +203,16 @@ const AdminAISettings = () => {
     pollinations_model: "flux",
     puter_chat_model: "openrouter:meta-llama/llama-3.1-8b-instruct",
     puter_custom_models: "[]",
+    krea_api_key: "",
+    krea_model: "flux",
+    airforce_api_key: "",
+    airforce_model: "plutogen-o1",
     custom_system_prompt: "",
   });
 
   const [newCustomModel, setNewCustomModel] = useState<CustomModel>({ id: "", name: "", category: "LLM" });
   const [customModelDialogOpen, setCustomModelDialogOpen] = useState(false);
-  const [customModelProvider, setCustomModelProvider] = useState<"openrouter" | "bytez" | "puter">("bytez");
+  const [customModelProvider, setCustomModelProvider] = useState<"openrouter" | "bytez" | "puter" | "groq" | "cerebras">("bytez");
 
   const { data: aiSettings, isLoading } = useQuery({
     queryKey: ["ai-settings"],
@@ -198,6 +233,12 @@ const AdminAISettings = () => {
         openrouter_api_key: "",
         openrouter_model: "meta-llama/llama-3.2-3b-instruct:free",
         openrouter_custom_models: "[]",
+        groq_api_key: "",
+        groq_model: "llama-3.3-70b-versatile",
+        groq_custom_models: "[]",
+        cerebras_api_key: "",
+        cerebras_model: "llama-3.3-70b",
+        cerebras_custom_models: "[]",
         bytez_api_key: "",
         bytez_chat_model: "Qwen/Qwen2.5-1.5B-Instruct",
         bytez_image_model: "black-forest-labs/FLUX.1-schnell",
@@ -205,6 +246,10 @@ const AdminAISettings = () => {
         pollinations_model: "flux",
         puter_chat_model: "openrouter:meta-llama/llama-3.1-8b-instruct",
         puter_custom_models: "[]",
+        krea_api_key: "",
+        krea_model: "flux",
+        airforce_api_key: "",
+        airforce_model: "plutogen-o1",
         custom_system_prompt: "",
       };
 
@@ -253,6 +298,14 @@ const AdminAISettings = () => {
       toast.error("Please enter your Bytez API key");
       return;
     }
+    if (settings.ai_provider === "groq" && !settings.groq_api_key) {
+      toast.error("Please enter your Groq API key");
+      return;
+    }
+    if (settings.ai_provider === "cerebras" && !settings.cerebras_api_key) {
+      toast.error("Please enter your Cerebras API key");
+      return;
+    }
     saveMutation.mutate();
   };
 
@@ -280,6 +333,22 @@ const AdminAISettings = () => {
     }
   };
 
+  const getGroqCustomModels = (): CustomModel[] => {
+    try {
+      return JSON.parse(settings.groq_custom_models || "[]");
+    } catch {
+      return [];
+    }
+  };
+
+  const getCerebrasCustomModels = (): CustomModel[] => {
+    try {
+      return JSON.parse(settings.cerebras_custom_models || "[]");
+    } catch {
+      return [];
+    }
+  };
+
   const addCustomModel = () => {
     if (!newCustomModel.id.trim() || !newCustomModel.name.trim()) {
       toast.error("Please enter both model ID and name");
@@ -302,6 +371,22 @@ const AdminAISettings = () => {
       }
       const updated = [...current, newCustomModel];
       setSettings(s => ({ ...s, bytez_custom_models: JSON.stringify(updated) }));
+    } else if (customModelProvider === "groq") {
+      const current = getGroqCustomModels();
+      if (current.some(m => m.id === newCustomModel.id)) {
+        toast.error("Model with this ID already exists");
+        return;
+      }
+      const updated = [...current, newCustomModel];
+      setSettings(s => ({ ...s, groq_custom_models: JSON.stringify(updated) }));
+    } else if (customModelProvider === "cerebras") {
+      const current = getCerebrasCustomModels();
+      if (current.some(m => m.id === newCustomModel.id)) {
+        toast.error("Model with this ID already exists");
+        return;
+      }
+      const updated = [...current, newCustomModel];
+      setSettings(s => ({ ...s, cerebras_custom_models: JSON.stringify(updated) }));
     } else {
       const current = getPuterCustomModels();
       if (current.some(m => m.id === newCustomModel.id)) {
@@ -317,7 +402,7 @@ const AdminAISettings = () => {
     toast.success("Custom model added");
   };
 
-  const removeCustomModel = (modelId: string, provider: "openrouter" | "bytez" | "puter") => {
+  const removeCustomModel = (modelId: string, provider: "openrouter" | "bytez" | "puter" | "groq" | "cerebras") => {
     if (provider === "openrouter") {
       const current = getOpenRouterCustomModels();
       const updated = current.filter(m => m.id !== modelId);
@@ -326,6 +411,14 @@ const AdminAISettings = () => {
       const current = getBytezCustomModels();
       const updated = current.filter(m => m.id !== modelId);
       setSettings(s => ({ ...s, bytez_custom_models: JSON.stringify(updated) }));
+    } else if (provider === "groq") {
+      const current = getGroqCustomModels();
+      const updated = current.filter(m => m.id !== modelId);
+      setSettings(s => ({ ...s, groq_custom_models: JSON.stringify(updated) }));
+    } else if (provider === "cerebras") {
+      const current = getCerebrasCustomModels();
+      const updated = current.filter(m => m.id !== modelId);
+      setSettings(s => ({ ...s, cerebras_custom_models: JSON.stringify(updated) }));
     } else {
       const current = getPuterCustomModels();
       const updated = current.filter(m => m.id !== modelId);
@@ -347,6 +440,8 @@ const AdminAISettings = () => {
   const openRouterCustomModels = getOpenRouterCustomModels();
   const bytezCustomModels = getBytezCustomModels();
   const puterCustomModels = getPuterCustomModels();
+  const groqCustomModels = getGroqCustomModels();
+  const cerebrasCustomModels = getCerebrasCustomModels();
 
   return (
     <AdminLayout>
@@ -401,6 +496,8 @@ const AdminAISettings = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { id: "openrouter", name: "OpenRouter", icon: Zap, badge: "Extensible", desc: "Access 100+ models via single API key." },
+              { id: "groq", name: "Groq", icon: Zap, badge: "Ultra-Fast", desc: "World's fastest inference for Llama & Qwen." },
+              { id: "cerebras", name: "Cerebras", icon: Sparkles, badge: "Inference", desc: "Specialized high-speed AI inference." },
               { id: "bytez", name: "Bytez", icon: Image, badge: "Multi-Modal", desc: "High-performance chat, image, & voice." },
               { id: "puter", name: "Puter.js", icon: Sparkles, badge: "Client-Side", desc: "Fastest response. Uses user's browser connection directly." }
             ].map((provider) => (
@@ -510,6 +607,166 @@ const AdminAISettings = () => {
                                       size="icon"
                                       className="h-6 w-6 text-red-500 hover:text-red-600"
                                       onClick={(e) => { e.stopPropagation(); removeCustomModel(model.id, "openrouter"); }}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Groq Config */}
+            {settings.ai_provider === "groq" && (
+              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 rounded-[3rem] border border-white/5 space-y-8">
+                <div className="flex items-center gap-4 pb-6 border-b border-white/5">
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-foreground tracking-tight">Groq Cloud Integration</h2>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Get your API key from <a href="https://console.groq.com/keys" target="_blank" className="text-primary hover:underline font-black underline-offset-4">CONSOLE.GROQ.COM</a></p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Groq API Key</Label>
+                    <Input
+                      type="password"
+                      placeholder="gsk_..."
+                      value={settings.groq_api_key}
+                      onChange={(e) => setSettings(s => ({ ...s, groq_api_key: e.target.value }))}
+                      className="h-12 rounded-xl bg-white/5 border-white/10 font-bold focus:ring-primary/20"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Groq Model</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setCustomModelProvider("groq"); setCustomModelDialogOpen(true); }}
+                        className="h-8 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-primary hover:bg-primary/10"
+                      >
+                        <Plus className="h-3 w-3 mr-2" /> ADD CORE
+                      </Button>
+                    </div>
+
+                    <Select value={settings.groq_model} onValueChange={(v) => setSettings(s => ({ ...s, groq_model: v }))}>
+                      <SelectTrigger className="h-14 rounded-2xl bg-white/5 border-white/10 font-black text-xs uppercase tracking-widest focus:ring-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="glass-card rounded-2xl border-white/10">
+                        <ScrollArea className="h-[300px]">
+                          <div className="p-2 space-y-1">
+                            <p className="px-2 py-1 text-[8px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Verified Cores</p>
+                            {GROQ_MODELS.map(model => (
+                              <SelectItem key={model.id} value={model.id} className="rounded-xl focus:bg-primary/20">
+                                <span className="font-bold">{model.name}</span>
+                              </SelectItem>
+                            ))}
+                            {groqCustomModels.length > 0 && (
+                              <>
+                                <p className="px-2 py-1 mt-4 text-[8px] font-black text-accent uppercase tracking-[0.2em] opacity-60">Custom Cores</p>
+                                {groqCustomModels.map(model => (
+                                  <div key={model.id} className="flex items-center justify-between pr-2">
+                                    <SelectItem value={model.id} className="flex-1 rounded-xl focus:bg-accent/20">
+                                      <span className="font-bold">{model.name}</span>
+                                    </SelectItem>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 text-red-500 hover:text-red-600"
+                                      onClick={(e) => { e.stopPropagation(); removeCustomModel(model.id, "groq"); }}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Cerebras Config */}
+            {settings.ai_provider === "cerebras" && (
+              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 rounded-[3rem] border border-white/5 space-y-8">
+                <div className="flex items-center gap-4 pb-6 border-b border-white/5">
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-foreground tracking-tight">Cerebras Cloud Integration</h2>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">Get your API key from <a href="https://cloud.cerebras.ai" target="_blank" className="text-primary hover:underline font-black underline-offset-4">CLOUD.CEREBRAS.AI</a></p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Cerebras API Key</Label>
+                    <Input
+                      type="password"
+                      placeholder="csk_..."
+                      value={settings.cerebras_api_key}
+                      onChange={(e) => setSettings(s => ({ ...s, cerebras_api_key: e.target.value }))}
+                      className="h-12 rounded-xl bg-white/5 border-white/10 font-bold focus:ring-primary/20"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Cerebras Model</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setCustomModelProvider("cerebras"); setCustomModelDialogOpen(true); }}
+                        className="h-8 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest hover:text-primary hover:bg-primary/10"
+                      >
+                        <Plus className="h-3 w-3 mr-2" /> ADD CORE
+                      </Button>
+                    </div>
+
+                    <Select value={settings.cerebras_model} onValueChange={(v) => setSettings(s => ({ ...s, cerebras_model: v }))}>
+                      <SelectTrigger className="h-14 rounded-2xl bg-white/5 border-white/10 font-black text-xs uppercase tracking-widest focus:ring-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="glass-card rounded-2xl border-white/10">
+                        <ScrollArea className="h-[300px]">
+                          <div className="p-2 space-y-1">
+                            <p className="px-2 py-1 text-[8px] font-black text-primary uppercase tracking-[0.2em] opacity-60">Verified Cores</p>
+                            {CEREBRAS_MODELS.map(model => (
+                              <SelectItem key={model.id} value={model.id} className="rounded-xl focus:bg-primary/20">
+                                <span className="font-bold">{model.name}</span>
+                              </SelectItem>
+                            ))}
+                            {cerebrasCustomModels.length > 0 && (
+                              <>
+                                <p className="px-2 py-1 mt-4 text-[8px] font-black text-accent uppercase tracking-[0.2em] opacity-60">Custom Cores</p>
+                                {cerebrasCustomModels.map(model => (
+                                  <div key={model.id} className="flex items-center justify-between pr-2">
+                                    <SelectItem value={model.id} className="flex-1 rounded-xl focus:bg-accent/20">
+                                      <span className="font-bold">{model.name}</span>
+                                    </SelectItem>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 text-red-500 hover:text-red-600"
+                                      onClick={(e) => { e.stopPropagation(); removeCustomModel(model.id, "cerebras"); }}
                                     >
                                       <X className="h-3 w-3" />
                                     </Button>
@@ -785,6 +1042,108 @@ const AdminAISettings = () => {
                 </div>
               </div>
             </motion.div>
+
+            {/* API Airforce Primary Image Generation Config */}
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 rounded-[3rem] border border-white/5 space-y-8">
+              <div className="flex items-center gap-4 pb-6 border-b border-white/5">
+                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                  <Image className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-foreground tracking-tight">API Airforce (Primary)</h2>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">
+                    Primary image generation motor • Fast & Reliable
+                  </p>
+                </div>
+                <Badge className="ml-auto bg-primary/10 text-primary border-primary/20 font-black uppercase tracking-widest">
+                  PRIMARY
+                </Badge>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Airforce API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="sk-air-..."
+                    value={settings.airforce_api_key}
+                    onChange={(e) => setSettings(s => ({ ...s, airforce_api_key: e.target.value }))}
+                    className="h-12 rounded-xl bg-white/5 border-white/10 font-bold focus:ring-primary/20"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                    Generation Model
+                  </Label>
+                  <Select value={settings.airforce_model} onValueChange={(v) => setSettings(s => ({ ...s, airforce_model: v }))}>
+                    <SelectTrigger className="h-14 rounded-2xl bg-white/5 border-white/10 font-black text-xs uppercase tracking-widest focus:ring-primary/20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="glass-card rounded-2xl border-white/10">
+                      <div className="p-2 space-y-1">
+                        {["plutogen-o1", "flux", "stable-diffusion-xl"].map(m => (
+                          <SelectItem key={m} value={m} className="rounded-xl focus:bg-primary/20">
+                            <span className="font-bold uppercase">{m}</span>
+                          </SelectItem>
+                        ))}
+                      </div>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Krea.ai Premium Image Generation Config */}
+            <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 rounded-[3rem] border border-white/5 space-y-8">
+              <div className="flex items-center gap-4 pb-6 border-b border-white/5">
+                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
+                  <Image className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-foreground tracking-tight">Krea.ai (Secondary)</h2>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">
+                    Secondary image generation • Get API key from <a href="https://www.krea.ai/api" target="_blank" className="text-primary hover:underline font-black">KREA.AI</a>
+                  </p>
+                </div>
+                <Badge className="ml-auto bg-primary/10 text-primary border-primary/20 font-black uppercase tracking-widest">
+                  SECONDARY
+                </Badge>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Krea API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="krea_..."
+                    value={settings.krea_api_key}
+                    onChange={(e) => setSettings(s => ({ ...s, krea_api_key: e.target.value }))}
+                    className="h-12 rounded-xl bg-white/5 border-white/10 font-bold focus:ring-primary/20"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                    Quality Preset
+                  </Label>
+                  <Select value={settings.krea_model} onValueChange={(v) => setSettings(s => ({ ...s, krea_model: v }))}>
+                    <SelectTrigger className="h-14 rounded-2xl bg-white/5 border-white/10 font-black text-xs uppercase tracking-widest focus:ring-primary/20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="glass-card rounded-2xl border-white/10">
+                      <div className="p-2 space-y-1">
+                        {["flux", "sdxl", "v3"].map(m => (
+                          <SelectItem key={m} value={m} className="rounded-xl focus:bg-primary/20">
+                            <span className="font-bold uppercase">{m}</span>
+                          </SelectItem>
+                        ))}
+                      </div>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </motion.div>
           </TabsContent>
 
           <TabsContent value="directive" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -821,7 +1180,7 @@ const AdminAISettings = () => {
             </h4>
             <ul className="space-y-3">
               {[
-                "Lovable Core is optimized for latency and stability.",
+                "Groq delivers ultra-fast Llama and Qwen inference.",
                 "OpenRouter allows deep customization of LLM nodes.",
                 "Bytez provides first-class support for visual synthesis.",
                 "Puter.js offers the fastest chat experience via direct connection."
@@ -855,7 +1214,12 @@ const AdminAISettings = () => {
         <DialogContent className="glass-card border-white/10 rounded-[2rem]">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-foreground">
-              Add Custom {customModelProvider === "openrouter" ? "OpenRouter" : customModelProvider === "puter" ? "Puter.js" : "Bytez"} Model
+              Add Custom {
+                customModelProvider === "openrouter" ? "OpenRouter" :
+                  customModelProvider === "puter" ? "Puter.js" :
+                    customModelProvider === "groq" ? "Groq" :
+                      customModelProvider === "cerebras" ? "Cerebras" : "Bytez"
+              } Model
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">

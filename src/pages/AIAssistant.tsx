@@ -754,15 +754,16 @@ export default function AIAssistant() {
     });
     setConnectionStatus("connecting");
 
-    // Waking up detection
+    // Waking up detection - skip or delay for fast providers
+    const isFastProvider = ["groq", "cerebras", "openrouter", "airforce"].includes(aiSettings?.ai_provider || "");
     const wakeupTimer = setTimeout(() => {
       setConnectionStatus((prev) => {
-        if (prev === "connecting") {
+        if (prev === "connecting" && !isFastProvider) {
           return "waking_up";
         }
         return prev;
       });
-    }, 4000); // Show "Waking up" after 4 seconds
+    }, isFastProvider ? 15000 : 4000); // Much longer delay for fast providers, essentially disabling it for typical use
 
     try {
       // Check if we should use Puter.js (Client-side)

@@ -22,7 +22,7 @@ const sidebarLinks = [
   { name: "Certificates", href: "/dashboard/certificates", icon: Award },
   { name: "Alumni Network", href: "/dashboard/alumni", icon: GraduationCap },
   { name: "Community", href: "/dashboard/community", icon: Users },
-  { name: "Neural Nexus", href: "/dashboard/ai-assistant", icon: Bot },
+  { name: "BCA AI Assistant", href: "/dashboard/ai-assistant", icon: Bot },
   { name: "Forum", href: "/dashboard/forum", icon: MessageSquare },
   { name: "Hall of Fame", href: "/dashboard/achievements", icon: Trophy },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
