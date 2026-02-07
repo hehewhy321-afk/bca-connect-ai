@@ -16,13 +16,18 @@ import {
     Upload,
     AlertCircle,
     ChevronDown,
-    ChevronRight
+    ChevronRight,
+    Download,
+    Percent,
+    Globe,
+    ExternalLink
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import DOMPurify from "dompurify";
 
 const CourseDetail = () => {
     const { id } = useParams();
@@ -157,7 +162,13 @@ const CourseDetail = () => {
     const isEnrolled = !!enrollment;
     const isApproved = enrollment?.status === "approved";
     const isPending = enrollment?.status === "pending";
-    const isFree = course.price === 0; // Check if course is free
+
+    // Calculate effective price
+    const originalPrice = (course as any).original_price ?? course.price ?? 0;
+    const offerPrice = (course as any).offer_price;
+    const effectivePrice = offerPrice ?? originalPrice;
+    const isFree = effectivePrice === 0;
+    const hasDiscount = offerPrice != null && offerPrice < originalPrice;
 
     return (
         <DashboardLayout>
@@ -175,12 +186,64 @@ const CourseDetail = () => {
                         </div>
 
                         <div className="flex-1 pb-4">
-                            <Badge className="mb-4 bg-primary text-primary-foreground text-xs uppercase tracking-widest">{course.category}</Badge>
+                            <div className="flex items-center gap-2 mb-4">
+                                <Badge className="bg-primary text-primary-foreground text-xs uppercase tracking-widest">{course.category}</Badge>
+                                {(course as any).language && (
+                                    <Badge className="bg-white/10 text-foreground text-xs flex items-center gap-1">
+                                        <Globe className="w-3 h-3" />
+                                        {(course as any).language}
+                                    </Badge>
+                                )}
+                            </div>
                             <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-foreground">{course.title}</h1>
-                            <p className="text-muted-foreground line-clamp-2 max-w-2xl">{course.description}</p>
+                            <div
+                                dangerouslySetInnerHTML={{
+                                    __html: DOMPurify.sanitize(course.description || "", {
+                                        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3'],
+                                        ALLOWED_ATTR: []
+                                    })
+                                }}
+                                className="prose prose-sm dark:prose-invert max-w-2xl line-clamp-3"
+                            />
                         </div>
 
-                        <div className="pb-4 flex-shrink-0 w-full md:w-auto">
+                        <div className="pb-4 flex-shrink-0 w-full md:w-auto space-y-3">
+                            {/* Pricing Display */}
+                            <div className="flex items-center gap-3">
+                                {hasDiscount ? (
+                                    <>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm line-through text-muted-foreground">NPR {originalPrice}</span>
+                                            <span className="text-3xl font-black text-primary">
+                                                {offerPrice > 0 ? `NPR ${offerPrice}` : "FREE"}
+                                            </span>
+                                        </div>
+                                        <Badge className="bg-green-500/20 text-green-500 border-green-500/30 flex items-center gap-1 h-fit">
+                                            <Percent className="w-4 h-4" />
+                                            {Math.round(((originalPrice - offerPrice) / originalPrice) * 100)}% OFF
+                                        </Badge>
+                                    </>
+                                ) : (
+                                    <span className="text-3xl font-black text-foreground">
+                                        {originalPrice > 0 ? `NPR ${originalPrice}` : "FREE"}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Course Resources Download */}
+                            {(course as any).resources_url && (
+                                <Button
+                                    variant="outline"
+                                    className="w-full md:w-auto rounded-xl font-bold border-primary/30 hover:bg-primary/10"
+                                    onClick={() => window.open((course as any).resources_url, '_blank')}
+                                >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Download Course Resources
+                                    <ExternalLink className="w-3 h-3 ml-2" />
+                                </Button>
+                            )}
+
+                            {/* Enrollment Button */}
                             {isApproved || isFree ? (
                                 <Button
                                     onClick={() => navigate(`/dashboard/courses/${id}/learn`)}
@@ -196,14 +259,14 @@ const CourseDetail = () => {
                                 <Dialog open={isEnrollDialogOpen} onOpenChange={setIsEnrollDialogOpen}>
                                     <DialogTrigger asChild>
                                         <Button className="w-full md:w-auto h-14 rounded-2xl text-lg font-bold px-8 shadow-xl shadow-primary/20">
-                                            Enroll Now - NPR {course.price}
+                                            Enroll Now - {hasDiscount ? `NPR ${offerPrice}` : `NPR ${originalPrice}`}
                                         </Button>
                                     </DialogTrigger>
                                     <DialogContent className="sm:max-w-md bg-card border-white/10">
                                         <DialogHeader>
                                             <DialogTitle>Unlock Full Access</DialogTitle>
                                             <DialogDescription>
-                                                Scan the QR code to pay <strong>NPR {course.price}</strong> and upload the screenshot.
+                                                Scan the QR code to pay <strong>NPR {effectivePrice}</strong> and upload the screenshot.
                                             </DialogDescription>
                                         </DialogHeader>
                                         <div className="space-y-6 py-4">
@@ -270,9 +333,26 @@ const CourseDetail = () => {
                                                 )}
                                                 <span>{chapter.title}</span>
                                             </div>
-                                            <span className="text-xs font-normal text-muted-foreground bg-white/5 px-2 py-1 rounded-md">
-                                                {chapter.lessons.length} Lessons
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                {chapter.resources_url && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 rounded-lg text-xs font-normal hover:bg-primary/10"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            window.open(chapter.resources_url, '_blank');
+                                                        }}
+                                                    >
+                                                        <Download className="w-3 h-3 mr-1" />
+                                                        Resources
+                                                        <ExternalLink className="w-2 h-2 ml-1" />
+                                                    </Button>
+                                                )}
+                                                <span className="text-xs font-normal text-muted-foreground bg-white/5 px-2 py-1 rounded-md">
+                                                    {chapter.lessons.length} Lessons
+                                                </span>
+                                            </div>
                                         </button>
                                         {isExpanded && (
                                             <div className="divide-y divide-white/5">
@@ -312,8 +392,16 @@ const CourseDetail = () => {
                         </TabsContent>
 
                         <TabsContent value="overview">
-                            <div className="glass-card rounded-3xl p-8 text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                                {course.description}
+                            <div className="glass-card rounded-3xl p-8">
+                                <div
+                                    dangerouslySetInnerHTML={{
+                                        __html: DOMPurify.sanitize(course.description || "", {
+                                            ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'blockquote', 'code', 'pre', 'a'],
+                                            ALLOWED_ATTR: ['href', 'target', 'rel']
+                                        })
+                                    }}
+                                    className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed"
+                                />
                             </div>
                         </TabsContent>
                     </Tabs>

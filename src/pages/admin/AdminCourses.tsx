@@ -10,20 +10,11 @@ import {
     Plus,
     Search,
     BookOpen,
-    MoreVertical,
     Edit,
     Trash2,
-    Eye,
-    EyeOff,
     Video,
     Users
 } from "lucide-react";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -133,24 +124,14 @@ const AdminCourses = () => {
                                 <CardHeader className="pb-2">
                                     <div className="flex justify-between items-start gap-4">
                                         <CardTitle className="line-clamp-1 text-lg">{course.title}</CardTitle>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
-                                                    <MoreVertical className="w-4 h-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => navigate(`/admin/courses/${course.id}`)}>
-                                                    <Edit className="w-4 h-4 mr-2" /> Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => navigate(`/admin/enrollments?courseId=${course.id}&tab=approved`)}>
-                                                    <Users className="w-4 h-4 mr-2" /> View Students
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={() => handleDelete(course.id)}>
-                                                    <Trash2 className="w-4 h-4 mr-2" /> Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 -mr-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-600"
+                                            onClick={() => handleDelete(course.id)}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
                                     </div>
                                     <CardDescription className="line-clamp-2 min-h-[2.5rem]">
                                         {course.description || "No description provided."}
@@ -164,14 +145,24 @@ const AdminCourses = () => {
                                             {course.price && Number(course.price) > 0 ? `NPR ${course.price}` : "Free"}
                                         </span>
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full mt-4 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 font-bold text-xs uppercase tracking-widest h-10"
-                                        onClick={() => navigate(`/admin/enrollments?courseId=${course.id}&tab=approved`)}
-                                    >
-                                        <Users className="w-3 h-3 mr-2" />
-                                        Manage Students
-                                    </Button>
+                                    <div className="space-y-2 mt-4">
+                                        <Button
+                                            variant="default"
+                                            className="w-full rounded-xl font-bold text-xs uppercase tracking-widest h-10"
+                                            onClick={() => navigate(`/admin/courses/${course.id}`)}
+                                        >
+                                            <Edit className="w-3 h-3 mr-2" />
+                                            Edit Course
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            className="w-full rounded-xl border-white/5 bg-white/5 hover:bg-white/10 font-bold text-xs uppercase tracking-widest h-10"
+                                            onClick={() => navigate(`/admin/enrollments?courseId=${course.id}&tab=approved`)}
+                                        >
+                                            <Users className="w-3 h-3 mr-2" />
+                                            Manage Students
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
                         ))

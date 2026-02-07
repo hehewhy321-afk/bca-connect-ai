@@ -12,12 +12,16 @@ import {
     Clock,
     CheckCircle,
     PlayCircle,
-    Filter
+    Filter,
+    Download,
+    Percent,
+    Globe
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import DOMPurify from "dompurify";
 
 const Courses = () => {
     const navigate = useNavigate();
@@ -63,17 +67,21 @@ const Courses = () => {
         return uniqueCategories;
     }, [courses]);
 
-    // Apply all filters
+    // Apply    // Filter courses
     const filteredCourses = useMemo(() => {
-        return courses?.filter(course => {
+        if (!courses) return [];
+
+        return courses.filter((course) => {
             // Search filter
             const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                course.category?.toLowerCase().includes(searchQuery.toLowerCase());
+                course.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-            // Price filter
-            const matchesPrice = priceFilter === "all" ||
-                (priceFilter === "free" && course.price === 0) ||
-                (priceFilter === "paid" && course.price > 0);
+            // Price filter - check both offer_price and original_price
+            const effectivePrice = course.offer_price ?? course.original_price ?? course.price ?? 0;
+            const matchesPrice =
+                priceFilter === "all" ||
+                (priceFilter === "free" && effectivePrice === 0) ||
+                (priceFilter === "paid" && effectivePrice > 0);
 
             // Category filter
             const matchesCategory = selectedCategory === "all" || course.category === selectedCategory;
@@ -188,17 +196,15 @@ const Courses = () => {
                                                 <BookOpen className="w-16 h-16" />
                                             </div>
                                         )}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                                            <Button
-                                                onClick={() => navigate(`/dashboard/courses/${course.id}`)}
-                                                className="w-full rounded-xl font-bold bg-white text-black hover:bg-white/90"
-                                            >
-                                                <PlayCircle className="w-4 h-4 mr-2" /> View Details
-                                            </Button>
-                                        </div>
                                         <Badge className="absolute top-4 right-4 bg-black/60 backdrop-blur-md border border-white/10">
                                             {course.category || "General"}
                                         </Badge>
+                                        {(course as any).language && (
+                                            <Badge className="absolute bottom-4 left-4 bg-primary/80 backdrop-blur-md border border-primary/20 text-white flex items-center gap-1">
+                                                <Globe className="w-3 h-3" />
+                                                {(course as any).language}
+                                            </Badge>
+                                        )}
                                         {isEnrolled && (
                                             <Badge className="absolute top-4 left-4 bg-green-500/80 backdrop-blur-md border border-green-400/20 text-white">
                                                 {isApproved ? "Enrolled" : isPending ? "Pending" : "Enrolled"}
@@ -210,8 +216,16 @@ const Courses = () => {
                                         <CardTitle className="text-xl font-black tracking-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors">
                                             {course.title}
                                         </CardTitle>
-                                        <CardDescription className="line-clamp-2">
-                                            {course.description}
+                                        <CardDescription className="line-clamp-3">
+                                            <div
+                                                dangerouslySetInnerHTML={{
+                                                    __html: DOMPurify.sanitize(course.description || "", {
+                                                        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
+                                                        ALLOWED_ATTR: []
+                                                    })
+                                                }}
+                                                className="prose prose-sm dark:prose-invert max-w-none"
+                                            />
                                         </CardDescription>
                                     </CardHeader>
 
@@ -226,38 +240,76 @@ const Courses = () => {
                                         </div>
                                     </CardContent>
 
-                                    <CardFooter className="pt-4 mt-auto border-t border-white/5 flex items-center justify-between">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Price</span>
-                                            <span className="text-lg font-black text-foreground">
-                                                {course.price > 0 ? `NPR ${course.price}` : "FREE"}
-                                            </span>
+                                    <CardFooter className="pt-4 mt-auto border-t border-white/5 flex flex-col gap-3">
+                                        <div className="flex items-center justify-between w-full">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Price</span>
+                                                {(() => {
+                                                    const originalPrice = (course as any).original_price ?? course.price ?? 0;
+                                                    const offerPrice = (course as any).offer_price;
+                                                    const hasDiscount = offerPrice != null && offerPrice < originalPrice;
+
+                                                    if (hasDiscount) {
+                                                        const discount = Math.round(((originalPrice - offerPrice) / originalPrice) * 100);
+                                                        return (
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-sm line-through text-muted-foreground">NPR {originalPrice}</span>
+                                                                    <span className="text-2xl font-medium text-primary">
+                                                                        {offerPrice > 0 ? `NPR ${offerPrice}` : "FREE"}
+                                                                    </span>
+                                                                </div>
+                                                                <Badge className="bg-green-500/20 text-green-500 border-green-500/30 flex items-center gap-1">
+                                                                    <Percent className="w-3 h-3" />
+                                                                    {discount}% OFF
+                                                                </Badge>
+                                                            </div>
+                                                        );
+                                                    } else {
+                                                        return (
+                                                            <span className="text-lg font-black text-foreground">
+                                                                {originalPrice > 0 ? `NPR ${originalPrice}` : "FREE"}
+                                                            </span>
+                                                        );
+                                                    }
+                                                })()}
+                                            </div>
                                         </div>
-                                        <Button
-                                            onClick={() => {
-                                                if (isApproved) {
-                                                    navigate(`/dashboard/courses/${course.id}/learn`);
-                                                } else {
-                                                    navigate(`/dashboard/courses/${course.id}`);
-                                                }
-                                            }}
-                                            variant={isApproved ? "default" : course.price > 0 ? "default" : "secondary"}
-                                            className={`rounded-xl px-6 font-bold ${isApproved || course.price > 0 ? 'shadow-lg shadow-primary/20' : ''}`}
-                                            disabled={isPending}
-                                        >
-                                            {isApproved ? (
-                                                <>
-                                                    <PlayCircle className="w-4 h-4 mr-2" />
-                                                    View Course
-                                                </>
-                                            ) : isPending ? (
-                                                "Pending Approval"
-                                            ) : course.price > 0 ? (
-                                                "Enroll Now"
-                                            ) : (
-                                                "Start Learning"
-                                            )}
-                                        </Button>
+                                        <div className="flex gap-2 w-full">
+                                            <Button
+                                                onClick={() => navigate(`/dashboard/courses/${course.id}`)}
+                                                variant="outline"
+                                                className="flex-1 rounded-xl font-bold border-white/10 bg-white/5 hover:bg-white/10"
+                                            >
+                                                <PlayCircle className="w-4 h-4 mr-2" />
+                                                View Details
+                                            </Button>
+                                            <Button
+                                                onClick={() => {
+                                                    if (isApproved) {
+                                                        navigate(`/dashboard/courses/${course.id}/learn`);
+                                                    } else {
+                                                        navigate(`/dashboard/courses/${course.id}`);
+                                                    }
+                                                }}
+                                                variant={isApproved ? "default" : course.price > 0 ? "default" : "secondary"}
+                                                className={`flex-1 rounded-xl font-bold ${isApproved || course.price > 0 ? 'shadow-lg shadow-primary/20' : ''}`}
+                                                disabled={isPending}
+                                            >
+                                                {isApproved ? (
+                                                    <>
+                                                        <PlayCircle className="w-4 h-4 mr-2" />
+                                                        View Course
+                                                    </>
+                                                ) : isPending ? (
+                                                    "Pending Approval"
+                                                ) : course.price > 0 ? (
+                                                    "Enroll Now"
+                                                ) : (
+                                                    "Start Learning"
+                                                )}
+                                            </Button>
+                                        </div>
                                     </CardFooter>
                                 </Card>
                             );

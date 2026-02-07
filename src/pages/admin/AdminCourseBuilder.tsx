@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
     ArrowLeft,
@@ -18,10 +20,14 @@ import {
     Video,
     GripVertical,
     LayoutList,
-    Upload
+    Upload,
+    Download,
+    Percent
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 // Types
 interface Lesson {
@@ -37,8 +43,16 @@ interface Chapter {
     id: string;
     title: string;
     order_index: number;
+    resources_url: string | null;
     lessons: Lesson[];
 }
+
+const LANGUAGE_OPTIONS = [
+    "English",
+    "Nepali",
+    "Hindi",
+    "Mixed (English/Nepali)"
+];
 
 const AdminCourseBuilder = () => {
     const { id } = useParams();
@@ -52,6 +66,10 @@ const AdminCourseBuilder = () => {
         description: "",
         thumbnail_url: "",
         price: "0",
+        original_price: "0",
+        offer_price: "",
+        language: "",
+        resources_url: "",
         category: "",
         is_published: false
     });
@@ -98,6 +116,10 @@ const AdminCourseBuilder = () => {
                 description: course.course.description || "",
                 thumbnail_url: course.course.thumbnail_url || "",
                 price: course.course.price?.toString() || "0",
+                original_price: course.course.original_price?.toString() || course.course.price?.toString() || "0",
+                offer_price: course.course.offer_price?.toString() || "",
+                language: course.course.language || "",
+                resources_url: course.course.resources_url || "",
                 category: course.course.category || "",
                 is_published: course.course.is_published || false
             });
@@ -107,7 +129,14 @@ const AdminCourseBuilder = () => {
     // Mutations
     const saveCourseMutation = useMutation({
         mutationFn: async () => {
-            const payload = { ...courseData, price: parseFloat(courseData.price) };
+            const payload = {
+                ...courseData,
+                price: parseFloat(courseData.price) || 0,
+                original_price: parseFloat(courseData.original_price) || 0,
+                offer_price: courseData.offer_price ? parseFloat(courseData.offer_price) : null,
+                language: courseData.language || null,
+                resources_url: courseData.resources_url || null
+            };
             if (isEditing) {
                 const { error } = await supabase.from("courses").update(payload).eq("id", id);
                 if (error) throw error;
@@ -142,8 +171,8 @@ const AdminCourseBuilder = () => {
     });
 
     const updateChapterMutation = useMutation({
-        mutationFn: async ({ chapterId, title }: { chapterId: string, title: string }) => {
-            const { error } = await supabase.from("course_chapters").update({ title }).eq("id", chapterId);
+        mutationFn: async ({ chapterId, ...updates }: { chapterId: string, title?: string, resources_url?: string | null }) => {
+            const { error } = await supabase.from("course_chapters").update(updates).eq("id", chapterId);
             if (error) throw error;
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["course", id] })
@@ -245,26 +274,78 @@ const AdminCourseBuilder = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="desc" className="text-xs uppercase font-black text-muted-foreground ml-1">Description</Label>
-                        <Textarea
-                            id="desc"
-                            value={courseData.description}
-                            onChange={(e) => setCourseData({ ...courseData, description: e.target.value })}
-                            className="bg-white/5 border-white/10 rounded-xl min-h-[100px]"
-                        />
+                        <Label htmlFor="language" className="text-xs uppercase font-black text-muted-foreground ml-1">Course Language</Label>
+                        <Select value={courseData.language} onValueChange={(value) => setCourseData({ ...courseData, language: value })}>
+                            <SelectTrigger className="bg-white/5 border-white/10 rounded-xl">
+                                <SelectValue placeholder="Select language" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {LANGUAGE_OPTIONS.map((lang) => (
+                                    <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-6 items-end">
-                        <div className="space-y-2">
-                            <Label htmlFor="price" className="text-xs uppercase font-black text-muted-foreground ml-1">Price (NPR)</Label>
-                            <Input
-                                id="price"
-                                type="number"
-                                value={courseData.price}
-                                onChange={(e) => setCourseData({ ...courseData, price: e.target.value })}
-                                className="bg-white/5 border-white/10 rounded-xl font-mono"
+                    <div className="space-y-2">
+                        <Label htmlFor="desc" className="text-xs uppercase font-black text-muted-foreground ml-1">Description (Rich Text)</Label>
+                        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                            <ReactQuill
+                                theme="snow"
+                                value={courseData.description}
+                                onChange={(value) => setCourseData({ ...courseData, description: value })}
+                                className="quill-editor"
+                                modules={{
+                                    toolbar: [
+                                        [{ 'header': [1, 2, 3, false] }],
+                                        ['bold', 'italic', 'underline', 'strike'],
+                                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                                        ['link', 'code-block'],
+                                        ['clean']
+                                    ]
+                                }}
                             />
                         </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="original_price" className="text-xs uppercase font-black text-muted-foreground ml-1">Original Price (NPR)</Label>
+                            <Input
+                                id="original_price"
+                                type="number"
+                                value={courseData.original_price}
+                                onChange={(e) => setCourseData({ ...courseData, original_price: e.target.value })}
+                                className="bg-white/5 border-white/10 rounded-xl font-mono"
+                                placeholder="0"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="offer_price" className="text-xs uppercase font-black text-muted-foreground ml-1">
+                                Offer Price (NPR) <span className="text-[10px] text-muted-foreground/60">(Optional)</span>
+                            </Label>
+                            <Input
+                                id="offer_price"
+                                type="number"
+                                value={courseData.offer_price}
+                                onChange={(e) => setCourseData({ ...courseData, offer_price: e.target.value })}
+                                className="bg-white/5 border-white/10 rounded-xl font-mono"
+                                placeholder="Leave empty for no discount"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Discount Badge */}
+                    {courseData.offer_price && parseFloat(courseData.offer_price) < parseFloat(courseData.original_price) && (
+                        <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
+                            <Percent className="w-4 h-4 text-green-500" />
+                            <span className="text-sm font-bold text-green-500">
+                                {Math.round(((parseFloat(courseData.original_price) - parseFloat(courseData.offer_price)) / parseFloat(courseData.original_price)) * 100)}% Discount
+                            </span>
+                        </div>
+                    )}
+
+                    <div className="grid md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                             <Label htmlFor="thumb" className="text-xs uppercase font-black text-muted-foreground ml-1">Thumbnail URL</Label>
                             <Input
@@ -272,6 +353,19 @@ const AdminCourseBuilder = () => {
                                 value={courseData.thumbnail_url}
                                 onChange={(e) => setCourseData({ ...courseData, thumbnail_url: e.target.value })}
                                 placeholder="https://..."
+                                className="bg-white/5 border-white/10 rounded-xl"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="resources" className="text-xs uppercase font-black text-muted-foreground ml-1">
+                                <Download className="w-3 h-3 inline mr-1" />
+                                Course Resources URL <span className="text-[10px] text-muted-foreground/60">(Optional)</span>
+                            </Label>
+                            <Input
+                                id="resources"
+                                value={courseData.resources_url}
+                                onChange={(e) => setCourseData({ ...courseData, resources_url: e.target.value })}
+                                placeholder="Link to zip file, Google Drive, etc."
                                 className="bg-white/5 border-white/10 rounded-xl"
                             />
                         </div>
@@ -311,21 +405,37 @@ const AdminCourseBuilder = () => {
                             {course?.chapters?.map((chapter: any) => (
                                 <div key={chapter.id} className="glass-card border-white/5 rounded-2xl overflow-hidden p-1">
                                     {/* Chapter Header */}
-                                    <div className="flex items-center gap-3 p-3 bg-white/5 rounded-t-xl md:rounded-xl group hover:bg-white/10 transition-colors">
-                                        <GripVertical className="w-4 h-4 text-muted-foreground/50 cursor-grab" />
-                                        <Input
-                                            defaultValue={chapter.title}
-                                            onBlur={(e) => {
-                                                if (e.target.value !== chapter.title) {
-                                                    updateChapterMutation.mutate({ chapterId: chapter.id, title: e.target.value });
-                                                }
-                                            }}
-                                            className="h-8 bg-transparent border-none font-bold text-lg p-0 focus-visible:ring-0"
-                                        />
-                                        <div className="flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="sm" onClick={() => deleteChapterMutation.mutate(chapter.id)} className="h-8 w-8 text-red-500 hover:bg-red-500/10">
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
+                                    <div className="flex flex-col gap-2 p-3 bg-white/5 rounded-t-xl md:rounded-xl group hover:bg-white/10 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <GripVertical className="w-4 h-4 text-muted-foreground/50 cursor-grab" />
+                                            <Input
+                                                defaultValue={chapter.title}
+                                                onBlur={(e) => {
+                                                    if (e.target.value !== chapter.title) {
+                                                        updateChapterMutation.mutate({ chapterId: chapter.id, title: e.target.value });
+                                                    }
+                                                }}
+                                                className="h-8 bg-transparent border-none font-bold text-lg p-0 focus-visible:ring-0"
+                                            />
+                                            <div className="flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button variant="ghost" size="sm" onClick={() => deleteChapterMutation.mutate(chapter.id)} className="h-8 w-8 text-red-500 hover:bg-red-500/10">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        {/* Chapter Resources URL */}
+                                        <div className="flex items-center gap-2 pl-7">
+                                            <Download className="w-3 h-3 text-muted-foreground" />
+                                            <Input
+                                                defaultValue={chapter.resources_url || ""}
+                                                onBlur={(e) => {
+                                                    if (e.target.value !== chapter.resources_url) {
+                                                        updateChapterMutation.mutate({ chapterId: chapter.id, resources_url: e.target.value || null });
+                                                    }
+                                                }}
+                                                placeholder="Chapter resources URL (optional)"
+                                                className="h-7 bg-black/20 border-white/10 rounded-lg text-xs"
+                                            />
                                         </div>
                                     </div>
 

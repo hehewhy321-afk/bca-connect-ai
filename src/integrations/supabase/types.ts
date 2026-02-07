@@ -191,6 +191,7 @@ export type Database = {
           created_at: string
           id: string
           order_index: number | null
+          resources_url: string | null
           title: string
         }
         Insert: {
@@ -198,6 +199,7 @@ export type Database = {
           created_at?: string
           id?: string
           order_index?: number | null
+          resources_url?: string | null
           title: string
         }
         Update: {
@@ -205,6 +207,7 @@ export type Database = {
           created_at?: string
           id?: string
           order_index?: number | null
+          resources_url?: string | null
           title?: string
         }
         Relationships: [
@@ -313,7 +316,11 @@ export type Database = {
           description: string | null
           id: string
           is_published: boolean | null
+          language: string | null
+          offer_price: number | null
+          original_price: number | null
           price: number | null
+          resources_url: string | null
           thumbnail_url: string | null
           title: string
           updated_at: string
@@ -324,7 +331,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_published?: boolean | null
+          language?: string | null
+          offer_price?: number | null
+          original_price?: number | null
           price?: number | null
+          resources_url?: string | null
           thumbnail_url?: string | null
           title: string
           updated_at?: string
@@ -335,7 +346,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_published?: boolean | null
+          language?: string | null
+          offer_price?: number | null
+          original_price?: number | null
           price?: number | null
+          resources_url?: string | null
           thumbnail_url?: string | null
           title?: string
           updated_at?: string

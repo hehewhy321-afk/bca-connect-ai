@@ -118,3 +118,49 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-primary/20 rounded-full transition-colors hover:bg-primary/40;
 }
+
+/* Quill Editor Custom Styles */
+.quill-editor .ql-toolbar {
+  background: rgba(255, 255, 255, 0.02);
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.quill-editor .ql-container {
+  background: transparent;
+  border: none !important;
+  min-height: 150px;
+  font-size: 14px;
+}
+
+.quill-editor .ql-editor {
+  min-height: 150px;
+  color: hsl(var(--foreground));
+}
+
+.quill-editor .ql-editor.ql-blank::before {
+  color: hsl(var(--muted-foreground));
+  opacity: 0.5;
+}
+
+.quill-editor .ql-stroke {
+  stroke: hsl(var(--foreground)) !important;
+}
+
+.quill-editor .ql-fill {
+  fill: hsl(var(--foreground)) !important;
+}
+
+.quill-editor .ql-picker-label {
+  color: hsl(var(--foreground)) !important;
+}
+
+.quill-editor button:hover .ql-stroke,
+.quill-editor button.ql-active .ql-stroke {
+  stroke: hsl(var(--primary)) !important;
+}
+
+.quill-editor button:hover .ql-fill,
+.quill-editor button.ql-active .ql-fill {
+  fill: hsl(var(--primary)) !important;
+}
