@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, Users, Clock, Search, Filter, ExternalLink, Star } from "lucide-react";
+import { Calendar, MapPin, Users, Clock, Search, Filter, ExternalLink, Star, Eye, IndianRupee, FileText, ListOrdered, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -8,6 +8,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { EventFeedbackDialog } from "@/components/events/EventFeedbackDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 interface Event {
   id: string;
@@ -21,6 +30,12 @@ interface Event {
   max_attendees: number | null;
   is_featured: boolean;
   status: string;
+  registration_fee: number | null;
+  team_type: string | null;
+  team_size_min: number | null;
+  team_size_max: number | null;
+  gallery_images: string[] | null;
+  admin_notes: string | null;
 }
 
 interface Registration {
@@ -36,6 +51,8 @@ export default function Events() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedEventForFeedback, setSelectedEventForFeedback] = useState<Event | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedEventForDetails, setSelectedEventForDetails] = useState<Event | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -104,6 +121,11 @@ export default function Events() {
     setFeedbackDialogOpen(true);
   };
 
+  const handleViewDetails = (event: Event) => {
+    setSelectedEventForDetails(event);
+    setDetailsDialogOpen(true);
+  };
+
   const handleRegister = async (eventId: string) => {
     if (!user) {
       toast({
@@ -117,7 +139,7 @@ export default function Events() {
     try {
       // Generate unique check-in code
       const checkInCode = `EVT-${eventId.substring(0, 4).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
-      
+
       const { error } = await supabase.from("event_registrations").insert({
         event_id: eventId,
         user_id: user.id,
@@ -188,15 +210,38 @@ export default function Events() {
     return matchesSearch && matchesCategory;
   });
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const formatFullDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const getTeamTypeLabel = (teamType: string | null) => {
+    switch (teamType) {
+      case "solo": return "Individual Participation";
+      case "duo": return "Duo (2 members)";
+      case "squad": return "Squad (3-5 members)";
+      case "any": return "Team Event";
+      default: return "Individual Participation";
+    }
   };
 
   return (
@@ -279,15 +324,14 @@ export default function Events() {
                     />
                     <div className="absolute top-4 left-4 flex gap-2">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          event.category === "Workshop"
-                            ? "bg-primary text-primary-foreground"
-                            : event.category === "Seminar"
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${event.category === "Workshop"
+                          ? "bg-primary text-primary-foreground"
+                          : event.category === "Seminar"
                             ? "bg-accent text-accent-foreground"
                             : event.category === "Competition"
-                            ? "bg-secondary text-secondary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        }`}
+                              ? "bg-secondary text-secondary-foreground"
+                              : "bg-muted text-muted-foreground"
+                          }`}
                       >
                         {event.category}
                       </span>
@@ -298,13 +342,12 @@ export default function Events() {
                       )}
                     </div>
                     <div
-                      className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium ${
-                        event.status === "upcoming"
-                          ? "bg-accent/90 text-accent-foreground"
-                          : event.status === "ongoing"
+                      className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium ${event.status === "upcoming"
+                        ? "bg-accent/90 text-accent-foreground"
+                        : event.status === "ongoing"
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground"
-                      }`}
+                        }`}
                     >
                       {event.status}
                     </div>
@@ -336,39 +379,50 @@ export default function Events() {
                       )}
                     </div>
 
-                    {event.status === "upcoming" && (
-                      isRegistered(event.id) ? (
+                    <div className="flex gap-2">
+                      {event.status === "upcoming" && (
+                        isRegistered(event.id) ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleCancelRegistration(event.id)}
+                          >
+                            Cancel Registration
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => handleRegister(event.id)}
+                          >
+                            Register Now
+                          </Button>
+                        )
+                      )}
+
+                      {event.status === "completed" && isRegistered(event.id) && (
                         <Button
-                          variant="outline"
+                          variant={hasFeedback(event.id) ? "outline" : "default"}
                           size="sm"
-                          className="w-full"
-                          onClick={() => handleCancelRegistration(event.id)}
+                          className="flex-1"
+                          onClick={() => handleFeedback(event)}
                         >
-                          Cancel Registration
+                          <Star className="w-4 h-4 mr-2" />
+                          {hasFeedback(event.id) ? "Update Feedback" : "Give Feedback"}
                         </Button>
-                      ) : (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="w-full"
-                          onClick={() => handleRegister(event.id)}
-                        >
-                          Register Now
-                        </Button>
-                      )
-                    )}
-                    
-                    {event.status === "completed" && isRegistered(event.id) && (
+                      )}
+
                       <Button
-                        variant={hasFeedback(event.id) ? "outline" : "default"}
+                        variant="outline"
                         size="sm"
-                        className="w-full"
-                        onClick={() => handleFeedback(event)}
+                        onClick={() => handleViewDetails(event)}
                       >
-                        <Star className="w-4 h-4 mr-2" />
-                        {hasFeedback(event.id) ? "Update Feedback" : "Give Feedback"}
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Details
                       </Button>
-                    )}
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -385,6 +439,244 @@ export default function Events() {
             eventTitle={selectedEventForFeedback.title}
             onSuccess={fetchFeedbackGiven}
           />
+        )}
+
+        {/* Event Details Dialog */}
+        {selectedEventForDetails && (
+          <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-heading">
+                  {selectedEventForDetails.title}
+                </DialogTitle>
+                <DialogDescription>
+                  Full event details and information
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 mt-4">
+                {/* Event Image */}
+                {selectedEventForDetails.image_url && (
+                  <div className="relative h-64 rounded-xl overflow-hidden">
+                    <img
+                      src={selectedEventForDetails.image_url}
+                      alt={selectedEventForDetails.title}
+                      className="w-full h-full object-cover"
+                    />
+                    {selectedEventForDetails.is_featured && (
+                      <Badge className="absolute top-4 left-4 bg-primary">
+                        Featured Event
+                      </Badge>
+                    )}
+                    <Badge className="absolute top-4 right-4 bg-secondary">
+                      {selectedEventForDetails.category}
+                    </Badge>
+                  </div>
+                )}
+
+                {/* Description */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">About this Event</h3>
+                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {selectedEventForDetails.description}
+                  </p>
+                </div>
+
+                <Separator />
+
+                {/* Event Details Grid */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-3">Event Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Start Date */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <Calendar className="w-5 h-5 text-primary flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Start Date</p>
+                        <p className="font-medium text-sm">{formatFullDate(selectedEventForDetails.start_date)}</p>
+                      </div>
+                    </div>
+
+                    {/* Start Time */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <Clock className="w-5 h-5 text-primary flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Start Time</p>
+                        <p className="font-medium text-sm">{formatTime(selectedEventForDetails.start_date)}</p>
+                      </div>
+                    </div>
+
+                    {/* End Date */}
+                    {selectedEventForDetails.end_date && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                        <CalendarClock className="w-5 h-5 text-primary flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">End Date</p>
+                          <p className="font-medium text-sm">{formatFullDate(selectedEventForDetails.end_date)}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* End Time */}
+                    {selectedEventForDetails.end_date && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                        <Clock className="w-5 h-5 text-primary flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">End Time</p>
+                          <p className="font-medium text-sm">{formatTime(selectedEventForDetails.end_date)}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Location */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Location</p>
+                        <p className="font-medium text-sm">{selectedEventForDetails.location}</p>
+                      </div>
+                    </div>
+
+                    {/* Participation Type */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <Users className="w-5 h-5 text-primary flex-shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Participation</p>
+                        <p className="font-medium text-sm">{getTeamTypeLabel(selectedEventForDetails.team_type)}</p>
+                      </div>
+                    </div>
+
+                    {/* Max Attendees */}
+                    {selectedEventForDetails.max_attendees && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                        <Users className="w-5 h-5 text-primary flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Max Attendees</p>
+                          <p className="font-medium text-sm">{selectedEventForDetails.max_attendees} spots</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Registration Fee */}
+                    {selectedEventForDetails.registration_fee !== null && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                        <IndianRupee className="w-5 h-5 text-primary flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Registration Fee</p>
+                          <p className="font-medium text-sm">
+                            {selectedEventForDetails.registration_fee > 0
+                              ? `₹${selectedEventForDetails.registration_fee}`
+                              : "Free"}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Rules & Regulations */}
+                {selectedEventForDetails.admin_notes && (
+                  <>
+                    <Separator />
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <FileText className="w-5 h-5 text-primary" />
+                        <h3 className="font-semibold text-lg">Rules & Regulations</h3>
+                      </div>
+                      <div className="p-4 rounded-lg bg-muted/50">
+                        <p className="text-muted-foreground text-sm whitespace-pre-wrap leading-relaxed">
+                          {selectedEventForDetails.admin_notes}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Event Schedule */}
+                <Separator />
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <ListOrdered className="w-5 h-5 text-primary" />
+                    <h3 className="font-semibold text-lg">Event Schedule</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex gap-4 p-3 rounded-lg bg-muted/50">
+                      <div className="text-primary font-mono text-sm min-w-[80px]">
+                        {formatTime(selectedEventForDetails.start_date)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">Event Begins</p>
+                        <p className="text-xs text-muted-foreground">Welcome and introduction</p>
+                      </div>
+                    </div>
+                    {selectedEventForDetails.end_date && (
+                      <div className="flex gap-4 p-3 rounded-lg bg-muted/50">
+                        <div className="text-primary font-mono text-sm min-w-[80px]">
+                          {formatTime(selectedEventForDetails.end_date)}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">Event Ends</p>
+                          <p className="text-xs text-muted-foreground">Closing remarks and networking</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Gallery Images */}
+                {selectedEventForDetails.gallery_images && selectedEventForDetails.gallery_images.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-3">Event Gallery</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {selectedEventForDetails.gallery_images.map((img, idx) => (
+                        <div key={idx} className="relative h-32 rounded-lg overflow-hidden">
+                          <img
+                            src={img}
+                            alt={`Gallery ${idx + 1}`}
+                            className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4 border-t">
+                  {selectedEventForDetails.status === "upcoming" && (
+                    isRegistered(selectedEventForDetails.id) ? (
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => {
+                          handleCancelRegistration(selectedEventForDetails.id);
+                          setDetailsDialogOpen(false);
+                        }}
+                      >
+                        Cancel Registration
+                      </Button>
+                    ) : (
+                      <Button
+                        className="flex-1"
+                        onClick={() => {
+                          handleRegister(selectedEventForDetails.id);
+                          setDetailsDialogOpen(false);
+                        }}
+                      >
+                        Register Now
+                      </Button>
+                    )
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={() => setDetailsDialogOpen(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </DashboardLayout>

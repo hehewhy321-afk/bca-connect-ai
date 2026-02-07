@@ -74,6 +74,7 @@ interface Event {
   max_attendees: number | null;
   is_featured: boolean;
   registration_fee: number | null;
+  image_url: string | null;
 }
 
 interface InternalRegistration {
@@ -238,6 +239,18 @@ export default function AdminEventsHub() {
       if (error) throw error;
       setInternalRegs(prev => prev.map(r => r.id === id ? { ...r, attended: !currentValue } : r));
       toast({ title: `Marked as ${!currentValue ? "attended" : "not attended"}` });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteInternalReg = async (id: string) => {
+    if (!confirm("Delete this member registration? This action cannot be undone.")) return;
+    try {
+      const { error } = await supabase.from("event_registrations").delete().eq("id", id);
+      if (error) throw error;
+      setInternalRegs(prev => prev.filter(r => r.id !== id));
+      toast({ title: "Registration deleted" });
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
@@ -545,15 +558,34 @@ export default function AdminEventsHub() {
                   transition={{ delay: idx * 0.05 }}
                   className="glass-card rounded-[2.5rem] border border-white/5 p-8 group relative overflow-hidden flex flex-col h-full"
                 >
-                  <div className="absolute top-0 right-0 p-8">
+                  <div className="absolute top-0 right-0 p-8 z-10">
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 hover:bg-primary/20 hover:text-primary transition-all" onClick={() => navigate(`/admin/events/${event.id}`)}>
+                      <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl bg-primary/90 hover:bg-primary text-primary-foreground border border-primary/20 hover:scale-105 transition-all" onClick={() => navigate(`/admin/events/${event.id}`)}>
                         <Edit size={16} />
                       </Button>
-                      <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 hover:bg-red-500/20 hover:text-red-500 transition-all" onClick={() => handleDeleteEvent(event.id)}>
+                      <Button variant="ghost" size="icon" className="w-10 h-10 rounded-xl bg-red-500/90 hover:bg-red-500 text-white border border-red-500/20 hover:scale-105 transition-all" onClick={() => handleDeleteEvent(event.id)}>
                         <Trash2 size={16} />
                       </Button>
                     </div>
+                  </div>
+
+                  {/* Event Thumbnail */}
+                  <div className="mb-6 -mx-8 -mt-8">
+                    {event.image_url ? (
+                      <div className="relative h-40 overflow-hidden rounded-t-[2.5rem]">
+                        <img
+                          src={event.image_url}
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                      </div>
+                    ) : (
+                      <div className="relative h-40 overflow-hidden rounded-t-[2.5rem] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                        <FileImage className="w-12 h-12 text-primary/30" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                      </div>
+                    )}
                   </div>
 
                   <div className="mb-6">
@@ -635,9 +667,14 @@ export default function AdminEventsHub() {
                     >
                       {reg.attended ? "PRESENT" : "MARK PRESENT"}
                     </Button>
-                    <div className="p-3 rounded-xl bg-white/5 border border-white/5 text-muted-foreground opacity-50">
-                      <BarChart3 size={18} />
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-11 h-11 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all"
+                      onClick={() => handleDeleteInternalReg(reg.id)}
+                    >
+                      <Trash2 size={18} />
+                    </Button>
                   </div>
                 </div>
               </motion.div>
