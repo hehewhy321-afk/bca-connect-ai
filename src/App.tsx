@@ -9,7 +9,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
-import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+
 
 // Eager load critical and frequently accessed pages for instant navigation
 import Index from "./pages/Index";
@@ -72,7 +72,7 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const About = lazy(() => import("./pages/About"));
 const PublicEvents = lazy(() => import("./pages/PublicEvents"));
 const EventDetail = lazy(() => import("./pages/EventDetail"));
-const Install = lazy(() => import("./pages/Install"));
+
 const Documentation = lazy(() => import("./pages/Documentation"));
 
 // Configure QueryClient with production-ready defaults
@@ -128,7 +128,7 @@ const App = () => (
           <ErrorBoundary>
             <Toaster />
             <Sonner />
-            <PWAInstallPrompt />
+
             <BrowserRouter>
               <ScrollToTop />
               <Routes>
@@ -146,7 +146,7 @@ const App = () => (
                 <Route path="/about" element={<LazyRoute><About /></LazyRoute>} />
                 <Route path="/events" element={<LazyRoute><PublicEvents /></LazyRoute>} />
                 <Route path="/events/:id" element={<LazyRoute><EventDetail /></LazyRoute>} />
-                <Route path="/install" element={<LazyRoute><Install /></LazyRoute>} />
+
                 <Route path="/docs" element={<LazyRoute><Documentation /></LazyRoute>} />
 
                 {/* Dashboard routes - eager loaded pages don't need LazyRoute */}

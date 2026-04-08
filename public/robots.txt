@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://mmamc-bca.vercel.app/sitemap.xml
+Sitemap: https://www.bcaassociation.com/sitemap.xml

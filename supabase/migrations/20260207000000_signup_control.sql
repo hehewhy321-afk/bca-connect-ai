@@ -7,6 +7,10 @@ ON CONFLICT (setting_key) DO NOTHING;
 CREATE OR REPLACE FUNCTION public.check_signup_allowed()
 RETURNS TRIGGER AS $$
 BEGIN
+  IF NEW.raw_user_meta_data->>'created_by_admin' = 'true' THEN
+    RETURN NEW;
+  END IF;
+
   IF EXISTS (
     SELECT 1 FROM public.website_settings 
     WHERE setting_key = 'signup_enabled' AND setting_value = 'false'

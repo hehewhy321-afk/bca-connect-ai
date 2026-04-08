@@ -6,46 +6,24 @@ import { useToast } from "@/hooks/use-toast";
 export function usePushNotifications() {
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [isSupported, setIsSupported] = useState(false);
-  const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if browser supports notifications and service workers
-    const supported = "Notification" in window && "serviceWorker" in navigator;
+    // Check if browser supports notifications
+    const supported = "Notification" in window;
     setIsSupported(supported);
 
-    if ("Notification" in window) {
+    if (supported) {
       setPermission(Notification.permission);
     }
-
-    // Register service worker
-    if (supported) {
-      registerServiceWorker();
-    }
   }, []);
-
-  const registerServiceWorker = async () => {
-    try {
-      const reg = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/',
-      });
-      setRegistration(reg);
-
-      // Wait for service worker to be ready
-      await navigator.serviceWorker.ready;
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        console.error('Service Worker registration failed:', error);
-      }
-    }
-  };
 
   const requestPermission = async () => {
     if (!isSupported) {
       toast({
         title: "Not Supported",
-        description: "Your browser doesn't support push notifications.",
+        description: "Your browser doesn't support notifications.",
         variant: "destructive",
       });
       return false;
@@ -93,39 +71,16 @@ export function usePushNotifications() {
     }
 
     try {
-      // Use Service Worker to show notification for better reliability
-      if (registration) {
-        await registration.showNotification(title, {
-          icon: "/pwa-192x192.png",
-          badge: "/favicon.png",
-          requireInteraction: false,
-          ...options,
-        });
-      } else {
-        // Fallback to regular notification
-        new Notification(title, {
-          icon: "/pwa-192x192.png",
-          badge: "/favicon.png",
-          requireInteraction: false,
-          ...options,
-        });
-      }
+      // Use regular notification
+      new Notification(title, {
+        icon: "/favicon.png",
+        badge: "/favicon.png",
+        requireInteraction: false,
+        ...options,
+      });
     } catch (error) {
       if (import.meta.env.DEV) {
         console.error("Error showing notification:", error);
-      }
-      // Fallback to regular notification if service worker fails
-      try {
-        new Notification(title, {
-          icon: "/pwa-192x192.png",
-          badge: "/favicon.png",
-          requireInteraction: false,
-          ...options,
-        });
-      } catch (fallbackError) {
-        if (import.meta.env.DEV) {
-          console.error("Fallback notification also failed:", fallbackError);
-        }
       }
     }
   };
