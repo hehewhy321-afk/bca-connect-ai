@@ -8,11 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Clock, 
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
   Send,
   Facebook,
   Instagram,
@@ -30,7 +30,7 @@ const contactInfo = [
   {
     icon: Mail,
     title: "Email",
-    details: ["mmamcbcaassociation@gmail.com", "mmamc.bca.association@gmail.com"],
+    details: ["contact@bcaassociation.com", "business@bcaassociation.com", "president@bcaassociation.com"],
   },
   {
     icon: Phone,
@@ -107,7 +107,7 @@ export default function Contact() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero Section */}
       <section className="pt-24 sm:pt-32 pb-10 sm:pb-16 px-4 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto text-center">
@@ -143,7 +143,7 @@ export default function Contact() {
                 <h2 className="font-heading text-xl sm:text-2xl font-semibold text-foreground mb-4 sm:mb-6">
                   Send us a Message
                 </h2>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
