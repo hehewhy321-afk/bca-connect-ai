@@ -15,6 +15,9 @@ import {
   ShieldOff,
   Filter,
   X,
+  Trash2,
+  Calendar,
+  Clock,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -52,6 +55,8 @@ interface Member {
   ban_expires_at: string | null;
   ban_reason: string | null;
   role?: string;
+  created_at?: string;
+  last_sign_in_at?: string | null;
 }
 
 export default function AdminMembers() {
@@ -89,6 +94,13 @@ export default function AdminMembers() {
         rolesMap[r.user_id] = r.role;
       });
 
+      // Fetch auth metrics for last sign in date
+      const { data: authMetrics } = await supabase.rpc("get_auth_metrics" as any);
+      const authMetricsMap: Record<string, string> = {};
+      (authMetrics as any[])?.forEach((a: any) => {
+        authMetricsMap[a.user_id] = a.last_sign_in_at;
+      });
+
       const membersWithRoles: Member[] = profiles?.map((p: any) => ({
         id: p.id,
         user_id: p.user_id,
@@ -104,6 +116,8 @@ export default function AdminMembers() {
         ban_expires_at: p.ban_expires_at || null,
         ban_reason: p.ban_reason || null,
         role: rolesMap[p.user_id] || "member",
+        created_at: p.created_at,
+        last_sign_in_at: authMetricsMap[p.user_id] || null,
       })) || [];
 
       setMembers(membersWithRoles);
@@ -249,6 +263,35 @@ export default function AdminMembers() {
       toast({
         title: "Error",
         description: "Failed to update ban status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteClick = async (member: Member) => {
+    if (!window.confirm(`Are you absolutely sure you want to permanently delete ${member.full_name}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await supabase.functions.invoke("delete-user", {
+        body: { userId: member.user_id },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
+
+      setMembers((prev) => prev.filter((m) => m.user_id !== member.user_id));
+
+      toast({
+        title: "User deleted",
+        description: `${member.full_name} has been completely removed from the system.`,
+      });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete user.",
         variant: "destructive",
       });
     }
@@ -514,6 +557,18 @@ export default function AdminMembers() {
                             • Permanently banned
                           </span>
                         )}
+                        {member.created_at && (
+                          <span className="flex items-center gap-1.5 opacity-80">
+                            <Calendar className="w-3 h-3" />
+                            Joined: {new Date(member.created_at).toLocaleDateString()}
+                          </span>
+                        )}
+                        {member.last_sign_in_at && (
+                          <span className="flex items-center gap-1.5 opacity-80">
+                            <Clock className="w-3 h-3" />
+                            Last Active: {new Date(member.last_sign_in_at).toLocaleDateString()}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -570,6 +625,16 @@ export default function AdminMembers() {
                             Ban
                           </>
                         )}
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteClick(member)}
+                        className="rounded-xl font-bold bg-destructive/10 text-destructive hover:bg-destructive hover:text-white border border-destructive/20"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete fully
                       </Button>
 
                       <select
