@@ -187,7 +187,7 @@ export default function AdminPanel() {
     {
       icon: Calendar,
       title: "Events",
-      tint: "from-primary/20 via-card/60 to-card/40",
+      tint: "from-primary/5 via-card to-card dark:from-primary/20 dark:via-card/60 dark:to-card/40",
       description: "Schedule and publish what's coming up",
       value: stats.upcomingEvents,
       unit: "upcoming",
@@ -196,7 +196,7 @@ export default function AdminPanel() {
     {
       icon: Video,
       title: "Courses",
-      tint: "from-accent/20 via-card/60 to-card/40",
+      tint: "from-accent/5 via-card to-card dark:from-accent/20 dark:via-card/60 dark:to-card/40",
       description: "Build lessons and approve enrolments",
       value: stats.courses,
       unit: "published",
@@ -205,7 +205,7 @@ export default function AdminPanel() {
     {
       icon: BookOpen,
       title: "Library",
-      tint: "from-primary/15 via-card/60 to-card/40",
+      tint: "from-primary/5 via-card to-card dark:from-primary/15 dark:via-card/60 dark:to-card/40",
       description: "Curate notes, papers and guides",
       value: stats.resources,
       unit: "resources",
@@ -214,7 +214,7 @@ export default function AdminPanel() {
     {
       icon: Users,
       title: "Members",
-      tint: "from-accent/15 via-card/60 to-card/40",
+      tint: "from-accent/5 via-card to-card dark:from-accent/15 dark:via-card/60 dark:to-card/40",
       description: "Manage accounts and roles",
       value: stats.members,
       unit: "members",
@@ -223,7 +223,7 @@ export default function AdminPanel() {
     {
       icon: Bell,
       title: "Announcements",
-      tint: "from-primary/20 via-card/60 to-card/40",
+      tint: "from-primary/5 via-card to-card dark:from-primary/20 dark:via-card/60 dark:to-card/40",
       description: "Broadcast notices to everyone",
       value: stats.announcements,
       unit: "posted",
@@ -249,7 +249,7 @@ export default function AdminPanel() {
         className="space-y-8"
       >
         {/* Header — the title, plus whatever is actually waiting on an admin */}
-        <header className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-primary/15 via-card/60 to-card/30 p-6 md:p-8">
+        <header className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-primary/5 via-card to-card p-6 dark:from-primary/15 dark:via-card/60 dark:to-card/30 md:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-xl">
               <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
@@ -261,7 +261,7 @@ export default function AdminPanel() {
               </p>
             </div>
 
-            <div className="w-full rounded-lg border border-primary/20 bg-background/60 p-4 backdrop-blur-sm lg:w-80 lg:shrink-0">
+            <div className="w-full rounded-lg border border-border bg-background/60 p-4 dark:border-primary/20 lg:w-80 lg:shrink-0">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-bold text-foreground">Waiting on you</h2>
                 {!loading && openItems > 0 && (
@@ -305,7 +305,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Shortcuts into the create forms */}
-        <section className="rounded-xl border border-border bg-gradient-to-br from-card/70 to-card/30 p-6 md:p-8">
+        <section className="rounded-xl border border-border bg-gradient-to-br from-muted/40 to-card p-6 dark:from-card/70 dark:to-card/30 md:p-8">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-sm shadow-primary/20">
               <Plus className="h-5 w-5" aria-hidden />
@@ -324,7 +324,7 @@ export default function AdminPanel() {
                 key={shortcut.label}
                 type="button"
                 onClick={() => navigate(shortcut.path)}
-                className="flex flex-col items-start gap-3 rounded-lg border border-border bg-gradient-to-br from-primary/10 to-transparent p-4 text-left transition-colors hover:border-primary/40 hover:from-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="flex flex-col items-start gap-3 rounded-lg border border-border bg-gradient-to-br from-primary/5 to-transparent p-4 text-left transition-colors hover:border-primary/40 hover:from-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:from-primary/10 dark:hover:from-primary/20"
               >
                 <shortcut.icon className="h-5 w-5 text-primary" aria-hidden />
                 <span className="text-sm font-semibold text-foreground">{shortcut.label}</span>

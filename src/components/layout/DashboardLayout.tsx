@@ -214,7 +214,7 @@ export function DashboardLayout({
       </AnimatePresence>
 
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 z-[70] h-full glass border-r border-white/10 transition-all duration-500 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "w-24" : "w-72"}`}>
+      <aside className={`fixed top-0 left-0 z-[70] h-full glass border-r border-border dark:border-white/10 transition-all duration-500 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "w-24" : "w-72"}`}>
         {/* Logo Section */}
         <div className={`p-8 ${collapsed ? "px-4" : ""}`}>
           <Link to="/" className="flex items-center gap-3 group">
@@ -311,7 +311,7 @@ export function DashboardLayout({
           {(isAdmin || isModerator) && (
             <Button
               variant="ghost"
-              className={`w-full justify-start gap-4 h-14 rounded-none bg-white/5 border-y border-white/5 px-4 hover:bg-white/10 transition-all font-bold group ${collapsed ? "justify-center px-3" : ""}`}
+              className={`w-full justify-start gap-4 h-14 rounded-none bg-muted/60 border-y border-border px-4 hover:bg-muted dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10 transition-all font-bold group ${collapsed ? "justify-center px-3" : ""}`}
               onClick={() => navigate("/admin")}
               title={collapsed ? "Admin Portal" : ""}
             >
@@ -337,13 +337,13 @@ export function DashboardLayout({
       <div className={`flex flex-col transition-all duration-500 ${fullBleed ? "h-screen overflow-hidden" : "min-h-screen"} ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
         {/* Top Header */}
         {!hideHeader && (
-        <header className="sticky top-0 z-[50] glass-card border-b border-white/5 backdrop-blur-2xl">
+        <header className="sticky top-0 z-[50] border-b border-border bg-background/80 backdrop-blur-2xl dark:border-white/5">
           <div className="flex items-center justify-between px-4 sm:px-6 h-16 sm:h-20">
             {/* Mobile Trigger & Title */}
             <div className="flex items-center gap-3 sm:gap-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-white/5 border border-white/10 text-foreground active:scale-95 transition-all"
+                className="lg:hidden p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-muted/60 border border-border text-foreground active:scale-95 dark:bg-white/5 dark:border-white/10 transition-all"
               >
                 {sidebarOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
               </button>
@@ -358,16 +358,16 @@ export function DashboardLayout({
                 to="/dashboard/ai-assistant"
                 aria-label="AI assistant"
                 title="AI assistant"
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-white transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Bot className="h-6 w-6 motion-safe:animate-wiggle" aria-hidden />
               </Link>
 
               <NotificationsDropdown />
 
-              <div className="h-8 sm:h-10 w-[1px] bg-white/10 mx-0.5 sm:mx-1 hidden sm:block" />
+              <div className="h-8 sm:h-10 w-px bg-border mx-0.5 sm:mx-1 hidden sm:block dark:bg-white/10" />
 
-              <div className="flex items-center gap-2 sm:gap-3 p-1 sm:p-1.5 pr-2 sm:pr-4 rounded-xl sm:rounded-2xl bg-white/5 border border-white/5 items-center">
+              <div className="flex items-center gap-2 sm:gap-3 p-1 sm:p-1.5 pr-2 sm:pr-4 rounded-xl sm:rounded-2xl bg-muted/60 border border-border dark:bg-white/5 dark:border-white/5 items-center">
                 <Avatar className="w-8 h-8 sm:w-10 sm:h-10 shadow-lg shadow-primary/20">
                   <AvatarImage
                     src={avatarUrl || undefined}
@@ -392,10 +392,10 @@ export function DashboardLayout({
         )}
 
         {hideHeader && (
-          <div className="sticky top-0 z-[50] flex items-center gap-3 border-b border-white/5 px-4 py-3 backdrop-blur-2xl lg:hidden">
+          <div className="sticky top-0 z-[50] flex items-center gap-3 border-b border-border px-4 py-3 dark:border-white/5 backdrop-blur-2xl lg:hidden">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="rounded-lg border border-white/10 bg-white/5 p-2 text-foreground transition-all active:scale-95"
+              className="rounded-lg border border-border bg-muted/60 p-2 text-foreground dark:border-white/10 dark:bg-white/5 transition-all active:scale-95"
               aria-label={sidebarOpen ? "Close menu" : "Open menu"}
             >
               {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -416,7 +416,7 @@ export function DashboardLayout({
 
         {/* Dashboard Footer */}
         {!fullBleed && (
-          <footer className="p-4 sm:p-8 text-center border-t border-white/5">
+          <footer className="p-4 sm:p-8 text-center border-t border-border dark:border-white/5">
             <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40">
               © {new Date().getFullYear()} BCA Connect AI • All Rights Reserved
             </p>

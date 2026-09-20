@@ -165,7 +165,7 @@ export default function Dashboard() {
       unit: "upcoming",
       icon: Calendar,
       href: "/dashboard/events",
-      tint: "from-primary/20 via-card/60 to-card/40",
+      tint: "from-primary/5 via-card to-card dark:from-primary/20 dark:via-card/60 dark:to-card/40",
     },
     {
       title: "Study library",
@@ -173,7 +173,7 @@ export default function Dashboard() {
       unit: "resources",
       icon: BookOpen,
       href: "/dashboard/resources",
-      tint: "from-accent/20 via-card/60 to-card/40",
+      tint: "from-accent/5 via-card to-card dark:from-accent/20 dark:via-card/60 dark:to-card/40",
     },
     {
       title: "Experience",
@@ -181,7 +181,7 @@ export default function Dashboard() {
       unit: "XP",
       icon: TrendingUp,
       href: "/dashboard/achievements",
-      tint: "from-primary/15 via-card/60 to-card/40",
+      tint: "from-primary/5 via-card to-card dark:from-primary/15 dark:via-card/60 dark:to-card/40",
     },
     {
       title: "Level",
@@ -189,7 +189,7 @@ export default function Dashboard() {
       unit: "reached",
       icon: Trophy,
       href: "/dashboard/achievements",
-      tint: "from-accent/15 via-card/60 to-card/40",
+      tint: "from-accent/5 via-card to-card dark:from-accent/15 dark:via-card/60 dark:to-card/40",
     },
   ];
 
@@ -354,7 +354,7 @@ export default function Dashboard() {
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="rounded-xl border border-border bg-gradient-to-br from-primary/15 via-card/60 to-card/30 p-6 md:p-8"
+          className="rounded-xl border border-border bg-gradient-to-br from-primary/5 via-card to-card p-6 dark:from-primary/15 dark:via-card/60 dark:to-card/30 md:p-8"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-xl">
@@ -426,7 +426,7 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Events */}
-          <section className="rounded-xl border border-border bg-gradient-to-br from-card/70 to-card/30 p-5 lg:col-span-2">
+          <section className="rounded-xl border border-border bg-gradient-to-br from-muted/40 to-card p-5 dark:from-card/70 dark:to-card/30 lg:col-span-2">
             <div className="flex h-9 items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-primary-foreground">
@@ -457,7 +457,7 @@ export default function Dashboard() {
                   <Link
                     key={event.id}
                     to={`/events/${event.id}`}
-                    className="group flex items-center gap-3 rounded-lg border border-border bg-gradient-to-br from-primary/10 to-transparent p-3 transition-colors hover:border-primary/40 hover:from-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="group flex items-center gap-3 rounded-lg border border-border bg-gradient-to-br from-primary/5 to-transparent p-3 transition-colors hover:border-primary/40 hover:from-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:from-primary/10 dark:hover:from-primary/20"
                   >
                     <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-md bg-background/60 text-center">
                       <span className="text-[9px] font-bold uppercase tracking-wider text-primary">
@@ -531,7 +531,7 @@ export default function Dashboard() {
 
           <div className="flex h-full flex-col gap-6">
             {/* Shortcuts */}
-            <section className="flex flex-1 flex-col rounded-xl border border-border bg-gradient-to-br from-card/70 to-card/30 p-5">
+            <section className="flex flex-1 flex-col rounded-xl border border-border bg-gradient-to-br from-muted/40 to-card p-5 dark:from-card/70 dark:to-card/30">
               <div className="flex h-9 items-center">
                 <h2 className="text-base font-bold text-foreground">
                   Jump <span className="italic text-primary">back in</span>
@@ -542,7 +542,7 @@ export default function Dashboard() {
                   <Link
                     key={shortcut.title}
                     to={shortcut.href}
-                    className="group flex items-center gap-3 rounded-lg border border-border bg-gradient-to-br from-primary/10 to-transparent p-3 transition-colors hover:border-primary/40 hover:from-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="group flex items-center gap-3 rounded-lg border border-border bg-gradient-to-br from-primary/5 to-transparent p-3 transition-colors hover:border-primary/40 hover:from-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:from-primary/10 dark:hover:from-primary/20"
                   >
                     <span className="flex h-9 w-9 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent text-primary-foreground">
                       <shortcut.icon className="h-[18px] w-[18px]" aria-hidden />
@@ -562,7 +562,7 @@ export default function Dashboard() {
 
             {/* Notices */}
             {announcements.length > 0 && (
-              <section className="rounded-xl border border-border bg-gradient-to-br from-card/70 to-card/30 p-5">
+              <section className="rounded-xl border border-border bg-gradient-to-br from-muted/40 to-card p-5 dark:from-card/70 dark:to-card/30">
                 <div className="flex h-9 items-center justify-between gap-4">
                   <h2 className="text-base font-bold text-foreground">Notices</h2>
                   <Link

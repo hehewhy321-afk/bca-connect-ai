@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
+import { ChatSkeleton } from "@/components/chat/ChatSkeleton";
 
 
 // Eager load critical and frequently accessed pages for instant navigation
@@ -115,9 +116,15 @@ function AuthRedirect() {
 }
 
 // Wrapper for lazy-loaded routes - minimal overhead
-function LazyRoute({ children }: { children: React.ReactNode }) {
+function LazyRoute({
+  children,
+  fallback,
+}: {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}) {
   return (
-    <Suspense fallback={<MinimalLoader />}>
+    <Suspense fallback={fallback ?? <MinimalLoader />}>
       <ErrorBoundary>{children}</ErrorBoundary>
     </Suspense>
   );
@@ -158,7 +165,7 @@ const App = () => (
 
                 {/* Dashboard routes - eager loaded pages don't need LazyRoute */}
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/dashboard/ai-assistant" element={<ProtectedRoute><LazyRoute><AIAssistant /></LazyRoute></ProtectedRoute>} />
+                <Route path="/dashboard/ai-assistant" element={<ProtectedRoute><LazyRoute fallback={<ChatSkeleton />}><AIAssistant /></LazyRoute></ProtectedRoute>} />
                 <Route path="/dashboard/image-gallery" element={<ProtectedRoute><LazyRoute><ImageGallery /></LazyRoute></ProtectedRoute>} />
                 <Route path="/dashboard/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
                 <Route path="/dashboard/resources" element={<ProtectedRoute><Resources /></ProtectedRoute>} />

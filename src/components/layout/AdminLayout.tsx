@@ -276,7 +276,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar - Refined Glassmorphism */}
       <aside
-        className={`fixed top-0 left-0 z-[70] h-full glass border-r border-white/10 transition-all duration-500 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "w-24" : "w-72"}`}
+        className={`fixed top-0 left-0 z-[70] h-full glass border-r border-border dark:border-white/10 transition-all duration-500 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "w-24" : "w-72"}`}
       >
         {/* Logo Section */}
         <div className={`p-8 ${collapsed ? "px-4" : ""}`}>
@@ -370,7 +370,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="absolute bottom-6 left-0 right-0">
           <Button
             variant="ghost"
-            className={`w-full justify-start gap-4 h-14 rounded-none bg-white/5 border-y border-white/5 px-4 hover:bg-white/10 transition-all font-bold group ${collapsed ? "justify-center px-3" : ""}`}
+            className={`w-full justify-start gap-4 h-14 rounded-none bg-muted/60 border-y border-border px-4 hover:bg-muted dark:bg-white/5 dark:border-white/5 dark:hover:bg-white/10 transition-all font-bold group ${collapsed ? "justify-center px-3" : ""}`}
             onClick={() => navigate("/dashboard")}
             title={collapsed ? "User View" : ""}
           >
@@ -394,13 +394,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main Content Area */}
       <div className={`flex flex-col min-h-screen transition-all duration-500 ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
         {/* Top Header - Glassmorphic */}
-        <header className="sticky top-0 z-[50] glass-card border-b border-white/5 backdrop-blur-2xl">
+        <header className="sticky top-0 z-[50] border-b border-border bg-background/80 dark:border-white/5 backdrop-blur-2xl">
           <div className="flex items-center justify-between px-6 h-20">
             {/* Mobile Trigger & Breadcrumb/Title */}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2.5 rounded-xl bg-white/5 border border-white/10 text-foreground active:scale-95 transition-all"
+                className="lg:hidden p-2.5 rounded-xl bg-muted/60 border border-border text-foreground active:scale-95 dark:bg-white/5 dark:border-white/10 transition-all"
               >
                 {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
@@ -417,9 +417,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
             {/* Actions Area */}
             <div className="flex items-center gap-4">
-              <div className="h-10 w-[1px] bg-white/10 mx-1 hidden sm:block" />
+              <div className="h-10 w-px bg-border mx-1 hidden sm:block dark:bg-white/10" />
 
-              <div className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl bg-white/5 border border-white/5">
+              <div className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl bg-muted/60 border border-border dark:bg-white/5 dark:border-white/5">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-black text-sm shadow-lg shadow-primary/20">
                   {user?.email?.charAt(0).toUpperCase() || "A"}
                 </div>
@@ -455,7 +455,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </main>
 
         {/* Admin Footer */}
-        <footer className="p-8 text-center border-t border-white/5">
+        <footer className="p-8 text-center border-t border-border dark:border-white/5">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] opacity-40">
             Internal Admin Portal • BCA Association • {new Date().getFullYear()}
           </p>
