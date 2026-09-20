@@ -52,11 +52,18 @@ interface RegistrationCount {
 }
 
 const EVENT_CATEGORIES = ["All", "Workshop", "Seminar", "Hackathon", "Meetup", "Competition"];
+const STATUS_FILTERS = [
+  { value: "all", label: "All Status" },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "ongoing", label: "Ongoing" },
+  { value: "completed", label: "Completed" },
+];
 const DATE_FILTERS = [
   { value: "all", label: "All Dates" },
   { value: "today", label: "Today" },
   { value: "this_week", label: "This Week" },
   { value: "this_month", label: "This Month" },
+  { value: "past", label: "Past Dates" },
 ];
 const TYPE_FILTERS = [
   { value: "all", label: "All Types" },
@@ -82,6 +89,7 @@ export default function PublicEvents() {
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
 
@@ -101,7 +109,7 @@ export default function PublicEvents() {
     const registerEventId = searchParams.get("register");
     if (registerEventId && !loading) {
       const event = [...publicEvents, ...memberEvents].find(e => e.id === registerEventId);
-      if (event && event.visibility === "public") {
+      if (event && event.visibility === "public" && event.status !== "completed") {
         handleRegister(event);
       }
     }
@@ -127,29 +135,56 @@ export default function PublicEvents() {
     };
   }, []);
 
+  const sortEvents = (events: Event[]) => {
+    return [...events].sort((a, b) => {
+      const statusOrder: Record<string, number> = {
+        ongoing: 1,
+        upcoming: 2,
+        completed: 3,
+        cancelled: 4,
+      };
+      const orderA = statusOrder[a.status || "upcoming"] || 2;
+      const orderB = statusOrder[b.status || "upcoming"] || 2;
+
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+
+      const timeA = new Date(a.start_date).getTime();
+      const timeB = new Date(b.start_date).getTime();
+
+      // For ongoing and upcoming: closest first
+      if (orderA <= 2) {
+        return timeA - timeB;
+      }
+      // For completed: most recent first
+      return timeB - timeA;
+    });
+  };
+
   const fetchEvents = async () => {
     try {
-      // Fetch public events
+      // Fetch public events (including upcoming, ongoing, and completed)
       const { data: publicData, error: publicError } = await supabase
         .from("events")
         .select("*")
-        .in("status", ["upcoming", "ongoing"])
+        .neq("status", "cancelled")
         .eq("visibility", "public")
-        .order("start_date", { ascending: true });
+        .order("start_date", { ascending: false });
 
       if (publicError) throw publicError;
-      setPublicEvents(publicData || []);
+      setPublicEvents(sortEvents(publicData || []));
 
       // Fetch member-only events (internal visibility)
       const { data: memberData, error: memberError } = await supabase
         .from("events")
         .select("*")
-        .in("status", ["upcoming", "ongoing"])
+        .neq("status", "cancelled")
         .eq("visibility", "internal")
-        .order("start_date", { ascending: true });
+        .order("start_date", { ascending: false });
 
       if (memberError) throw memberError;
-      setMemberEvents(memberData || []);
+      setMemberEvents(sortEvents(memberData || []));
       
       // Fetch registration counts for public events
       const allEvents = [...(publicData || []), ...(memberData || [])];
@@ -176,6 +211,9 @@ export default function PublicEvents() {
       const matchesCategory = categoryFilter === "All" || 
         event.category.toLowerCase() === categoryFilter.toLowerCase();
 
+      // Status filter
+      const matchesStatus = statusFilter === "all" || (event.status || "upcoming") === statusFilter;
+
       // Date filter
       let matchesDate = true;
       if (dateFilter !== "all") {
@@ -195,24 +233,27 @@ export default function PublicEvents() {
           const monthEnd = new Date(today);
           monthEnd.setMonth(monthEnd.getMonth() + 1);
           matchesDate = eventDate >= today && eventDate <= monthEnd;
+        } else if (dateFilter === "past") {
+          matchesDate = eventDate < today;
         }
       }
 
       // Type filter
       const matchesType = typeFilter === "all" || event.team_type === typeFilter;
 
-      return matchesSearch && matchesCategory && matchesDate && matchesType;
+      return matchesSearch && matchesCategory && matchesStatus && matchesDate && matchesType;
     });
   };
 
-  const filteredPublicEvents = useMemo(() => filterEvents(publicEvents), [publicEvents, searchQuery, categoryFilter, dateFilter, typeFilter]);
-  const filteredMemberEvents = useMemo(() => filterEvents(memberEvents), [memberEvents, searchQuery, categoryFilter, dateFilter, typeFilter]);
+  const filteredPublicEvents = useMemo(() => filterEvents(publicEvents), [publicEvents, searchQuery, categoryFilter, statusFilter, dateFilter, typeFilter]);
+  const filteredMemberEvents = useMemo(() => filterEvents(memberEvents), [memberEvents, searchQuery, categoryFilter, statusFilter, dateFilter, typeFilter]);
 
-  const hasActiveFilters = searchQuery !== "" || categoryFilter !== "All" || dateFilter !== "all" || typeFilter !== "all";
+  const hasActiveFilters = searchQuery !== "" || categoryFilter !== "All" || statusFilter !== "all" || dateFilter !== "all" || typeFilter !== "all";
 
   const clearFilters = () => {
     setSearchQuery("");
     setCategoryFilter("All");
+    setStatusFilter("all");
     setDateFilter("all");
     setTypeFilter("all");
   };
@@ -240,6 +281,7 @@ export default function PublicEvents() {
   };
 
   const getAvailableSpots = (event: Event) => {
+    if (event.status === "completed") return null;
     if (!event.max_attendees) return null;
     const registered = registrationCounts[event.id] || 0;
     return Math.max(0, event.max_attendees - registered);
@@ -272,6 +314,15 @@ export default function PublicEvents() {
   };
 
   const handleRegister = (event: Event) => {
+    if (event.status === "completed") {
+      toast({
+        title: "Event Completed",
+        description: "This event has concluded. Registration is closed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const availableSpots = getAvailableSpots(event);
     if (availableSpots !== null && availableSpots <= 0) {
       toast({
@@ -439,6 +490,7 @@ export default function PublicEvents() {
   };
 
   const renderEventCard = (event: Event, index: number, isMemberOnly: boolean = false) => {
+    const isCompleted = event.status === "completed";
     const availableSpots = getAvailableSpots(event);
     const isFull = availableSpots !== null && availableSpots <= 0;
 
@@ -448,7 +500,7 @@ export default function PublicEvents() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.1 }}
-        className="glass-card rounded-2xl overflow-hidden group hover:border-primary/50 transition-all duration-300"
+        className="glass-card rounded-2xl overflow-hidden group hover:border-primary/50 transition-all duration-300 flex flex-col"
       >
         {/* Event Image - Clickable for detail */}
         <Link to={`/events/${event.id}`} className="block relative h-48 overflow-hidden">
@@ -463,85 +515,114 @@ export default function PublicEvents() {
               <Calendar className="w-12 h-12 text-primary/50" />
             </div>
           )}
-          {event.is_featured && (
-            <span className="absolute top-3 left-3 px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-full">
-              Featured
+          <div className="absolute top-3 left-3 flex items-center gap-2">
+            {event.is_featured && (
+              <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-full shadow-sm">
+                Featured
+              </span>
+            )}
+            <span className={`px-3 py-1 text-xs font-medium rounded-full border backdrop-blur-md ${getCategoryColor(event.category)}`}>
+              {event.category}
             </span>
-          )}
-          <span className={`absolute top-3 right-3 px-3 py-1 text-xs font-medium rounded-full border ${getCategoryColor(event.category)}`}>
-            {event.category}
+          </div>
+          <span
+            className={`absolute top-3 right-3 px-3 py-1 text-xs font-medium rounded-full capitalize backdrop-blur-md shadow-sm ${
+              event.status === "upcoming"
+                ? "bg-accent/90 text-accent-foreground"
+                : event.status === "ongoing"
+                  ? "bg-primary text-primary-foreground"
+                  : event.status === "completed"
+                    ? "bg-muted/90 text-muted-foreground border border-border"
+                    : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {event.status || "upcoming"}
           </span>
         </Link>
 
         {/* Event Details */}
-        <div className="p-5">
-          <Link to={`/events/${event.id}`}>
-            <h3 className="font-heading font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-              {event.title}
-            </h3>
-          </Link>
-          {event.description && (
-            <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-              {event.description}
-            </p>
-          )}
-
-          <div className="flex flex-wrap gap-2 mb-3">
-            <Badge variant="outline" className="text-xs">
-              {getTeamTypeLabel(event.team_type)}
-            </Badge>
-            {isMemberOnly && (
-              <Badge variant="secondary" className="text-xs">
-                <Shield className="w-3 h-3 mr-1" />
-                Members Only
-              </Badge>
+        <div className="p-5 flex flex-col flex-1 justify-between">
+          <div>
+            <Link to={`/events/${event.id}`}>
+              <h3 className="font-heading font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                {event.title}
+              </h3>
+            </Link>
+            {event.description && (
+              <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                {event.description}
+              </p>
             )}
-            {event.registration_fee && event.registration_fee > 0 ? (
-              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-400 border-green-500/30">
-                <IndianRupee className="w-3 h-3 mr-0.5" />
-                {event.registration_fee}
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-xs bg-green-500/10 text-green-400 border-green-500/30">
-                Free
-              </Badge>
-            )}
-          </div>
 
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="w-4 h-4 text-primary" />
-              <span>{formatDate(event.start_date)}</span>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <Badge variant="outline" className="text-xs">
+                {getTeamTypeLabel(event.team_type)}
+              </Badge>
+              {isMemberOnly && (
+                <Badge variant="secondary" className="text-xs">
+                  <Shield className="w-3 h-3 mr-1" />
+                  Members Only
+                </Badge>
+              )}
+              {!isCompleted && (
+                event.registration_fee && event.registration_fee > 0 ? (
+                  <Badge variant="outline" className="text-xs bg-green-500/10 text-green-400 border-green-500/30">
+                    <IndianRupee className="w-3 h-3 mr-0.5" />
+                    {event.registration_fee}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-xs bg-green-500/10 text-green-400 border-green-500/30">
+                    Free
+                  </Badge>
+                )
+              )}
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="w-4 h-4 text-primary" />
-              <span>{formatTime(event.start_date)}</span>
-            </div>
-            {event.location && (
+
+            <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4 text-primary" />
-                <span className="truncate">{event.location}</span>
+                <Calendar className="w-4 h-4 text-primary" />
+                <span>{formatDate(event.start_date)}</span>
               </div>
-            )}
-            {event.max_attendees && !isMemberOnly && (
-              <div className="flex items-center gap-2 text-sm">
-                <Users className="w-4 h-4 text-primary" />
-                <span className={availableSpots !== null && availableSpots <= 5 ? "text-orange-500 font-medium" : "text-muted-foreground"}>
-                  {isFull ? (
-                    <span className="text-destructive font-medium">Sold Out</span>
-                  ) : (
-                    <>
-                      {availableSpots} spots left
-                      <span className="text-muted-foreground"> of {event.max_attendees}</span>
-                    </>
-                  )}
-                </span>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="w-4 h-4 text-primary" />
+                <span>{formatTime(event.start_date)}</span>
               </div>
-            )}
+              {event.location && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span className="truncate">{event.location}</span>
+                </div>
+              )}
+              {!isCompleted && event.max_attendees && !isMemberOnly && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="w-4 h-4 text-primary" />
+                  <span className={availableSpots !== null && availableSpots <= 5 ? "text-orange-500 font-medium" : "text-muted-foreground"}>
+                    {isFull ? (
+                      <span className="text-destructive font-medium">Sold Out</span>
+                    ) : (
+                      <>
+                        {availableSpots} spots left
+                        <span className="text-muted-foreground"> of {event.max_attendees}</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex gap-2">
-            {isMemberOnly && !user ? (
+          <div className="flex gap-2 pt-2">
+            {isCompleted ? (
+              <Button
+                className="flex-1"
+                variant="outline"
+                asChild
+              >
+                <Link to={`/events/${event.id}`}>
+                  View Details
+                </Link>
+              </Button>
+            ) : isMemberOnly && !user ? (
               <Button
                 className="flex-1"
                 onClick={() => navigate("/auth")}
@@ -603,10 +684,10 @@ export default function PublicEvents() {
             className="text-center mb-8"
           >
             <h1 className="font-heading text-4xl md:text-5xl font-bold mb-4">
-              <span className="text-gradient-primary">Upcoming</span> Events
+              <span className="text-gradient-primary">Community</span> Events
             </h1>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Join us for exciting events, workshops, and seminars. Register now to secure your spot!
+              Join us for exciting events, workshops, and seminars. Explore upcoming activities and past event highlights!
             </p>
           </motion.div>
 
@@ -631,6 +712,20 @@ export default function PublicEvents() {
 
               {/* Filters */}
               <div className="flex flex-wrap gap-3">
+                {/* Status Filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_FILTERS.map((filter) => (
+                      <SelectItem key={filter.value} value={filter.value}>
+                        {filter.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 {/* Category Filter */}
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                   <SelectTrigger className="w-[140px]">
@@ -700,6 +795,12 @@ export default function PublicEvents() {
                     <X className="w-3 h-3 cursor-pointer" onClick={() => setSearchQuery("")} />
                   </Badge>
                 )}
+                {statusFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1">
+                    Status: {STATUS_FILTERS.find(f => f.value === statusFilter)?.label}
+                    <X className="w-3 h-3 cursor-pointer" onClick={() => setStatusFilter("all")} />
+                  </Badge>
+                )}
                 {categoryFilter !== "All" && (
                   <Badge variant="secondary" className="gap-1">
                     {categoryFilter}
@@ -739,7 +840,7 @@ export default function PublicEvents() {
           ) : totalEvents === 0 ? (
             <div className="text-center py-16 glass-card rounded-2xl">
               <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">No Upcoming Events</h2>
+              <h2 className="text-xl font-semibold mb-2">No Events Available</h2>
               <p className="text-muted-foreground">Check back later for new events!</p>
             </div>
           ) : (

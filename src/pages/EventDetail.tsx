@@ -198,11 +198,20 @@ export default function EventDetail() {
   };
 
   const getAvailableSpots = () => {
+    if (event?.status === "completed") return null;
     if (!event?.max_attendees) return null;
     return Math.max(0, event.max_attendees - registrationCount);
   };
 
   const handleRegisterClick = () => {
+    if (event?.status === "completed") {
+      toast({
+        title: "Event Completed",
+        description: "This event has already ended. Registration is closed.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (event?.visibility === "internal") {
       if (user) {
         navigate("/dashboard/events");
@@ -742,7 +751,16 @@ export default function EventDetail() {
               {/* Registration Card */}
               <div className="glass-card p-6 rounded-2xl lg:sticky lg:top-24">
                 <div className="space-y-4">
-                  {event.max_attendees && !isMemberOnly && (
+                  {event.status === "completed" ? (
+                    <div className="text-center p-4 rounded-lg bg-muted/50">
+                      <Badge variant="secondary" className="text-sm px-3 py-1">
+                        Completed Event
+                      </Badge>
+                      <p className="text-xs text-muted-foreground mt-1.5">
+                        This event has already concluded
+                      </p>
+                    </div>
+                  ) : event.max_attendees && !isMemberOnly ? (
                     <div className="text-center p-4 rounded-lg bg-muted/50">
                       {isFull ? (
                         <p className="text-destructive font-semibold text-lg">Sold Out</p>
@@ -753,7 +771,7 @@ export default function EventDetail() {
                         </>
                       )}
                     </div>
-                  )}
+                  ) : null}
 
                   <div className="text-center">
                     {hasFee ? (
@@ -772,7 +790,16 @@ export default function EventDetail() {
                     )}
                   </div>
 
-                  {isMemberOnly && !user ? (
+                  {event.status === "completed" ? (
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      disabled
+                      variant="secondary"
+                    >
+                      Event Completed
+                    </Button>
+                  ) : isMemberOnly && !user ? (
                     <Button
                       className="w-full"
                       size="lg"
@@ -801,7 +828,9 @@ export default function EventDetail() {
                   )}
 
                   {/* Event Reminder */}
-                  <EventReminderForm eventId={event.id} eventTitle={event.title} />
+                  {event.status !== "completed" && (
+                    <EventReminderForm eventId={event.id} eventTitle={event.title} />
+                  )}
                 </div>
 
                 <Separator className="my-4" />

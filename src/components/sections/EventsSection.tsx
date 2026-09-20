@@ -14,6 +14,7 @@ interface Event {
   category: string;
   image_url: string | null;
   is_featured: boolean | null;
+  status: string | null;
 }
 
 export function EventsSection() {
@@ -27,15 +28,32 @@ export function EventsSection() {
 
   const fetchEvents = async () => {
     try {
-      const { data, error } = await supabase
+      // Try fetching upcoming or ongoing first
+      const { data: activeData, error: activeError } = await supabase
         .from("events")
         .select("*")
-        .eq("status", "upcoming")
+        .in("status", ["upcoming", "ongoing"])
+        .eq("visibility", "public")
         .order("start_date", { ascending: true })
         .limit(3);
 
-      if (error) throw error;
-      setEvents(data || []);
+      if (activeError) throw activeError;
+
+      if (activeData && activeData.length > 0) {
+        setEvents(activeData);
+      } else {
+        // Fall back to recent public events (e.g. completed)
+        const { data: recentData, error: recentError } = await supabase
+          .from("events")
+          .select("*")
+          .neq("status", "cancelled")
+          .eq("visibility", "public")
+          .order("start_date", { ascending: false })
+          .limit(3);
+
+        if (recentError) throw recentError;
+        setEvents(recentData || []);
+      }
     } catch (error) {
       console.error("Error fetching events:", error);
     } finally {
@@ -76,7 +94,8 @@ export function EventsSection() {
               Events
             </span>
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">
-              Upcoming <span className="gradient-text">Events</span>
+              {events.some(e => e.status === "upcoming" || e.status === "ongoing") ? "Upcoming" : "Latest"}{" "}
+              <span className="gradient-text">Events</span>
             </h2>
             <p className="text-muted-foreground text-lg mt-2 max-w-xl">
               Join workshops, seminars, and competitions to enhance your skills
@@ -100,7 +119,7 @@ export function EventsSection() {
           <div className="text-center py-12">
             <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="font-heading text-lg font-medium text-foreground mb-2">
-              No upcoming events
+              No events available
             </h3>
             <p className="text-muted-foreground">
               Check back soon for new events!
@@ -138,13 +157,26 @@ export function EventsSection() {
                         {event.category}
                       </span>
                     </div>
-                    {event.is_featured && (
-                      <div className="absolute top-3 right-3 md:top-4 md:right-4">
-                        <span className="px-2.5 py-1 md:px-3 md:py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
+                    <div className="absolute top-3 right-3 md:top-4 md:right-4 flex items-center gap-1.5">
+                      {event.is_featured && (
+                        <span className="px-2.5 py-1 md:px-3 md:py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground shadow-sm">
                           Featured
                         </span>
-                      </div>
-                    )}
+                      )}
+                      <span
+                        className={`px-2.5 py-1 md:px-3 md:py-1 rounded-full text-xs font-medium capitalize backdrop-blur-md shadow-sm ${
+                          event.status === "upcoming"
+                            ? "bg-accent/90 text-accent-foreground"
+                            : event.status === "ongoing"
+                              ? "bg-primary text-primary-foreground"
+                              : event.status === "completed"
+                                ? "bg-muted/90 text-muted-foreground border border-border"
+                                : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {event.status || "upcoming"}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Content */}
@@ -170,8 +202,13 @@ export function EventsSection() {
                       )}
                     </div>
 
-                    <Button variant="default" size="sm" className="w-full mt-3 md:mt-4 text-xs md:text-sm" onClick={() => navigate("/events")}>
-                      Register Now
+                    <Button
+                      variant={event.status === "completed" ? "outline" : "default"}
+                      size="sm"
+                      className="w-full mt-3 md:mt-4 text-xs md:text-sm"
+                      onClick={() => navigate(event.status === "completed" ? `/events/${event.id}` : "/events")}
+                    >
+                      {event.status === "completed" ? "View Details" : "Register Now"}
                     </Button>
                   </div>
                 </div>
