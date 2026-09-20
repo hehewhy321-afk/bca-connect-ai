@@ -4,10 +4,17 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type AppRole = "admin" | "moderator" | "member";
 
+// The layouts that call this hook are rendered inside each page, so they
+// remount on every navigation. Without a cache that means a fresh
+// `loading: true` and another round trip to user_roles per route change —
+// the layout flashes its loading state and reads as a full page reload.
+const roleCache = new Map<string, AppRole>();
+
 export function useUserRole() {
   const { user } = useAuth();
-  const [role, setRole] = useState<AppRole | null>(null);
-  const [loading, setLoading] = useState(true);
+  const cached = user ? roleCache.get(user.id) : null;
+  const [role, setRole] = useState<AppRole | null>(cached ?? null);
+  const [loading, setLoading] = useState(!cached);
 
   useEffect(() => {
     if (!user) {
@@ -15,6 +22,14 @@ export function useUserRole() {
       setLoading(false);
       return;
     }
+
+    const known = roleCache.get(user.id);
+    if (known) {
+      setRole(known);
+      setLoading(false);
+    }
+
+    let active = true;
 
     const fetchRole = async () => {
       try {
@@ -25,16 +40,24 @@ export function useUserRole() {
           .maybeSingle();
 
         if (error) throw error;
-        setRole(data?.role || "member");
+
+        const resolved = (data?.role as AppRole) || "member";
+        roleCache.set(user.id, resolved);
+        if (active) setRole(resolved);
       } catch (error) {
         console.error("Error fetching user role:", error);
-        setRole("member");
+        if (active && !known) setRole("member");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
+    // A cached role renders immediately; this call just revalidates it.
     fetchRole();
+
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   const isAdmin = role === "admin";

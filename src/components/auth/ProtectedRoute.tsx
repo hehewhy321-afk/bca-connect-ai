@@ -1,5 +1,5 @@
-import { ReactNode, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { ReactNode } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
@@ -8,14 +8,10 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
+  const location = useLocation();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate("/auth");
-    }
-  }, [user, loading, navigate]);
-
+  // Only the initial session lookup blocks; after that `loading` stays false,
+  // so navigating between protected routes never shows this again.
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -27,8 +23,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
+  // Redirect during render instead of in an effect: an effect leaves a frame
+  // rendering `null`, and the browser history keeps the unreachable entry.
   if (!user) {
-    return null;
+    return <Navigate to="/auth" replace state={{ from: location.pathname }} />;
   }
 
   return <>{children}</>;

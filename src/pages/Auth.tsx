@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, ShieldAlert, UserPlus } from "lucide-react";
 import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
@@ -36,6 +36,10 @@ export default function Auth() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const navigate = useNavigate();
+  const location = useLocation();
+  // ProtectedRoute records where it bounced the user from.
+  const redirectTo =
+    (location.state as { from?: string } | null)?.from || "/dashboard";
   const { signUp, signIn } = useAuth();
   const { toast } = useToast();
   const { data: settings } = useWebsiteSettings();
@@ -93,7 +97,7 @@ export default function Auth() {
             title: "Welcome to BCA Association!",
             description: "Your account has been created successfully.",
           });
-          navigate("/dashboard");
+          navigate(redirectTo, { replace: true });
         }
       } else {
         const { error } = await signIn(formData.email, formData.password);
@@ -108,7 +112,7 @@ export default function Auth() {
             title: "Welcome back!",
             description: "You have signed in successfully.",
           });
-          navigate("/dashboard");
+          navigate(redirectTo, { replace: true });
         }
       }
     } catch (error) {

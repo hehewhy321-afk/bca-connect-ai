@@ -1074,43 +1074,38 @@ export default function AIAssistant() {
     ];
 
   return (
-    <DashboardLayout>
-      <div className="h-[calc(100vh-8rem)] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Bot className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-heading text-xl font-bold text-foreground">
-                AI Study Assistant
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Chat, Voice & Image Generation • 24/7 BCA companion
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link to="/dashboard/image-gallery">
-              <Button variant="outline" size="sm">
-                <ImageIcon className="w-4 h-4 mr-2" />
-                Gallery
+    <DashboardLayout hideHeader fullBleed>
+      <div className="flex h-[calc(100dvh-3.25rem)] min-h-0 flex-col lg:h-[100dvh]">
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-1.5 border-b border-border px-4 py-2.5">
+          <Link to="/dashboard/image-gallery">
+            <Button variant="outline" size="sm" className="h-8 rounded-md border-border px-2.5 text-xs">
+              <ImageIcon className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              Gallery
+            </Button>
+          </Link>
+          {messages.length > 0 && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadChat}
+                className="h-8 rounded-md border-border px-2.5 text-xs"
+              >
+                <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                Download
               </Button>
-            </Link>
-            {messages.length > 0 && (
-              <>
-                <Button variant="outline" size="sm" onClick={handleDownloadChat}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleClearChat}>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Clear Chat
-                </Button>
-              </>
-            )}
-          </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearChat}
+                className="h-8 rounded-md px-2.5 text-xs text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                Clear
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Streaming Status Indicator */}
@@ -1118,7 +1113,7 @@ export default function AIAssistant() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-2 flex items-center gap-3 px-4 py-2 rounded-lg bg-muted/50 border border-border"
+            className="flex items-center gap-3 border-b border-border bg-muted/40 px-4 py-2"
           >
             <Zap className="w-4 h-4 text-primary animate-pulse" />
             <span className="text-sm text-muted-foreground">
@@ -1142,33 +1137,32 @@ export default function AIAssistant() {
         )}
 
         {/* Chat Area */}
-        <div className="flex-1 bg-card rounded-2xl border border-border overflow-hidden flex flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 lg:px-8">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-4">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground">
                   {imageMode ? (
-                    <ImageIcon className="w-10 h-10 text-primary" />
+                    <ImageIcon className="h-7 w-7" aria-hidden />
                   ) : (
-                    <Sparkles className="w-10 h-10 text-primary" />
+                    <Sparkles className="h-7 w-7" aria-hidden />
                   )}
                 </div>
-                <h2 className="font-heading text-xl font-semibold text-foreground mb-2">
-                  {imageMode ? "Image Generation Mode" : "How can I help you today?"}
+                <h2 className="mb-2 text-lg font-bold text-foreground">
+                  {imageMode ? "Describe an image" : "What are you working on?"}
                 </h2>
-                <p className="text-muted-foreground mb-6 max-w-md">
+                <p className="mb-6 max-w-sm text-sm leading-relaxed text-muted-foreground">
                   {imageMode
-                    ? "Describe any image you want to create and I'll generate it for you!"
-                    : "Ask me anything about your BCA curriculum, programming concepts, or toggle Image Mode to generate images!"
-                  }
+                    ? "Say what you want to see and it gets generated for you."
+                    : "Course topics, code that won't run, exam prep — start with a question or pick one below."}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
                   {suggestedQuestions.map((question) => (
                     <button
                       key={question}
                       onClick={() => setInput(question)}
-                      className="p-3 text-left text-sm rounded-xl bg-muted hover:bg-muted/80 text-foreground transition-colors flex items-center gap-2"
+                      className="flex items-center gap-2 rounded-md border border-border bg-gradient-to-br from-primary/10 to-transparent p-3 text-left text-sm text-foreground transition-colors hover:border-primary/40 hover:from-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       {imageMode ? (
                         <ImageIcon className="w-4 h-4 text-primary flex-shrink-0" />
@@ -1209,9 +1203,9 @@ export default function AIAssistant() {
                         }`}
                     >
                       <div
-                        className={`inline-block p-4 rounded-2xl ${message.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-muted text-foreground rounded-bl-md"
+                        className={`inline-block max-w-full rounded-lg px-3.5 py-2.5 text-left text-sm [&>*:last-child]:mb-0 ${message.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-muted text-foreground rounded-bl-sm"
                           }`}
                       >
                         {message.type === "image" && message.imageUrl ? (
@@ -1237,9 +1231,7 @@ export default function AIAssistant() {
                             )}
                           </div>
                         ) : (
-                          <div className="text-sm">
-                            <MarkdownRenderer content={message.content} />
-                          </div>
+                          <MarkdownRenderer content={message.content} />
                         )}
                       </div>
                       {message.role === "assistant" && message.content && (
@@ -1273,7 +1265,7 @@ export default function AIAssistant() {
                         <Bot className="w-4 h-4 text-primary-foreground" />
                       )}
                     </div>
-                    <div className="flex items-center gap-2 p-4 bg-muted rounded-2xl rounded-bl-md">
+                    <div className="flex items-center gap-2 rounded-lg rounded-bl-sm bg-muted px-3.5 py-2.5">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       <span className="text-sm text-muted-foreground animate-pulse">
                         {imageMode ? "Generating image..." :
@@ -1290,14 +1282,14 @@ export default function AIAssistant() {
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSubmit} className="p-4 border-t border-border">
+          <form onSubmit={handleSubmit} className="shrink-0 border-t border-border bg-background p-3 lg:px-8">
             <div className="flex items-center gap-2">
               {/* Voice Button */}
               <Button
                 type="button"
                 size="icon"
                 variant={isListening ? "destructive" : "outline"}
-                className={`h-12 w-12 rounded-xl flex-shrink-0 ${isListening ? 'animate-pulse' : ''}`}
+                className={`h-11 w-11 shrink-0 rounded-md ${isListening ? "animate-pulse" : ""}`}
                 onClick={handleMicClick}
                 disabled={isLoading}
               >
@@ -1313,7 +1305,7 @@ export default function AIAssistant() {
                 type="button"
                 size="icon"
                 variant={imageMode ? "default" : "outline"}
-                className={`h-12 w-12 rounded-xl flex-shrink-0 ${imageMode ? 'bg-primary hover:bg-primary/90' : ''}`}
+                className={`h-11 w-11 shrink-0 rounded-md ${imageMode ? "bg-primary hover:bg-primary/90" : ""}`}
                 onClick={() => setImageMode(!imageMode)}
                 disabled={isLoading}
                 aria-label="Toggle between chat and image mode"
@@ -1338,7 +1330,7 @@ export default function AIAssistant() {
                         ? "Describe the image you want to generate..."
                         : "Ask anything about your studies..."
                   }
-                  className="w-full px-4 py-3 pr-12 rounded-xl bg-muted text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="h-11 w-full rounded-md border border-border bg-background/60 px-4 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   disabled={isLoading}
                 />
                 {/* Show interim transcript as overlay */}
@@ -1364,16 +1356,18 @@ export default function AIAssistant() {
               <Button
                 type="submit"
                 size="icon"
-                className="h-12 w-12 rounded-xl"
+                className="h-11 w-11 shrink-0 rounded-md"
                 disabled={!input.trim() || isLoading}
               >
                 <Send className="w-5 h-5" />
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              🎤 Real-time Voice • 💬 Chat • 🎨 Image Generation
-              {imageMode && <span className="text-primary font-medium"> • IMAGE MODE ON</span>}
-              {isListening && <span className="text-red-500 font-medium animate-pulse"> • LISTENING...</span>}
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              {isListening
+                ? "Listening — speak now"
+                : imageMode
+                  ? "Image mode is on. Switch back with the chat button."
+                  : "Type a question, talk with the mic, or switch to image mode."}
             </p>
           </form>
         </div>

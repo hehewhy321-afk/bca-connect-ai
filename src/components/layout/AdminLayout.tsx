@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, easeOut } from "framer-motion";
 import {
   Shield,
@@ -24,33 +24,123 @@ import {
   Megaphone,
   Video,
   CreditCard,
+  ChevronDown,
+  type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import logoImg from "@/assets/logo.jpg";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { preloadRoute, preloadRoutesWhenIdle } from "@/lib/route-preload";
 import { useUserRole } from "@/hooks/useUserRole";
 
-const adminLinks = [
-  { name: "Overview", href: "/admin", icon: Shield },
-  { name: "Courses", href: "/admin/courses", icon: Video },
-  { name: "Enrollments", href: "/admin/enrollments", icon: CreditCard },
-  { name: "Events", href: "/admin/events", icon: Calendar },
-  { name: "QR Check-in", href: "/admin/qr-scanner", icon: QrCode },
-  { name: "Resources", href: "/admin/resources", icon: BookOpen },
-  { name: "Certificates", href: "/admin/certificates", icon: Award },
-  { name: "Members", href: "/admin/members", icon: Users },
-  { name: "Founding Members", href: "/admin/founding-members", icon: Award },
-  { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
-  { name: "Notices", href: "/admin/notices", icon: FileText },
-  { name: "Notifications", href: "/admin/send-notifications", icon: Bell },
-  { name: "FAQs", href: "/admin/faqs", icon: HelpCircle },
-  { name: "AI Settings", href: "/admin/ai-settings", icon: Bot },
-  { name: "Website Settings", href: "/admin/settings", icon: Settings },
-  { name: "Contacts", href: "/admin/contacts", icon: MessageSquare },
-  { name: "Create User", href: "/admin/users", icon: UserPlus },
+const overviewLink = { name: "Overview", href: "/admin", icon: Shield };
+
+const adminGroups = [
+  {
+    name: "Learning",
+    icon: Video,
+    links: [
+      { name: "Courses", href: "/admin/courses", icon: Video },
+      { name: "Enrollments", href: "/admin/enrollments", icon: CreditCard },
+      { name: "Resources", href: "/admin/resources", icon: BookOpen },
+      { name: "Certificates", href: "/admin/certificates", icon: Award },
+    ],
+  },
+  {
+    name: "Events",
+    icon: Calendar,
+    links: [
+      { name: "Events", href: "/admin/events", icon: Calendar },
+      { name: "QR Check-in", href: "/admin/qr-scanner", icon: QrCode },
+    ],
+  },
+  {
+    name: "People",
+    icon: Users,
+    links: [
+      { name: "Members", href: "/admin/members", icon: Users },
+      { name: "Founding Members", href: "/admin/founding-members", icon: Award },
+      { name: "Create User", href: "/admin/users", icon: UserPlus },
+    ],
+  },
+  {
+    name: "Content",
+    icon: FileText,
+    links: [
+      { name: "Announcements", href: "/admin/announcements", icon: Megaphone },
+      { name: "Notices", href: "/admin/notices", icon: FileText },
+      { name: "FAQs", href: "/admin/faqs", icon: HelpCircle },
+    ],
+  },
+  {
+    name: "Engagement",
+    icon: Bell,
+    links: [
+      { name: "Notifications", href: "/admin/send-notifications", icon: Bell },
+      { name: "Contacts", href: "/admin/contacts", icon: MessageSquare },
+    ],
+  },
+  {
+    name: "System",
+    icon: Settings,
+    links: [
+      { name: "AI Settings", href: "/admin/ai-settings", icon: Bot },
+      { name: "Website Settings", href: "/admin/settings", icon: Settings },
+    ],
+  },
 ];
+
+// Flat list used when the sidebar is collapsed to icons.
+const adminLinks = [overviewLink, ...adminGroups.flatMap((group) => group.links)];
+
+function NavRow({
+  link,
+  isActive,
+  collapsed = false,
+  nested = false,
+  showBadge = false,
+  onNavigate,
+}: {
+  link: { name: string; href: string; icon: LucideIcon };
+  isActive: boolean;
+  collapsed?: boolean;
+  nested?: boolean;
+  showBadge?: boolean;
+  onNavigate: () => void;
+}) {
+  return (
+    <Link
+      to={link.href}
+      onClick={onNavigate}
+      onMouseEnter={() => preloadRoute(link.href)}
+      onFocus={() => preloadRoute(link.href)}
+      onTouchStart={() => preloadRoute(link.href)}
+      className={`flex items-center gap-3 py-3.5 rounded-md text-sm font-semibold transition-colors duration-200 group relative ${
+        collapsed ? "justify-center px-3" : nested ? "ml-4 pl-5 pr-4" : "px-4"
+      } ${
+        isActive
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+      }`}
+      title={collapsed ? link.name : ""}
+    >
+      <div className="relative">
+        <link.icon className="w-[18px] h-[18px] flex-shrink-0" />
+        {showBadge && (
+          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-600 animate-pulse ring-2 ring-background z-10 shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
+        )}
+      </div>
+      {!collapsed && link.name}
+    </Link>
+  );
+}
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -100,23 +190,56 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     };
   }, [isAdmin]);
 
+  // Keep the group holding the current page open, plus whatever the user opened.
+  const [openGroups, setOpenGroups] = useState<string[]>(() => {
+    const active = adminGroups.find((group) =>
+      group.links.some((link) => location.pathname.startsWith(link.href))
+    );
+    return active ? [active.name] : [];
+  });
+
+  useEffect(() => {
+    const active = adminGroups.find((group) =>
+      group.links.some((link) => location.pathname.startsWith(link.href))
+    );
+    if (active) {
+      setOpenGroups((prev) =>
+        prev.includes(active.name) ? prev : [...prev, active.name]
+      );
+    }
+  }, [location.pathname]);
+
+  const isLinkActive = (href: string) =>
+    location.pathname === href ||
+    (href !== "/admin" && location.pathname.startsWith(href));
+
+  const toggleGroup = (name: string) => {
+    setOpenGroups((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
+    );
+  };
+
   // Persist collapsed state to localStorage
+  // Warm every sidebar chunk once the browser goes idle.
+  useEffect(() => preloadRoutesWhenIdle(adminLinks.map((link) => link.href)), []);
+
   const toggleCollapsed = () => {
     const newCollapsed = !collapsed;
     setCollapsed(newCollapsed);
     localStorage.setItem('admin-sidebar-collapsed', String(newCollapsed));
   };
 
+  const allowed = isAdmin || isModerator;
+
   useEffect(() => {
-    if (!loading && !isAdmin && !isModerator) {
+    if (!loading && !allowed) {
       toast({
         title: "Access Denied",
         description: "You don't have permission to access the admin panel.",
         variant: "destructive",
       });
-      navigate("/dashboard");
     }
-  }, [isAdmin, isModerator, loading, navigate, toast]);
+  }, [allowed, loading, toast]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -127,16 +250,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     navigate("/");
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin shadow-2xl shadow-primary/20" />
-      </div>
-    );
-  }
 
-  if (!isAdmin && !isModerator) {
-    return null;
+  if (!loading && !allowed) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
@@ -197,45 +313,64 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </button>
 
         {/* Navigation - Scrollable with custom styles */}
-        <nav className={`px-4 py-2 space-y-1 overflow-y-auto h-[calc(100vh-280px)] scrollbar-none ${collapsed ? "px-2" : ""}`}>
-          {adminLinks.map((link) => {
-            const isActive = location.pathname === link.href ||
-              (link.href !== "/admin" && location.pathname.startsWith(link.href));
-            return (
-              <Link
+        <nav className={`px-3 py-2 space-y-1 overflow-y-auto h-[calc(100vh-280px)] scrollbar-none ${collapsed ? "px-2" : ""}`}>
+          {collapsed ? (
+            adminLinks.map((link) => (
+              <NavRow
                 key={link.name}
-                to={link.href}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-5 py-3.5 rounded-[1.25rem] text-sm font-semibold transition-all duration-300 group relative ${collapsed ? "justify-center px-3" : ""
-                  } ${isActive
-                    ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                  }`}
-                title={collapsed ? link.name : ""}
-              >
-                <div className="relative">
-                  <link.icon className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
-                  {link.name === "Enrollments" && pendingEnrollments > 0 && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-600 animate-pulse ring-2 ring-background z-10 shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
-                  )}
-                </div>
-                {!collapsed && link.name}
-                {isActive && !collapsed && (
-                  <motion.div
-                    layoutId="active-admin-nav"
-                    className="absolute right-3 w-1.5 h-1.5 rounded-full bg-primary-foreground"
-                  />
-                )}
-              </Link>
-            );
-          })}
+                link={link}
+                collapsed
+                isActive={isLinkActive(link.href)}
+                showBadge={link.name === "Enrollments" && pendingEnrollments > 0}
+                onNavigate={() => setSidebarOpen(false)}
+              />
+            ))
+          ) : (
+            <>
+              <NavRow
+                link={overviewLink}
+                isActive={isLinkActive(overviewLink.href)}
+                onNavigate={() => setSidebarOpen(false)}
+              />
+              {adminGroups.map((group) => {
+                const isOpen = openGroups.includes(group.name);
+                return (
+                  <Collapsible
+                    key={group.name}
+                    open={isOpen}
+                    onOpenChange={() => toggleGroup(group.name)}
+                  >
+                    <CollapsibleTrigger className="flex w-full items-center gap-3 px-4 py-3 text-xs font-black uppercase tracking-wider text-muted-foreground/80 transition-colors hover:text-foreground">
+                      <group.icon className="w-[18px] h-[18px] flex-shrink-0" />
+                      <span className="flex-1 text-left">{group.name}</span>
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                      />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="overflow-hidden space-y-1 pb-1 data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+                      {group.links.map((link) => (
+                        <NavRow
+                          key={link.name}
+                          link={link}
+                          nested
+                          isActive={isLinkActive(link.href)}
+                          showBadge={link.name === "Enrollments" && pendingEnrollments > 0}
+                          onNavigate={() => setSidebarOpen(false)}
+                        />
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         {/* Footer Actions */}
-        <div className={`absolute bottom-6 left-4 right-4 space-y-2 ${collapsed ? "left-2 right-2" : ""}`}>
+        <div className="absolute bottom-6 left-0 right-0">
           <Button
             variant="ghost"
-            className={`w-full justify-start gap-4 h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all font-bold group ${collapsed ? "justify-center px-3" : ""}`}
+            className={`w-full justify-start gap-4 h-14 rounded-none bg-white/5 border-y border-white/5 px-4 hover:bg-white/10 transition-all font-bold group ${collapsed ? "justify-center px-3" : ""}`}
             onClick={() => navigate("/dashboard")}
             title={collapsed ? "User View" : ""}
           >
@@ -246,7 +381,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </Button>
           <Button
             variant="ghost"
-            className={`w-full justify-start gap-3 h-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all font-bold ${collapsed ? "justify-center px-3" : ""}`}
+            className={`w-full justify-start gap-3 h-12 rounded-none px-4 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all font-bold ${collapsed ? "justify-center px-3" : ""}`}
             onClick={handleSignOut}
             title={collapsed ? "Sign Out" : ""}
           >
@@ -309,7 +444,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: easeOut }}
           >
-            {children}
+            {loading ? (
+              <div className="flex items-center justify-center py-24">
+                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              children
+            )}
           </motion.div>
         </main>
 

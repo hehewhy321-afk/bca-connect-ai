@@ -47,6 +47,7 @@ const AdminNotices = lazy(() => import("./pages/admin/AdminNotices"));
 const AdminContacts = lazy(() => import("./pages/admin/AdminContacts"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminFoundingMembers = lazy(() => import("./pages/admin/AdminFoundingMembers"));
+const FoundingMemberForm = lazy(() => import("./pages/admin/FoundingMemberForm"));
 const AdminWebsiteSettings = lazy(() => import("./pages/admin/AdminWebsiteSettings"));
 const AdminFAQs = lazy(() => import("./pages/admin/AdminFAQs"));
 const AdminQRScanner = lazy(() => import("./pages/admin/AdminQRScanner"));
@@ -99,13 +100,15 @@ function MinimalLoader() {
 // Redirect authenticated users away from auth page
 function AuthRedirect() {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <MinimalLoader />;
   }
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    const from = (location.state as { from?: string } | null)?.from;
+    return <Navigate to={from || "/dashboard"} replace />;
   }
 
   return <Auth />;
@@ -129,7 +132,9 @@ const App = () => (
             <Toaster />
             <Sonner />
 
-            <BrowserRouter>
+            <BrowserRouter
+              future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+            >
               <ScrollToTop />
               <Routes>
                 {/* Public routes - eager loaded */}
@@ -189,6 +194,8 @@ const App = () => (
                 <Route path="/admin/contacts" element={<ProtectedRoute><LazyRoute><AdminContacts /></LazyRoute></ProtectedRoute>} />
                 <Route path="/admin/users" element={<ProtectedRoute><LazyRoute><AdminUsers /></LazyRoute></ProtectedRoute>} />
                 <Route path="/admin/founding-members" element={<ProtectedRoute><LazyRoute><AdminFoundingMembers /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/founding-members/new" element={<ProtectedRoute><LazyRoute><FoundingMemberForm /></LazyRoute></ProtectedRoute>} />
+                <Route path="/admin/founding-members/:id" element={<ProtectedRoute><LazyRoute><FoundingMemberForm /></LazyRoute></ProtectedRoute>} />
                 <Route path="/admin/settings" element={<ProtectedRoute><LazyRoute><AdminWebsiteSettings /></LazyRoute></ProtectedRoute>} />
                 <Route path="/admin/faqs" element={<ProtectedRoute><LazyRoute><AdminFAQs /></LazyRoute></ProtectedRoute>} />
                 <Route path="/admin/ai-settings" element={<ProtectedRoute><LazyRoute><AdminAISettings /></LazyRoute></ProtectedRoute>} />

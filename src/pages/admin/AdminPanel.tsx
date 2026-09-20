@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { motion, easeOut } from "framer-motion";
+import { motion, easeOut, useReducedMotion } from "framer-motion";
 import {
-  Shield,
   Users,
   Calendar,
   BookOpen,
@@ -10,227 +9,330 @@ import {
   Plus,
   ChevronRight,
   CreditCard,
+  Video,
+  Mail,
+  GraduationCap,
+  CheckCircle2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import type { LucideIcon } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 interface Stats {
-  totalMembers: number;
-  totalEvents: number;
-  totalResources: number;
+  members: number;
+  events: number;
   upcomingEvents: number;
-  totalAnnouncements: number;
+  resources: number;
+  courses: number;
+  announcements: number;
+  pendingPayments: number;
+  pendingEnrollments: number;
+  unreadMessages: number;
+}
+
+const emptyStats: Stats = {
+  members: 0,
+  events: 0,
+  upcomingEvents: 0,
+  resources: 0,
+  courses: 0,
+  announcements: 0,
+  pendingPayments: 0,
+  pendingEnrollments: 0,
+  unreadMessages: 0,
+};
+
+function countOf(table: string) {
+  return supabase.from(table as never).select("*", { count: "exact", head: true });
+}
+
+function StatCard({
+  icon: Icon,
+  title,
+  description,
+  value,
+  unit,
+  href,
+  tint,
+  loading,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  value: number;
+  unit: string;
+  href: string;
+  tint: string;
+  loading: boolean;
+}) {
+  return (
+    <Link
+      to={href}
+      className={`group flex flex-col rounded-xl border border-border bg-gradient-to-br p-5 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${tint}`}
+    >
+      <div className="flex items-start justify-between">
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-sm shadow-primary/20">
+          <Icon className="h-5 w-5" aria-hidden />
+        </span>
+        <ChevronRight
+          className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+          aria-hidden
+        />
+      </div>
+
+      <h3 className="mt-4 text-base font-bold text-foreground">{title}</h3>
+      <p className="mt-0.5 text-sm leading-snug text-muted-foreground">{description}</p>
+
+      <div className="mt-5 flex items-baseline gap-2">
+        {loading ? (
+          <span className="h-7 w-10 rounded bg-muted" aria-hidden />
+        ) : (
+          <span className="text-3xl font-bold tabular-nums tracking-tight text-foreground">
+            {value}
+          </span>
+        )}
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {unit}
+        </span>
+      </div>
+    </Link>
+  );
 }
 
 export default function AdminPanel() {
-  const [stats, setStats] = useState<Stats>({
-    totalMembers: 0,
-    totalEvents: 0,
-    totalResources: 0,
-    upcomingEvents: 0,
-    totalAnnouncements: 0,
-  });
+  const [stats, setStats] = useState<Stats>(emptyStats);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    let active = true;
+
+    const fetchStats = async () => {
+      try {
+        const [
+          members,
+          events,
+          upcoming,
+          resources,
+          courses,
+          announcements,
+          payments,
+          enrollments,
+          messages,
+        ] = await Promise.all([
+          countOf("profiles"),
+          countOf("events"),
+          countOf("events").eq("status", "upcoming"),
+          countOf("resources"),
+          countOf("courses"),
+          countOf("announcements"),
+          countOf("public_event_registrations").eq("payment_status", "pending"),
+          countOf("course_enrollments").eq("status", "pending"),
+          countOf("contact_submissions").eq("is_read", false),
+        ]);
+
+        if (!active) return;
+
+        setStats({
+          members: members.count || 0,
+          events: events.count || 0,
+          upcomingEvents: upcoming.count || 0,
+          resources: resources.count || 0,
+          courses: courses.count || 0,
+          announcements: announcements.count || 0,
+          pendingPayments: payments.count || 0,
+          pendingEnrollments: enrollments.count || 0,
+          unreadMessages: messages.count || 0,
+        });
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
     fetchStats();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const fetchStats = async () => {
-    try {
-      const [membersRes, eventsRes, resourcesRes, upcomingRes, announcementsRes] = await Promise.all([
-        supabase.from("profiles").select("*", { count: "exact", head: true }),
-        supabase.from("events").select("*", { count: "exact", head: true }),
-        supabase.from("resources").select("*", { count: "exact", head: true }),
-        supabase
-          .from("events")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "upcoming"),
-        supabase.from("announcements").select("*", { count: "exact", head: true }),
-      ]);
-
-      setStats({
-        totalMembers: membersRes.count || 0,
-        totalEvents: eventsRes.count || 0,
-        totalResources: resourcesRes.count || 0,
-        upcomingEvents: upcomingRes.count || 0,
-        totalAnnouncements: announcementsRes.count || 0,
-      });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const adminCards = [
+  const queue = [
     {
-      title: "Event Hub",
-      description: "Manage global and local events",
-      icon: Calendar,
-      href: "/admin/events",
-      color: "from-primary to-accent",
-      stat: stats.totalEvents,
-      label: "Live Events",
-    },
-    {
-      title: "Library",
-      description: "Curate student study materials",
-      icon: BookOpen,
-      href: "/admin/resources",
-      color: "from-orange-500 to-primary",
-      stat: stats.totalResources,
-      label: "Resources",
-    },
-    {
-      title: "Registry",
-      description: "Manage member base and roles",
-      icon: Users,
-      href: "/admin/members",
-      color: "from-accent to-primary",
-      stat: stats.totalMembers,
-      label: "Members",
-    },
-    {
-      title: "Broadcast",
-      description: "Global site announcements",
-      icon: Bell,
-      href: "/admin/announcements",
-      color: "from-primary to-primary",
-      stat: stats.totalAnnouncements,
-      label: "Notices",
-    },
-    {
-      title: "Payments",
-      description: "Verify pending transactions",
       icon: CreditCard,
+      label: "Payments to verify",
+      value: stats.pendingPayments,
       href: "/admin/payment-verification",
-      color: "from-primary to-accent",
-      stat: stats.upcomingEvents, // Reuse stats for visual
-      label: "Pending",
     },
+    {
+      icon: GraduationCap,
+      label: "Enrolment requests",
+      value: stats.pendingEnrollments,
+      href: "/admin/enrollments",
+    },
+    {
+      icon: Mail,
+      label: "Unread messages",
+      value: stats.unreadMessages,
+      href: "/admin/contacts",
+    },
+  ].filter((item) => item.value > 0);
+
+  const openItems = queue.reduce((total, item) => total + item.value, 0);
+
+  const cards = [
+    {
+      icon: Calendar,
+      title: "Events",
+      tint: "from-primary/20 via-card/60 to-card/40",
+      description: "Schedule and publish what's coming up",
+      value: stats.upcomingEvents,
+      unit: "upcoming",
+      href: "/admin/events",
+    },
+    {
+      icon: Video,
+      title: "Courses",
+      tint: "from-accent/20 via-card/60 to-card/40",
+      description: "Build lessons and approve enrolments",
+      value: stats.courses,
+      unit: "published",
+      href: "/admin/courses",
+    },
+    {
+      icon: BookOpen,
+      title: "Library",
+      tint: "from-primary/15 via-card/60 to-card/40",
+      description: "Curate notes, papers and guides",
+      value: stats.resources,
+      unit: "resources",
+      href: "/admin/resources",
+    },
+    {
+      icon: Users,
+      title: "Members",
+      tint: "from-accent/15 via-card/60 to-card/40",
+      description: "Manage accounts and roles",
+      value: stats.members,
+      unit: "members",
+      href: "/admin/members",
+    },
+    {
+      icon: Bell,
+      title: "Announcements",
+      tint: "from-primary/20 via-card/60 to-card/40",
+      description: "Broadcast notices to everyone",
+      value: stats.announcements,
+      unit: "posted",
+      href: "/admin/announcements",
+    },
+  ];
+
+  const shortcuts = [
+    { label: "New event", icon: Calendar, path: "/admin/events/new" },
+    { label: "Add resource", icon: BookOpen, path: "/admin/resources/new" },
+    { label: "Post announcement", icon: Bell, path: "/admin/announcements" },
+    { label: "Post notice", icon: FileText, path: "/admin/notices" },
+    { label: "Add member", icon: Users, path: "/admin/users" },
+    { label: "Verify payments", icon: CreditCard, path: "/admin/payment-verification" },
   ];
 
   return (
     <AdminLayout>
-      <div className="space-y-10">
-        {/* Main Banner */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: easeOut }}
-          className="relative overflow-hidden glass rounded-[2.5rem] p-8 md:p-12 border border-border"
-        >
-          <div className="absolute top-0 left-0 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -ml-24 -mt-24" />
-
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-                <Shield className="w-4 h-4 text-primary" />
-                <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Root Administrator</span>
-              </div>
-              <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tight leading-none">
-                Command <span className="text-primary italic">Center</span>
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: easeOut }}
+        className="space-y-8"
+      >
+        {/* Header — the title, plus whatever is actually waiting on an admin */}
+        <header className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-primary/15 via-card/60 to-card/30 p-6 md:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-xl">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+                Admin <span className="italic text-primary">overview</span>
               </h1>
-              <p className="text-muted-foreground text-lg font-medium max-w-xl">
-                Monitor platform growth, manage resources, and oversee member interactions from this unified interface.
+              <p className="mt-2 text-base leading-relaxed text-muted-foreground">
+                Everything that runs the association site — events, courses, the study library,
+                and the people using them.
               </p>
             </div>
 
-            <div className="bg-muted/50 backdrop-blur-xl border border-border rounded-[2rem] p-6 text-center min-w-[200px]">
-              <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1">Server Health</p>
-              <div className="text-3xl font-black text-primary mb-2 tracking-tighter">OPTIMAL</div>
-              <div className="flex items-center justify-center gap-1">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="w-1 h-3 rounded-full bg-primary/40" />
-                ))}
+            <div className="w-full rounded-lg border border-primary/20 bg-background/60 p-4 backdrop-blur-sm lg:w-80 lg:shrink-0">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold text-foreground">Waiting on you</h2>
+                {!loading && openItems > 0 && (
+                  <span className="rounded-md bg-primary px-2 py-0.5 text-xs font-bold tabular-nums text-primary-foreground">
+                    {openItems}
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-3 space-y-1">
+                {loading ? (
+                  <span className="block h-4 w-32 rounded bg-muted" aria-hidden />
+                ) : queue.length > 0 ? (
+                  queue.map((item) => (
+                    <Link
+                      key={item.label}
+                      to={item.href}
+                      className="-mx-2 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <item.icon className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                      <span className="flex-1 text-muted-foreground">{item.label}</span>
+                      <span className="font-bold tabular-nums text-foreground">{item.value}</span>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="flex items-center gap-2 py-1.5 text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
+                    Nothing to review
+                  </p>
+                )}
               </div>
             </div>
           </div>
-        </motion.div>
+        </header>
 
-        {/* Stats Grid - Premium Style */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {adminCards.map((card, index) => (
-            <motion.div
-              key={card.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              onClick={() => navigate(card.href)}
-              className="cursor-pointer group"
-            >
-              <div className="glass-card h-full rounded-3xl p-6 border border-border hover:border-primary/30 hover:shadow-2xl transition-all duration-500 relative overflow-hidden">
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${card.color} flex items-center justify-center mb-6 shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform`}>
-                  <card.icon className="w-6 h-6 text-white" />
-                </div>
-
-                <h3 className="font-black text-lg text-foreground mb-1 group-hover:text-primary transition-colors">
-                  {card.title}
-                </h3>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
-                  {card.description}
-                </p>
-
-                <div className="flex items-end justify-between mt-auto">
-                  <div>
-                    <p className="text-3xl font-black text-foreground tracking-tighter leading-none">
-                      {loading ? "..." : card.stat}
-                    </p>
-                    <p className="text-[10px] font-black text-primary uppercase mt-1">
-                      {card.label}
-                    </p>
-                  </div>
-                  <div className="p-2 rounded-xl bg-muted opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ChevronRight className="w-5 h-5 text-primary" />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+        {/* Each section of the site, with the number that matters most for it */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          {cards.map((card) => (
+            <StatCard key={card.title} {...card} loading={loading} />
           ))}
         </div>
 
-        {/* Action Hub */}
-        <div className="glass-card rounded-[3rem] p-10 border border-border">
-          <div className="flex items-center gap-4 mb-10">
-            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20">
-              <Plus className="w-6 h-6 text-primary" />
-            </div>
+        {/* Shortcuts into the create forms */}
+        <section className="rounded-xl border border-border bg-gradient-to-br from-card/70 to-card/30 p-6 md:p-8">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-sm shadow-primary/20">
+              <Plus className="h-5 w-5" aria-hidden />
+            </span>
             <div>
-              <h2 className="text-2xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
-                Deployment Desk
+              <h2 className="text-lg font-bold text-foreground">
+                Create <span className="italic text-primary">something</span>
               </h2>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">Quick deployment of new content</p>
+              <p className="text-sm text-muted-foreground">Jump straight into the form</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[
-              { label: "New Event", icon: Calendar, path: "/admin/events/new" },
-              { label: "Add Resource", icon: BookOpen, path: "/admin/resources/new" },
-              { label: "Broadcast", icon: Bell, path: "/admin/announcements" },
-              { label: "Post Notice", icon: FileText, path: "/admin/notices" },
-              { label: "Add Member", icon: Users, path: "/admin/members" },
-              { label: "Verify Payments", icon: CreditCard, path: "/admin/payment-verification" }
-            ].map((btn, i) => (
-              <Button
-                key={i}
-                onClick={() => navigate(btn.path)}
-                variant="ghost"
-                className="flex flex-col items-center justify-center h-32 rounded-3xl bg-muted/50 border border-border border-dashed hover:bg-primary/10 hover:border-primary/30 hover:border-solid transition-all p-4 group"
+          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+            {shortcuts.map((shortcut) => (
+              <button
+                key={shortcut.label}
+                type="button"
+                onClick={() => navigate(shortcut.path)}
+                className="flex flex-col items-start gap-3 rounded-lg border border-border bg-gradient-to-br from-primary/10 to-transparent p-4 text-left transition-colors hover:border-primary/40 hover:from-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                <btn.icon className="w-7 h-7 mb-3 text-muted-foreground group-hover:text-primary transition-colors" />
-                <span className="text-xs font-black uppercase tracking-tighter text-foreground text-center">
-                  {btn.label}
-                </span>
-              </Button>
+                <shortcut.icon className="h-5 w-5 text-primary" aria-hidden />
+                <span className="text-sm font-semibold text-foreground">{shortcut.label}</span>
+              </button>
             ))}
           </div>
-        </div>
-      </div>
+        </section>
+      </motion.div>
     </AdminLayout>
   );
 }

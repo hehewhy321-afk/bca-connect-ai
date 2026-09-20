@@ -1,35 +1,107 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, easeOut } from "framer-motion";
-import { LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, MessageSquare, Shield, GraduationCap, Award, ChevronLeft, ChevronRight, Video } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, Users, Bot, Trophy, Settings, LogOut, Menu, X, MessageSquare, Shield, GraduationCap, Award, ChevronLeft, ChevronRight, ChevronDown, Video, type LucideIcon } from "lucide-react";
 import logoImg from "@/assets/logo.jpg";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { preloadRoute, preloadRoutesWhenIdle } from "@/lib/route-preload";
 import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  /** Pages that supply their own header (the AI assistant) can hide this one. */
+  hideHeader?: boolean;
+  /** Drops the main padding and footer so a page can own the viewport (chat). */
+  fullBleed?: boolean;
 }
 
-const sidebarLinks = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Events Hub", href: "/dashboard/events", icon: Calendar },
-  { name: "Courses", href: "/dashboard/courses", icon: Video },
-  { name: "Study Library", href: "/dashboard/resources", icon: BookOpen },
-  { name: "Certificates", href: "/dashboard/certificates", icon: Award },
-  { name: "Alumni Network", href: "/dashboard/alumni", icon: GraduationCap },
-  { name: "Community", href: "/dashboard/community", icon: Users },
-  { name: "BCA AI Assistant", href: "/dashboard/ai-assistant", icon: Bot },
-  { name: "Forum", href: "/dashboard/forum", icon: MessageSquare },
-  { name: "Hall of Fame", href: "/dashboard/achievements", icon: Trophy },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
+const dashboardLink = { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard };
+const settingsLink = { name: "Settings", href: "/dashboard/settings", icon: Settings };
+
+const sidebarGroups = [
+  {
+    name: "Learning",
+    icon: BookOpen,
+    links: [
+      { name: "Courses", href: "/dashboard/courses", icon: Video },
+      { name: "Study Library", href: "/dashboard/resources", icon: BookOpen },
+      { name: "Certificates", href: "/dashboard/certificates", icon: Award },
+    ],
+  },
+  {
+    name: "Campus",
+    icon: Calendar,
+    links: [
+      { name: "Events Hub", href: "/dashboard/events", icon: Calendar },
+      { name: "Alumni Network", href: "/dashboard/alumni", icon: GraduationCap },
+    ],
+  },
+  {
+    name: "Community",
+    icon: Users,
+    links: [
+      { name: "Community", href: "/dashboard/community", icon: Users },
+      { name: "Forum", href: "/dashboard/forum", icon: MessageSquare },
+      { name: "Hall of Fame", href: "/dashboard/achievements", icon: Trophy },
+    ],
+  },
 ];
 
+// Flat list used when the sidebar is collapsed to icons.
+const sidebarLinks = [
+  dashboardLink,
+  ...sidebarGroups.flatMap((group) => group.links),
+  settingsLink,
+];
+
+function NavRow({
+  link,
+  isActive,
+  collapsed = false,
+  nested = false,
+  onNavigate,
+}: {
+  link: { name: string; href: string; icon: LucideIcon };
+  isActive: boolean;
+  collapsed?: boolean;
+  nested?: boolean;
+  onNavigate: () => void;
+}) {
+  return (
+    <Link
+      to={link.href}
+      onClick={onNavigate}
+      onMouseEnter={() => preloadRoute(link.href)}
+      onFocus={() => preloadRoute(link.href)}
+      onTouchStart={() => preloadRoute(link.href)}
+      className={`flex items-center gap-3 py-3.5 rounded-md text-sm font-semibold transition-colors duration-200 group relative ${
+        collapsed ? "justify-center px-3" : nested ? "ml-4 pl-5 pr-4" : "px-4"
+      } ${
+        isActive
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+      }`}
+      title={collapsed ? link.name : ""}
+    >
+      <link.icon className="w-[18px] h-[18px] flex-shrink-0" />
+      {!collapsed && link.name}
+    </Link>
+  );
+}
+
 export function DashboardLayout({
-  children
+  children,
+  hideHeader = false,
+  fullBleed = false
 }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
@@ -72,6 +144,39 @@ export function DashboardLayout({
   }, [user?.id]);
 
   // Persist collapsed state to localStorage
+  // Keep the group holding the current page open, plus whatever the user opened.
+  const [openGroups, setOpenGroups] = useState<string[]>(() => {
+    const active = sidebarGroups.find((group) =>
+      group.links.some((link) => location.pathname.startsWith(link.href))
+    );
+    return active ? [active.name] : [];
+  });
+
+  useEffect(() => {
+    const active = sidebarGroups.find((group) =>
+      group.links.some((link) => location.pathname.startsWith(link.href))
+    );
+    if (active) {
+      setOpenGroups((prev) =>
+        prev.includes(active.name) ? prev : [...prev, active.name]
+      );
+    }
+  }, [location.pathname]);
+
+  const toggleGroup = (name: string) => {
+    setOpenGroups((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
+    );
+  };
+
+  const isLinkActive = (href: string) =>
+    href === "/dashboard"
+      ? location.pathname === "/dashboard"
+      : location.pathname === href || location.pathname.startsWith(href + "/");
+
+  // Warm every sidebar chunk once the browser goes idle.
+  useEffect(() => preloadRoutesWhenIdle(sidebarLinks.map((link) => link.href)), []);
+
   const toggleCollapsed = () => {
     const newCollapsed = !collapsed;
     setCollapsed(newCollapsed);
@@ -145,42 +250,68 @@ export function DashboardLayout({
         </button>
 
         {/* Navigation */}
-        <nav className={`px-4 py-2 space-y-1 overflow-y-auto h-[calc(100vh-220px)] scrollbar-none ${collapsed ? "px-2" : ""}`}>
-          {sidebarLinks.map((link) => {
-            const isActive = link.href === "/dashboard"
-              ? location.pathname === "/dashboard"
-              : location.pathname === link.href || location.pathname.startsWith(link.href + "/");
-            return (
-              <Link
+        <nav className={`px-3 py-2 space-y-1 overflow-y-auto h-[calc(100vh-220px)] scrollbar-none ${collapsed ? "px-2" : ""}`}>
+          {collapsed ? (
+            sidebarLinks.map((link) => (
+              <NavRow
                 key={link.name}
-                to={link.href}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-5 py-4 rounded-[1.25rem] text-sm font-semibold transition-all duration-300 group relative ${collapsed ? "justify-center px-3" : ""
-                  } ${isActive
-                    ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                  }`}
-                title={collapsed ? link.name : ""}
-              >
-                <link.icon className={`w-5 h-5 transition-transform duration-300 flex-shrink-0 ${isActive ? "scale-110" : "group-hover:scale-110"}`} />
-                {!collapsed && link.name}
-                {isActive && !collapsed && (
-                  <motion.div
-                    layoutId="active-nav"
-                    className="absolute right-3 w-1.5 h-1.5 rounded-full bg-primary-foreground"
-                  />
-                )}
-              </Link>
-            );
-          })}
+                link={link}
+                collapsed
+                isActive={isLinkActive(link.href)}
+                onNavigate={() => setSidebarOpen(false)}
+              />
+            ))
+          ) : (
+            <>
+              <NavRow
+                link={dashboardLink}
+                isActive={isLinkActive(dashboardLink.href)}
+                onNavigate={() => setSidebarOpen(false)}
+              />
+              {sidebarGroups.map((group) => {
+                const isOpen = openGroups.includes(group.name);
+                return (
+                  <Collapsible
+                    key={group.name}
+                    open={isOpen}
+                    onOpenChange={() => toggleGroup(group.name)}
+                  >
+                    <CollapsibleTrigger className="flex w-full items-center gap-3 px-4 py-3 text-xs font-black uppercase tracking-wider text-muted-foreground/80 transition-colors hover:text-foreground">
+                      <group.icon className="w-[18px] h-[18px] flex-shrink-0" />
+                      <span className="flex-1 text-left">{group.name}</span>
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                      />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="overflow-hidden space-y-1 pb-1 data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+                      {group.links.map((link) => (
+                        <NavRow
+                          key={link.name}
+                          link={link}
+                          nested
+                          isActive={isLinkActive(link.href)}
+                          onNavigate={() => setSidebarOpen(false)}
+                        />
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
+              <NavRow
+                link={settingsLink}
+                isActive={isLinkActive(settingsLink.href)}
+                onNavigate={() => setSidebarOpen(false)}
+              />
+            </>
+          )}
         </nav>
 
         {/* Footer Actions */}
-        <div className={`absolute bottom-6 left-4 right-4 space-y-2 ${collapsed ? "left-2 right-2" : ""}`}>
+        <div className="absolute bottom-6 left-0 right-0">
           {(isAdmin || isModerator) && (
             <Button
               variant="ghost"
-              className={`w-full justify-start gap-4 h-14 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all font-bold group ${collapsed ? "justify-center px-3" : ""}`}
+              className={`w-full justify-start gap-4 h-14 rounded-none bg-white/5 border-y border-white/5 px-4 hover:bg-white/10 transition-all font-bold group ${collapsed ? "justify-center px-3" : ""}`}
               onClick={() => navigate("/admin")}
               title={collapsed ? "Admin Portal" : ""}
             >
@@ -192,7 +323,7 @@ export function DashboardLayout({
           )}
           <Button
             variant="ghost"
-            className={`w-full justify-start gap-3 h-12 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all font-bold ${collapsed ? "justify-center px-3" : ""}`}
+            className={`w-full justify-start gap-3 h-12 rounded-none px-4 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all font-bold ${collapsed ? "justify-center px-3" : ""}`}
             onClick={handleSignOut}
             title={collapsed ? "Sign Out" : ""}
           >
@@ -203,8 +334,9 @@ export function DashboardLayout({
       </aside>
 
       {/* Main Content Area */}
-      <div className={`flex flex-col min-h-screen transition-all duration-500 ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
+      <div className={`flex flex-col transition-all duration-500 ${fullBleed ? "h-screen overflow-hidden" : "min-h-screen"} ${collapsed ? "lg:pl-20" : "lg:pl-72"}`}>
         {/* Top Header */}
+        {!hideHeader && (
         <header className="sticky top-0 z-[50] glass-card border-b border-white/5 backdrop-blur-2xl">
           <div className="flex items-center justify-between px-4 sm:px-6 h-16 sm:h-20">
             {/* Mobile Trigger & Title */}
@@ -222,6 +354,15 @@ export function DashboardLayout({
 
             {/* Actions Area */}
             <div className="flex items-center gap-2 sm:gap-4">
+              <Link
+                to="/dashboard/ai-assistant"
+                aria-label="AI assistant"
+                title="AI assistant"
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-white transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <Bot className="h-6 w-6 motion-safe:animate-wiggle" aria-hidden />
+              </Link>
+
               <NotificationsDropdown />
 
               <div className="h-8 sm:h-10 w-[1px] bg-white/10 mx-0.5 sm:mx-1 hidden sm:block" />
@@ -248,9 +389,22 @@ export function DashboardLayout({
             </div>
           </div>
         </header>
+        )}
+
+        {hideHeader && (
+          <div className="sticky top-0 z-[50] flex items-center gap-3 border-b border-white/5 px-4 py-3 backdrop-blur-2xl lg:hidden">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="rounded-lg border border-white/10 bg-white/5 p-2 text-foreground transition-all active:scale-95"
+              aria-label={sidebarOpen ? "Close menu" : "Open menu"}
+            >
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        )}
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10">
+        <main className={fullBleed ? "flex min-h-0 flex-1 flex-col" : "flex-1 p-4 sm:p-6 md:p-8 lg:p-10"}>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -261,11 +415,13 @@ export function DashboardLayout({
         </main>
 
         {/* Dashboard Footer */}
-        <footer className="p-4 sm:p-8 text-center border-t border-white/5">
-          <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40">
-            © {new Date().getFullYear()} BCA Connect AI • All Rights Reserved
-          </p>
-        </footer>
+        {!fullBleed && (
+          <footer className="p-4 sm:p-8 text-center border-t border-white/5">
+            <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40">
+              © {new Date().getFullYear()} BCA Connect AI • All Rights Reserved
+            </p>
+          </footer>
+        )}
       </div>
     </div>
   );

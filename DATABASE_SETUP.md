@@ -75,3 +75,64 @@ SELECT promote_to_admin('your-email@example.com');
     npx supabase db reset --linked
     ```
 *   **Storage Not Created**: Ensure `supabase/migrations/20260113000002_create_buckets.sql` was applied successfully in the `db push` output.
+
+---
+
+## 🐳 Local Development with Docker
+
+Run the whole backend on your machine — no hosted Supabase project needed.
+Requires Docker to be running.
+
+1.  **Start the stack** (first run pulls ~4 GB of images):
+    ```bash
+    npx supabase start
+    ```
+
+2.  **Apply all migrations to a clean database:**
+    ```bash
+    npx supabase db reset
+    ```
+
+3.  **Create `.env.local`** — copy `.env.example` and use the local values:
+    ```env
+    VITE_SUPABASE_PROJECT_ID="mqffqoirvbiynwrzwwse"
+    VITE_SUPABASE_URL="http://127.0.0.1:54321"
+    VITE_SUPABASE_PUBLISHABLE_KEY="<ANON_KEY from `npx supabase status`>"
+    ```
+
+4.  **Run the app:**
+    ```bash
+    bun install && bun run dev      # http://localhost:8080
+    ```
+
+### Local endpoints
+
+| Service       | URL                        |
+| ------------- | -------------------------- |
+| API / Kong    | http://127.0.0.1:54321     |
+| Studio        | http://127.0.0.1:54323     |
+| Mailpit inbox | http://127.0.0.1:54324     |
+| Postgres      | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+
+Email confirmation is off locally (`[auth.email] enable_confirmations = false`),
+so signups log in immediately. Any mail the app sends is caught by Mailpit
+rather than being delivered.
+
+### Edge functions
+
+```bash
+npx supabase functions serve            # serves all functions locally
+```
+
+`SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected
+automatically. Put third-party secrets (e.g. `RESEND_API_KEY`) in
+`supabase/functions/.env` — that file is gitignored.
+
+### Useful commands
+
+```bash
+npx supabase stop                       # stop containers (keeps data)
+npx supabase stop --no-backup           # stop and wipe local data
+npx supabase db reset                   # rebuild schema from migrations
+npx supabase gen types typescript --local > src/integrations/supabase/types.ts
+```

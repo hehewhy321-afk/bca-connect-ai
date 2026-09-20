@@ -1,15 +1,3 @@
--- Drop existing policies first (to avoid conflicts)
-DROP POLICY IF EXISTS "Public can view published courses" ON public.courses;
-DROP POLICY IF EXISTS "Admins can do everything on courses" ON public.courses;
-DROP POLICY IF EXISTS "Public can view chapters of published courses" ON public.course_chapters;
-DROP POLICY IF EXISTS "Admins can do everything on chapters" ON public.course_chapters;
-DROP POLICY IF EXISTS "Public can view free preview lessons" ON public.course_lessons;
-DROP POLICY IF EXISTS "Enrolled users can view lessons" ON public.course_lessons;
-DROP POLICY IF EXISTS "Admins can do everything on lessons" ON public.course_lessons;
-DROP POLICY IF EXISTS "Users can view their own enrollments" ON public.course_enrollments;
-DROP POLICY IF EXISTS "Users can create their own enrollments" ON public.course_enrollments;
-DROP POLICY IF EXISTS "Admins can do everything on enrollments" ON public.course_enrollments;
-
 -- Drop existing tables (CASCADE will drop dependent objects)
 DROP TABLE IF EXISTS public.course_enrollments CASCADE;
 DROP TABLE IF EXISTS public.course_lessons CASCADE;

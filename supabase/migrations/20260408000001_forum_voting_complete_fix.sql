@@ -12,6 +12,10 @@
 DROP POLICY IF EXISTS "Users can update own posts" ON public.forum_posts;
 
 -- Create new policy for content updates (users can only update their own posts)
+-- Dropped first so the migration is safe to re-run against a database where
+-- this SQL was already applied by hand in the SQL Editor.
+DROP POLICY IF EXISTS "Users can update own posts content" ON public.forum_posts;
+
 CREATE POLICY "Users can update own posts content"
 ON public.forum_posts
 FOR UPDATE

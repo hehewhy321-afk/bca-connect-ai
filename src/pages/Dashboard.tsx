@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Calendar,
   BookOpen,
@@ -14,6 +14,7 @@ import {
   Bot,
   MessageSquare,
   ChevronRight,
+  ChevronLeft,
   Zap,
   Download,
 } from "lucide-react";
@@ -29,6 +30,9 @@ interface DashboardStats {
   xpPoints: number;
   level: number;
 }
+
+const EVENTS_PER_PAGE = 3;
+const EVENT_POOL_SIZE = 12;
 
 interface Event {
   id: string;
@@ -58,6 +62,8 @@ export default function Dashboard() {
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [eventPage, setEventPage] = useState(0);
+  const reduceMotion = useReducedMotion();
   const [appDownloadUrl, setAppDownloadUrl] = useState(
     "https://github.com/hehewhy321-afk/bca-connect-ai-app/releases/download/v1.2.0/BCA-Association-v1.2.0.apk"
   );
@@ -91,12 +97,26 @@ export default function Dashboard() {
         const { count: resourcesCount } = await supabase
           .from("resources")
           .select("*", { count: "exact", head: true });
-        const { data: events } = await supabase
-          .from("events")
-          .select("id, title, start_date, category, location")
-          .eq("status", "upcoming")
-          .order("start_date", { ascending: true })
-          .limit(3);
+        const nowIso = new Date().toISOString();
+        const [{ data: futureEvents }, { data: pastEvents }] = await Promise.all([
+          supabase
+            .from("events")
+            .select("id, title, start_date, category, location")
+            .gte("start_date", nowIso)
+            .order("start_date", { ascending: true })
+            .limit(EVENT_POOL_SIZE),
+          supabase
+            .from("events")
+            .select("id, title, start_date, category, location")
+            .lt("start_date", nowIso)
+            .order("start_date", { ascending: false })
+            .limit(EVENT_POOL_SIZE),
+        ]);
+        // Whatever is still to come leads; finished events trail behind it.
+        const events = [...(futureEvents || []), ...(pastEvents || [])].slice(
+          0,
+          EVENT_POOL_SIZE
+        );
         const { data: announcementsData } = await supabase
           .from("announcements")
           .select("id, title, content, priority, is_pinned, created_at")
@@ -110,7 +130,7 @@ export default function Dashboard() {
           xpPoints: profile?.xp_points || 0,
           level: profile?.level || 1,
         });
-        setUpcomingEvents(events || []);
+        setUpcomingEvents(events);
         setAnnouncements(announcementsData || []);
       } catch (error) {
         if (import.meta.env.DEV) {
@@ -128,6 +148,55 @@ export default function Dashboard() {
     { title: "Resources", value: stats.resourcesCount, icon: BookOpen, color: "from-orange-500 to-primary", href: "/dashboard/resources" },
     { title: "XP Points", value: stats.xpPoints, icon: TrendingUp, color: "from-accent to-primary", href: "/dashboard/achievements" },
     { title: "Level", value: stats.level, icon: Trophy, color: "from-primary to-primary", href: "/dashboard/achievements" },
+  ];
+
+  const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "Member";
+
+  const eventPageCount = Math.max(1, Math.ceil(upcomingEvents.length / EVENTS_PER_PAGE));
+  const visibleEvents = upcomingEvents.slice(
+    eventPage * EVENTS_PER_PAGE,
+    eventPage * EVENTS_PER_PAGE + EVENTS_PER_PAGE
+  );
+
+  const desktopStats = [
+    {
+      title: "Events",
+      value: stats.eventsCount,
+      unit: "upcoming",
+      icon: Calendar,
+      href: "/dashboard/events",
+      tint: "from-primary/20 via-card/60 to-card/40",
+    },
+    {
+      title: "Study library",
+      value: stats.resourcesCount,
+      unit: "resources",
+      icon: BookOpen,
+      href: "/dashboard/resources",
+      tint: "from-accent/20 via-card/60 to-card/40",
+    },
+    {
+      title: "Experience",
+      value: stats.xpPoints,
+      unit: "XP",
+      icon: TrendingUp,
+      href: "/dashboard/achievements",
+      tint: "from-primary/15 via-card/60 to-card/40",
+    },
+    {
+      title: "Level",
+      value: stats.level,
+      unit: "reached",
+      icon: Trophy,
+      href: "/dashboard/achievements",
+      tint: "from-accent/15 via-card/60 to-card/40",
+    },
+  ];
+
+  const shortcuts = [
+    { title: "Study library", sub: "Notes, papers and guides", icon: BookOpen, href: "/dashboard/resources" },
+    { title: "Community", sub: "Meet other students", icon: Users, href: "/dashboard/community" },
+    { title: "Forum", sub: "Ask and answer questions", icon: MessageSquare, href: "/dashboard/forum" },
   ];
 
   const quickActions = [
@@ -279,137 +348,252 @@ export default function Dashboard() {
       </div>
 
       {/* DESKTOP LAYOUT */}
-      <div className="hidden sm:block space-y-10">
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: "easeOut" }} className="relative overflow-hidden glass rounded-[2.5rem] p-8 md:p-12 border border-border">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-[100px] -mr-32 -mt-32 animate-pulse" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/20 rounded-full blur-[80px] -ml-24 -mb-24" />
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-            <div className="space-y-4 max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-xs font-black text-primary uppercase tracking-widest">Personalized AI Dashboard</span>
-              </div>
-              <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tight leading-none">
-                Welcome back, <br />
-                <span className="text-gradient">{user?.user_metadata?.full_name?.split(" ")[0] || "Member"}!</span>
+      <div className="hidden sm:block space-y-8">
+        {/* Greeting, progress, and the two things most people come here to do */}
+        <motion.header
+          initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="rounded-xl border border-border bg-gradient-to-br from-primary/15 via-card/60 to-card/30 p-6 md:p-8"
+        >
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-xl">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+                Welcome back,{" "}
+                <span className="italic text-primary">{firstName}</span>
               </h1>
-              <p className="text-muted-foreground text-lg font-medium leading-relaxed">
-                You've earned <span className="text-primary font-bold">{stats.xpPoints} XP</span> this week. Keep pushing to reach level {stats.level + 1}!
+              <p className="mt-2 text-base leading-relaxed text-muted-foreground">
+                {stats.xpPoints > 0
+                  ? `You're on ${stats.xpPoints} XP at level ${stats.level}.`
+                  : "Join an event or open a resource to start earning XP."}
               </p>
+
             </div>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <a
-                href={appDownloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button size="lg" className="h-16 px-8 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:opacity-90 font-black text-lg shadow-2xl shadow-orange-500/20 transition-all active:scale-95 group border-0">
-                  <Download className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" />
-                  Get App
+
+            <div className="flex flex-col gap-3 sm:flex-row lg:shrink-0">
+              <Link to="/dashboard/ai-assistant">
+                <Button className="h-12 w-full rounded-lg bg-primary px-6 font-bold text-primary-foreground hover:bg-primary/90 sm:w-auto">
+                  <Bot className="mr-2 h-5 w-5" aria-hidden />
+                  Ask the AI assistant
+                </Button>
+              </Link>
+              <a href={appDownloadUrl} target="_blank" rel="noopener noreferrer">
+                <Button
+                  variant="outline"
+                  className="h-12 w-full rounded-lg border-border bg-background/40 px-6 font-bold hover:border-primary/40 sm:w-auto"
+                >
+                  <Download className="mr-2 h-5 w-5" aria-hidden />
+                  Get the app
                 </Button>
               </a>
-              <Link to="/dashboard/ai-assistant">
-                <Button size="lg" className="h-16 px-10 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 font-black text-lg shadow-2xl shadow-primary/30 transition-all active:scale-95 group">
-                  <Bot className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform" />
-                  Talk to AI
-                  <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-2 transition-transform" />
-                </Button>
-              </Link>
             </div>
           </div>
-        </motion.div>
+        </motion.header>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { title: "Upcoming Events", value: stats.eventsCount, icon: Calendar, color: "from-primary to-accent", href: "/dashboard/events" },
-            { title: "Study Resources", value: stats.resourcesCount, icon: BookOpen, color: "from-orange-500 to-primary", href: "/dashboard/resources" },
-            { title: "Performance XP", value: stats.xpPoints, icon: TrendingUp, color: "from-accent to-primary", href: "/dashboard/achievements" },
-            { title: "Current Level", value: stats.level, icon: Trophy, color: "from-primary to-primary", href: "/dashboard/achievements" },
-          ].map((stat, index) => (
-            <motion.div key={stat.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: index * 0.1 }}>
-              <Link to={stat.href}>
-                <div className="glass-card h-full rounded-3xl p-6 border border-border hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 group relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-6 shadow-xl shadow-primary/20 group-hover:scale-110 transition-transform duration-500`}>
-                    <stat.icon className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-black text-muted-foreground uppercase tracking-widest group-hover:text-primary transition-colors">{stat.title}</p>
-                    <p className="text-4xl font-black text-foreground tracking-tighter">{loading ? <span className="inline-block w-8 h-8 bg-muted animate-pulse rounded" /> : stat.value}</p>
-                  </div>
-                  <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity"><stat.icon size={100} strokeWidth={1} /></div>
-                </div>
-              </Link>
-            </motion.div>
+        {/* What's available to you right now */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {desktopStats.map((stat) => (
+            <Link
+              key={stat.title}
+              to={stat.href}
+              className={`group flex flex-col rounded-xl border border-border bg-gradient-to-br p-5 transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${stat.tint}`}
+            >
+              <div className="flex items-start justify-between">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-sm shadow-primary/20">
+                  <stat.icon className="h-5 w-5" aria-hidden />
+                </span>
+                <ChevronRight
+                  className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                  aria-hidden
+                />
+              </div>
+              <h2 className="mt-4 text-base font-bold text-foreground">{stat.title}</h2>
+              <div className="mt-3 flex items-baseline gap-2">
+                {loading ? (
+                  <span className="h-7 w-10 rounded bg-muted" aria-hidden />
+                ) : (
+                  <span className="text-3xl font-bold tabular-nums tracking-tight text-foreground">
+                    {stat.value}
+                  </span>
+                )}
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {stat.unit}
+                </span>
+              </div>
+            </Link>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 }} className="lg:col-span-2 glass-card rounded-[2.5rem] border border-border p-8">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20"><Calendar className="w-5 h-5 text-primary" /></div>
-                <h2 className="text-xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">Upcoming Events</h2>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Events */}
+          <section className="rounded-xl border border-border bg-gradient-to-br from-card/70 to-card/30 p-5 lg:col-span-2">
+            <div className="flex h-9 items-center justify-between gap-4">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-primary-foreground">
+                  <Calendar className="h-[18px] w-[18px]" aria-hidden />
+                </span>
+                <h2 className="text-base font-bold text-foreground">Events</h2>
               </div>
-              <Link to="/dashboard/events"><Button variant="ghost" className="rounded-xl hover:bg-muted font-bold">View Schedule</Button></Link>
+              <Link
+                to="/dashboard/events"
+                className="rounded-md px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                See all
+              </Link>
             </div>
-            <div className="space-y-4">
-              {loading ? [1, 2, 3].map((i) => <div key={i} className="h-24 glass rounded-3xl animate-pulse" />) : upcomingEvents.length === 0 ? (
-                <div className="text-center py-12 glass rounded-3xl border border-dashed border-white/10">
-                  <Calendar className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground font-medium">Clear schedule for now</p>
-                </div>
-              ) : upcomingEvents.map((event) => (
-                <motion.div key={event.id} whileHover={{ x: 8 }} className="flex flex-col sm:flex-row sm:items-center gap-5 p-5 rounded-3xl bg-muted/50 border border-border hover:bg-muted transition-all group">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors"><span className="text-2xl">📅</span></div>
-                  <div className="flex-1 space-y-2">
-                    <h3 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">{event.title}</h3>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground font-medium">
-                      <span className="flex items-center gap-1.5 bg-background/50 px-2.5 py-1 rounded-lg"><Clock className="w-4 h-4" />{formatDate(event.start_date)}</span>
-                      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary"><Pin className="w-3 h-3" />{event.location || "Online"}</span>
-                    </div>
-                  </div>
-                  <Button variant="outline" className="rounded-xl h-12 px-6 border-border hover:border-primary active:scale-95 transition-all">Details</Button>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
 
-          <div className="space-y-8">
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.5 }} className="glass-card rounded-[2.5rem] border border-border p-8">
-              <h2 className="text-xl font-black text-foreground tracking-tight underline elevation-1 decoration-accent/30 decoration-4 underline-offset-8 mb-8">Quick Hub</h2>
-              <div className="grid gap-4">
-                {[
-                  { title: "Smart Resources", sub: "Explore curriculum", icon: BookOpen, color: "bg-primary", href: "/dashboard/resources" },
-                  { title: "Student Connect", sub: "Peer networking", icon: Users, color: "bg-accent", href: "/dashboard/community" },
-                  { title: "Forum Discussions", sub: "Join the talk", icon: MessageSquare, color: "bg-muted", href: "/dashboard/forum" }
-                ].map((action, i) => (
-                  <Link key={i} to={action.href} className="group">
-                    <div className="flex items-center gap-4 p-4 rounded-3xl bg-muted/50 border border-border hover:bg-primary/10 hover:border-primary/20 transition-all duration-300">
-                      <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}><action.icon className="w-6 h-6 text-white" /></div>
-                      <div><p className="font-bold text-foreground">{action.title}</p><p className="text-xs text-muted-foreground font-medium">{action.sub}</p></div>
+            <div className="mt-4 space-y-2">
+              {loading ? (
+                [1, 2, 3].map((i) => <div key={i} className="h-16 rounded-lg bg-muted" />)
+              ) : upcomingEvents.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border bg-background/40 py-10 text-center">
+                  <Calendar className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" aria-hidden />
+                  <p className="text-sm text-muted-foreground">
+                    No events scheduled yet. Check back soon.
+                  </p>
+                </div>
+              ) : (
+                visibleEvents.map((event) => (
+                  <Link
+                    key={event.id}
+                    to={`/events/${event.id}`}
+                    className="group flex items-center gap-3 rounded-lg border border-border bg-gradient-to-br from-primary/10 to-transparent p-3 transition-colors hover:border-primary/40 hover:from-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-md bg-background/60 text-center">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-primary">
+                        {new Date(event.start_date).toLocaleDateString("en-US", { month: "short" })}
+                      </span>
+                      <span className="text-sm font-bold leading-none text-foreground">
+                        {new Date(event.start_date).getDate()}
+                      </span>
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+                        <span className="truncate">{event.title}</span>
+                        {new Date(event.start_date) < new Date() && (
+                          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Past
+                          </span>
+                        )}
+                      </h3>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="h-3 w-3" aria-hidden />
+                          {formatDate(event.start_date)}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Pin className="h-3 w-3" aria-hidden />
+                          {event.location || "Online"}
+                        </span>
+                      </p>
+                    </div>
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
+                  </Link>
+                ))
+              )}
+            </div>
+
+            {!loading && upcomingEvents.length > EVENTS_PER_PAGE && (
+              <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  Page {eventPage + 1} of {eventPageCount}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={eventPage === 0}
+                    onClick={() => setEventPage((page) => Math.max(0, page - 1))}
+                    className="h-7 rounded-md border-border px-2.5 text-xs"
+                  >
+                    <ChevronLeft className="mr-1 h-3.5 w-3.5" aria-hidden />
+                    Newer
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={eventPage >= eventPageCount - 1}
+                    onClick={() =>
+                      setEventPage((page) => Math.min(eventPageCount - 1, page + 1))
+                    }
+                    className="h-7 rounded-md border-border px-2.5 text-xs"
+                  >
+                    Older
+                    <ChevronRight className="ml-1 h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <div className="flex h-full flex-col gap-6">
+            {/* Shortcuts */}
+            <section className="flex flex-1 flex-col rounded-xl border border-border bg-gradient-to-br from-card/70 to-card/30 p-5">
+              <div className="flex h-9 items-center">
+                <h2 className="text-base font-bold text-foreground">
+                  Jump <span className="italic text-primary">back in</span>
+                </h2>
+              </div>
+              <div className="mt-4 space-y-2">
+                {shortcuts.map((shortcut) => (
+                  <Link
+                    key={shortcut.title}
+                    to={shortcut.href}
+                    className="group flex items-center gap-3 rounded-lg border border-border bg-gradient-to-br from-primary/10 to-transparent p-3 transition-colors hover:border-primary/40 hover:from-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent text-primary-foreground">
+                      <shortcut.icon className="h-[18px] w-[18px]" aria-hidden />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-foreground">{shortcut.title}</p>
+                      <p className="truncate text-xs text-muted-foreground">{shortcut.sub}</p>
+                    </div>
+                    <ChevronRight
+                      className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
                   </Link>
                 ))}
               </div>
-            </motion.div>
+            </section>
 
+            {/* Notices */}
             {announcements.length > 0 && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.6 }} className="glass-card rounded-[2.5rem] border border-border p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3"><Megaphone className="w-5 h-5 text-primary" /><h2 className="text-lg font-black text-foreground tracking-tight uppercase tracking-wider">Notices</h2></div>
-                  <Link to="../notice"><Button variant="ghost" size="sm" className="rounded-xl hover:bg-muted font-bold text-xs">View All</Button></Link>
+              <section className="rounded-xl border border-border bg-gradient-to-br from-card/70 to-card/30 p-5">
+                <div className="flex h-9 items-center justify-between gap-4">
+                  <h2 className="text-base font-bold text-foreground">Notices</h2>
+                  <Link
+                    to="/notice"
+                    className="rounded-md px-2 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    See all
+                  </Link>
                 </div>
-                <div className="space-y-3">
+                <div className="mt-4 space-y-2">
                   {announcements.map((ann) => (
-                    <div key={ann.id} className={`p-4 rounded-2xl border-l-[6px] ${getPriorityStyles(ann.priority)} transition-colors hover:shadow-md`}>
-                      <h3 className="font-bold text-sm text-foreground mb-1 flex items-center gap-2">{ann.is_pinned && <Pin className="w-3 h-3 text-primary fill-primary" />}{ann.title}</h3>
-                      <p className="text-xs text-muted-foreground font-medium line-clamp-2">{ann.content}</p>
-                      <p className="text-[10px] text-muted-foreground/60 mt-2">{formatDate(ann.created_at)}</p>
-                    </div>
+                    <article
+                      key={ann.id}
+                      className={`rounded-lg border-l-4 p-3.5 ${getPriorityStyles(ann.priority)}`}
+                    >
+                      <h3 className="flex items-center gap-2 text-sm font-bold text-foreground">
+                        {ann.is_pinned && (
+                          <Pin className="h-3 w-3 shrink-0 fill-primary text-primary" aria-hidden />
+                        )}
+                        <span className="truncate">{ann.title}</span>
+                      </h3>
+                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                        {ann.content}
+                      </p>
+                      <p className="mt-2 text-[11px] text-muted-foreground/70">
+                        {formatDate(ann.created_at)}
+                      </p>
+                    </article>
                   ))}
                 </div>
-              </motion.div>
+              </section>
             )}
           </div>
         </div>

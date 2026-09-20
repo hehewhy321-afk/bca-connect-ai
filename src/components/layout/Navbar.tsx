@@ -14,6 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
+import { UserMenu } from "./UserMenu";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
 
 const navLinks = [
@@ -30,6 +32,7 @@ export function Navbar() {
   const [logoLoaded, setLogoLoaded] = useState(false);
 
   const { user } = useAuth();
+  const { isAdmin, isModerator } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
   const { data: settings } = useWebsiteSettings();
@@ -154,12 +157,16 @@ export function Navbar() {
             <div className="flex items-center gap-3">
               <ThemeToggle />
               <div className="hidden sm:block">
-                <Button
-                  onClick={() => navigate(user ? "/dashboard" : "/auth")}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold px-5 rounded-lg h-9 text-xs"
-                >
-                  {user ? "Dashboard" : "Join Now"}
-                </Button>
+                {user ? (
+                  <UserMenu />
+                ) : (
+                  <Button
+                    onClick={() => navigate("/auth")}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold px-5 rounded-lg h-9 text-xs"
+                  >
+                    Join Now
+                  </Button>
+                )}
               </div>
 
               <button
@@ -224,12 +231,22 @@ export function Navbar() {
                 </div>
 
                 {/* --- Action Button  --- */}
-                <motion.div variants={itemVariants} className="mt-6 px-1">
+                <motion.div variants={itemVariants} className="mt-6 px-1 space-y-3">
+                  {user && (isAdmin || isModerator) && (
+                    <Button
+                      onClick={() => handleNavClick("/admin")}
+                      variant="outline"
+                      className="w-full h-12 font-bold rounded-xl border-border flex items-center justify-center gap-2 text-sm"
+                    >
+                      Admin dashboard
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Button
                     onClick={() => handleNavClick(user ? "/dashboard" : "/auth")}
                     className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-xl shadow-primary/20"
                   >
-                    {user ? "Dashboard" : "Join Now"}
+                    {user ? "User dashboard" : "Join Now"}
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </motion.div>
