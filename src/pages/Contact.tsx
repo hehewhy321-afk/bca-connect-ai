@@ -133,13 +133,13 @@ export default function Contact() {
         </motion.header>
 
         {/* Form + details */}
-        <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:items-start">
+        <div className="mt-10 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[1.15fr_1fr]">
           {/* Form */}
           <motion.section
             initial={reduceMotion ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.05 }}
-            className="rounded-lg border border-border bg-card p-5 sm:p-6"
+            className="flex h-full flex-col rounded-lg border border-border bg-card p-5 sm:p-6"
           >
             <h2 className="font-heading text-lg font-semibold text-foreground">
               Send us a message
@@ -148,7 +148,7 @@ export default function Contact() {
               Fields marked with * are required.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <form onSubmit={handleSubmit} className="mt-6 flex flex-1 flex-col gap-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="name" className="text-sm">Your name *</Label>
@@ -201,7 +201,7 @@ export default function Contact() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="flex flex-1 flex-col space-y-1.5">
                 <Label htmlFor="message" className="text-sm">Message *</Label>
                 <Textarea
                   id="message"
@@ -211,7 +211,7 @@ export default function Contact() {
                   value={formData.message}
                   onChange={handleChange}
                   required
-                  className="rounded-md"
+                  className="min-h-[140px] flex-1 rounded-md"
                 />
               </div>
 
@@ -237,9 +237,9 @@ export default function Contact() {
             initial={reduceMotion ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="space-y-6"
+            className="flex h-full flex-col"
           >
-            <section className="rounded-lg border border-border bg-card p-5 sm:p-6">
+            <section className="flex h-full flex-col rounded-lg border border-border bg-card p-5 sm:p-6">
               <h2 className="font-heading text-lg font-semibold text-foreground">
                 Get in touch
               </h2>
