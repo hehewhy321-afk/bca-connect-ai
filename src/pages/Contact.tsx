@@ -18,7 +18,8 @@ import {
   Facebook,
   Instagram,
   Twitter,
-  Linkedin
+  Linkedin,
+  Youtube
 } from "lucide-react";
 
 export default function Contact() {
@@ -57,6 +58,7 @@ export default function Contact() {
     { icon: Instagram, href: settings?.instagram_url, label: "Instagram" },
     { icon: Twitter, href: settings?.twitter_url, label: "Twitter" },
     { icon: Linkedin, href: settings?.linkedin_url, label: "LinkedIn" },
+    { icon: Youtube, href: settings?.youtube_url, label: "YouTube" },
   ].filter((social) => Boolean(social.href));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({

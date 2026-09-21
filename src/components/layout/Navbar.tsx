@@ -89,8 +89,8 @@ export function Navbar() {
 
             {/* Logo Section */}
             <Link to="/" className="flex items-center gap-2 group" onClick={() => setIsOpen(false)}>
-              <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-primary to-accent p-[1px]">
-                <div className="w-full h-full rounded-2xl bg-muted flex items-center justify-center overflow-hidden">
+              <div className="w-9 h-9 md:w-11 md:h-11 shrink-0 rounded-full bg-gradient-to-br from-primary to-accent p-[2px]">
+                <div className="w-full h-full rounded-full bg-background flex items-center justify-center overflow-hidden">
                   <img
                     src={settings?.site_logo || logoImg}
                     alt=""

@@ -26,12 +26,12 @@ const defaultSettings: WebsiteSettings = {
   email_primary: "bca@mmamc.edu.np",
   email_secondary: "info@mmamc.edu.np",
   address: "MMAMC College, Biratnagar, Nepal",
-  facebook_url: "https://facebook.com",
-  instagram_url: "https://instagram.com",
-  twitter_url: "https://twitter.com",
-  linkedin_url: "https://linkedin.com",
-  github_url: "https://github.com",
-  youtube_url: "https://youtube.com",
+  facebook_url: "",
+  instagram_url: "",
+  twitter_url: "",
+  linkedin_url: "",
+  github_url: "",
+  youtube_url: "",
   signup_enabled: "true",
 };
 

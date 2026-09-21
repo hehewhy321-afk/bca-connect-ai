@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   GraduationCap, Mail, Phone, MapPin,
   Facebook, Instagram, Twitter, Linkedin,
-  Github, ArrowRight, Heart, Wrench
+  Github, Youtube, ArrowRight, Heart, Wrench
 } from "lucide-react";
 import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
 
@@ -56,12 +56,13 @@ export function Footer() {
   const { data: settings } = useWebsiteSettings();
 
   const socialLinks = [
-    { icon: Facebook, href: settings?.facebook_url || "#", label: "Facebook" },
-    { icon: Instagram, href: settings?.instagram_url || "#", label: "Instagram" },
-    { icon: Twitter, href: settings?.twitter_url || "#", label: "Twitter" },
-    { icon: Linkedin, href: settings?.linkedin_url || "#", label: "LinkedIn" },
-    { icon: Github, href: settings?.github_url || "#", label: "GitHub" },
-  ];
+    { icon: Facebook, href: settings?.facebook_url, label: "Facebook" },
+    { icon: Instagram, href: settings?.instagram_url, label: "Instagram" },
+    { icon: Twitter, href: settings?.twitter_url, label: "Twitter" },
+    { icon: Linkedin, href: settings?.linkedin_url, label: "LinkedIn" },
+    { icon: Youtube, href: settings?.youtube_url, label: "YouTube" },
+    { icon: Github, href: settings?.github_url, label: "GitHub" },
+  ].filter((social) => Boolean(social.href));
 
   const handleNavClick = (href: string) => {
     if (href.startsWith("#")) {
