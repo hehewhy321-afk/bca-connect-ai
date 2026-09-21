@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Settings, Globe, Phone, Mail, Facebook, Twitter, Instagram, Linkedin, Youtube, Loader2, Save, Upload, X, Image, Smartphone, Lock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
@@ -15,9 +15,15 @@ interface SettingsMap {
   [key: string]: string;
 }
 
+const LABEL =
+  "text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1";
+const FIELD =
+  "h-10 rounded-md border-border bg-background/60 font-medium focus:border-primary/50 focus:ring-primary/20";
+
 const AdminWebsiteSettings = () => {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const reduceMotion = useReducedMotion();
   const [isUploading, setIsUploading] = useState(false);
   const [settings, setSettings] = useState<SettingsMap>({
     site_name: "",
@@ -147,72 +153,69 @@ const AdminWebsiteSettings = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-10 pb-20">
-        {/* Modern Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-lg shadow-primary/5">
-              <Settings className="w-7 h-7" />
-            </div>
+      <div className="space-y-6 pb-20">
+        {/* Header */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent text-primary-foreground">
+              <Settings className="h-[18px] w-[18px]" aria-hidden />
+            </span>
             <div>
-              <h1 className="text-3xl font-black text-foreground tracking-tight underline elevation-1 decoration-primary/30 decoration-4 underline-offset-8">
-                Global Config
+              <h1 className="text-base font-bold text-foreground">
+                Website <span className="italic text-primary">settings</span>
               </h1>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-2">
-                Core parameters and branding protocols
+              <p className="text-xs text-muted-foreground">
+                Branding, contact details and links used across the public site
               </p>
             </div>
           </div>
+
           <Button
             onClick={handleSave}
             disabled={updateMutation.isPending}
-            className="h-14 px-8 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50"
+            className="h-9 shrink-0 rounded-md bg-primary px-4 font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           >
             {updateMutation.isPending ? (
-              <Loader2 className="h-4 w-4 mr-3 animate-spin" />
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />
             ) : (
-              <Save className="h-4 w-4 mr-3" />
+              <Save className="mr-1.5 h-4 w-4" aria-hidden />
             )}
-            Transmit Changes
+            Save changes
           </Button>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Basic Info */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Identity */}
+          <motion.section
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="glass-card rounded-[3rem] p-8 border border-white/5 relative overflow-hidden group"
+            transition={{ duration: 0.3 }}
+            className="rounded-lg border border-border bg-gradient-to-br from-muted/40 to-card p-5 dark:from-card/70 dark:to-card/30"
           >
-            <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
-
-            <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
-                <Globe className="h-5 w-5" />
-              </div>
+            <div className="mb-5 flex items-center gap-2.5 border-b border-border pb-4">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Globe className="h-[18px] w-[18px]" aria-hidden />
+              </span>
               <div>
-                <h2 className="text-xl font-black text-foreground tracking-tight">Identity Profile</h2>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Platform branding variables</p>
+                <h2 className="text-sm font-bold text-foreground">Identity Profile</h2>
+                <p className="text-xs text-muted-foreground">Name and logo shown to visitors</p>
               </div>
             </div>
 
-            <div className="space-y-6 relative z-10">
+            <div className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="site_name" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Platform Name</Label>
-                <div className="relative group">
-                  <Input
-                    id="site_name"
-                    value={settings.site_name}
-                    onChange={(e) => handleChange("site_name", e.target.value)}
-                    placeholder="BCA Association"
-                    className="h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
-                  />
-                </div>
+                <Label htmlFor="site_name" className={LABEL}>Platform Name</Label>
+                <Input
+                  id="site_name"
+                  value={settings.site_name}
+                  onChange={(e) => handleChange("site_name", e.target.value)}
+                  placeholder="BCA Association"
+                  className={FIELD}
+                />
               </div>
 
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Visual Signature (Logo)</Label>
+              <div className="space-y-2">
+                <Label className={LABEL}>Visual Signature (Logo)</Label>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -222,234 +225,204 @@ const AdminWebsiteSettings = () => {
                 />
 
                 {settings.site_logo ? (
-                  <div className="relative p-6 glass rounded-[2rem] border border-white/5 group/logo">
+                  <div className="rounded-md border border-border bg-background/60 p-4">
                     <img
                       src={settings.site_logo}
-                      alt="Logo Preview"
-                      className="max-h-24 object-contain mx-auto transition-transform group-hover/logo:scale-105 duration-500"
+                      alt="Logo preview"
+                      className="mx-auto max-h-20 object-contain"
                     />
-                    <div className="flex gap-3 mt-6 justify-center">
+                    <div className="mt-4 flex justify-center gap-2">
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
-                        className="rounded-xl border border-white/5 hover:bg-white/5"
+                        className="h-8 rounded-md border-border px-3 text-xs"
                       >
                         {isUploading ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />
                         ) : (
-                          <Upload className="h-4 w-4 mr-2 text-primary" />
+                          <Upload className="mr-1.5 h-3.5 w-3.5" aria-hidden />
                         )}
-                        Update
+                        Replace
                       </Button>
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={handleRemoveLogo}
-                        className="rounded-xl border border-white/5 hover:bg-red-500/10 text-red-500 hover:text-red-500"
+                        className="h-8 rounded-md border-border px-3 text-xs text-destructive hover:border-destructive/40 hover:text-destructive"
                       >
-                        <X className="h-4 w-4 mr-2" />
-                        Purge
+                        <X className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+                        Remove
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div
+                  <button
+                    type="button"
                     onClick={() => !isUploading && fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-white/10 rounded-[2rem] p-10 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group/upload"
+                    className="group/upload w-full rounded-md border border-dashed border-border p-8 text-center transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     {isUploading ? (
-                      <Loader2 className="h-12 w-12 mx-auto text-primary animate-spin" />
+                      <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" aria-hidden />
                     ) : (
-                      <div className="relative">
-                        <Image className="h-12 w-12 mx-auto text-muted-foreground group-hover/upload:text-primary transition-colors" />
-                        <Upload className="absolute -right-2 -bottom-2 h-5 w-5 text-primary opacity-0 group-hover/upload:opacity-100 transition-opacity" />
-                      </div>
+                      <Image className="mx-auto h-8 w-8 text-muted-foreground transition-colors group-hover/upload:text-primary" aria-hidden />
                     )}
-                    <p className="mt-4 text-xs font-black uppercase tracking-widest text-muted-foreground group-hover/upload:text-foreground">
-                      {isUploading ? "Uploading Protocol..." : "Upload Vector Data"}
+                    <p className="mt-3 text-sm font-semibold text-foreground">
+                      {isUploading ? "Uploading…" : "Upload a logo"}
                     </p>
-                    <p className="text-[10px] text-muted-foreground/50 font-bold mt-1">PNG, SVG, JPG | MAX 2MB</p>
-                  </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">PNG, SVG or JPG, up to 2MB</p>
+                  </button>
                 )}
               </div>
 
-              <div className="space-y-2 pt-2">
-                <Label htmlFor="site_logo_url" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Direct URI Link</Label>
+              <div className="space-y-2">
+                <Label htmlFor="site_logo_url" className={LABEL}>Direct URI Link</Label>
                 <Input
                   id="site_logo_url"
                   value={settings.site_logo}
                   onChange={(e) => handleChange("site_logo", e.target.value)}
                   placeholder="https://cdn.bca.ai/logo.png"
-                  className="h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-mono text-[10px] opacity-60 hover:opacity-100 transition-opacity"
+                  className={`${FIELD} font-mono text-xs`}
                 />
               </div>
             </div>
-          </motion.div>
+          </motion.section>
 
-          {/* Contact Info */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+          {/* Contact */}
+          <motion.section
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="glass-card rounded-[3rem] p-8 border border-white/5 relative overflow-hidden group"
+            transition={{ duration: 0.3, delay: 0.05 }}
+            className="rounded-lg border border-border bg-gradient-to-br from-muted/40 to-card p-5 dark:from-card/70 dark:to-card/30"
           >
-            <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
-
-            <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
-                <Phone className="h-5 w-5" />
-              </div>
+            <div className="mb-5 flex items-center gap-2.5 border-b border-border pb-4">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Phone className="h-[18px] w-[18px]" aria-hidden />
+              </span>
               <div>
-                <h2 className="text-xl font-black text-foreground tracking-tight">Nexus Terminals</h2>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Communication link parameters</p>
+                <h2 className="text-sm font-bold text-foreground">Nexus Terminals</h2>
+                <p className="text-xs text-muted-foreground">How people reach the association</p>
               </div>
             </div>
 
-            <div className="space-y-6 relative z-10">
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Transmission Line</Label>
-                <div className="relative group">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                  <Input
-                    id="phone"
-                    value={settings.phone}
-                    onChange={(e) => handleChange("phone", e.target.value)}
-                    placeholder="+977-XXXXXXXXXX"
-                    className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
-                  />
+            <div className="space-y-5">
+              {[
+                { id: "phone", label: "Transmission Line", icon: Phone, placeholder: "+977-XXXXXXXXXX", type: "text" },
+                { id: "email_primary", label: "Primary Archive Link", icon: Mail, placeholder: "info@bcaassociation.edu.np", type: "email" },
+                { id: "email_secondary", label: "Emergency Frequency", icon: Mail, placeholder: "support@bcaassociation.edu.np", type: "email" },
+              ].map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <Label htmlFor={field.id} className={LABEL}>{field.label}</Label>
+                  <div className="group relative">
+                    <field.icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden />
+                    <Input
+                      id={field.id}
+                      type={field.type}
+                      value={settings[field.id]}
+                      onChange={(e) => handleChange(field.id, e.target.value)}
+                      placeholder={field.placeholder}
+                      className={`${FIELD} pl-9`}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email_primary" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Primary Archive Link</Label>
-                <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                  <Input
-                    id="email_primary"
-                    type="email"
-                    value={settings.email_primary}
-                    onChange={(e) => handleChange("email_primary", e.target.value)}
-                    placeholder="info@bcaassociation.edu.np"
-                    className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email_secondary" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Emergency Frequency</Label>
-                <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                  <Input
-                    id="email_secondary"
-                    type="email"
-                    value={settings.email_secondary}
-                    onChange={(e) => handleChange("email_secondary", e.target.value)}
-                    placeholder="support@bcaassociation.edu.np"
-                    className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
-                  />
-                </div>
-              </div>
+              ))}
             </div>
-          </motion.div>
+          </motion.section>
 
-          {/* App Config */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+          {/* App distribution */}
+          <motion.section
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="glass-card rounded-[3rem] p-8 border border-white/5 relative overflow-hidden group"
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="rounded-lg border border-border bg-gradient-to-br from-muted/40 to-card p-5 dark:from-card/70 dark:to-card/30"
           >
-            <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
-
-            <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
-                <Smartphone className="h-5 w-5" />
-              </div>
+            <div className="mb-5 flex items-center gap-2.5 border-b border-border pb-4">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Smartphone className="h-[18px] w-[18px]" aria-hidden />
+              </span>
               <div>
-                <h2 className="text-xl font-black text-foreground tracking-tight">App Distribution</h2>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Mobile app parameters</p>
+                <h2 className="text-sm font-bold text-foreground">App Distribution</h2>
+                <p className="text-xs text-muted-foreground">Where the Get the app button points</p>
               </div>
             </div>
 
-            <div className="space-y-6 relative z-10">
-              <div className="space-y-2">
-                <Label htmlFor="app_download_link" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">APK / Download URL</Label>
-                <div className="relative group">
-                  <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                  <Input
-                    id="app_download_link"
-                    value={settings.app_download_link}
-                    onChange={(e) => handleChange("app_download_link", e.target.value)}
-                    placeholder="https://github.com/.../app-release.apk"
-                    className="pl-11 h-12 rounded-2xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold"
-                  />
-                </div>
-                <p className="text-[10px] text-muted-foreground ml-1">Direct link to the APK file or app store listing.</p>
+            <div className="space-y-2">
+              <Label htmlFor="app_download_link" className={LABEL}>APK / Download URL</Label>
+              <div className="group relative">
+                <Smartphone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden />
+                <Input
+                  id="app_download_link"
+                  value={settings.app_download_link}
+                  onChange={(e) => handleChange("app_download_link", e.target.value)}
+                  placeholder="https://github.com/.../app-release.apk"
+                  className={`${FIELD} pl-9`}
+                />
               </div>
+              <p className="text-xs text-muted-foreground">
+                Direct link to the APK file or an app store listing.
+              </p>
             </div>
-          </motion.div>
+          </motion.section>
 
-          {/* System Access Control */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+          {/* Access control */}
+          <motion.section
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.18 }}
-            className="glass-card rounded-[3rem] p-8 border border-white/5 relative overflow-hidden group"
+            transition={{ duration: 0.3, delay: 0.15 }}
+            className="rounded-lg border border-border bg-gradient-to-br from-muted/40 to-card p-5 dark:from-card/70 dark:to-card/30"
           >
-            <div className="absolute -top-12 -right-12 w-48 h-48 bg-red-500/5 rounded-full blur-3xl group-hover:bg-red-500/10 transition-colors" />
-
-            <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
-                <Lock className="h-5 w-5" />
-              </div>
+            <div className="mb-5 flex items-center gap-2.5 border-b border-border pb-4">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Lock className="h-[18px] w-[18px]" aria-hidden />
+              </span>
               <div>
-                <h2 className="text-xl font-black text-foreground tracking-tight">Access Control</h2>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Gatekeeper protocols</p>
+                <h2 className="text-sm font-bold text-foreground">Access Control</h2>
+                <p className="text-xs text-muted-foreground">Who can create an account</p>
               </div>
             </div>
 
-            <div className="space-y-6 relative z-10">
-              <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 group-hover:bg-white/10 transition-colors">
-                <div className="space-y-1">
-                  <Label className="text-sm font-black uppercase tracking-widest text-foreground">Self Signup</Label>
-                  <p className="text-[10px] text-muted-foreground font-bold">Allow users to create accounts independently</p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-background/60 p-4">
+                <div>
+                  <Label className="text-sm font-bold text-foreground">Self Signup</Label>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Let visitors create their own accounts
+                  </p>
                 </div>
                 <Switch
-                  checked={settings.signup_enabled === 'true'}
-                  onCheckedChange={(checked) => handleChange('signup_enabled', checked ? 'true' : 'false')}
+                  checked={settings.signup_enabled === "true"}
+                  onCheckedChange={(checked) => handleChange("signup_enabled", checked ? "true" : "false")}
                 />
               </div>
-              <div className="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20">
-                <p className="text-[10px] text-yellow-500 font-bold leading-relaxed">
-                  <span className="uppercase tracking-widest mr-2">Info:</span>
-                  When disabled, the signup form will be hidden and database-level blocking will be enforced. Admin account creation remains functional.
-                </p>
-              </div>
-            </div>
-          </motion.div>
 
-          {/* Social Links */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+              <p className="rounded-md border border-yellow-500/20 bg-yellow-500/10 p-3 text-xs leading-relaxed text-yellow-600 dark:text-yellow-500">
+                Turning this off hides the signup form and blocks signups at the database
+                level. Creating accounts from the admin still works.
+              </p>
+            </div>
+          </motion.section>
+
+          {/* Social links */}
+          <motion.section
+            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="lg:col-span-2 glass-card rounded-[3rem] p-8 border border-white/5 relative overflow-hidden group"
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="rounded-lg border border-border bg-gradient-to-br from-muted/40 to-card p-5 dark:from-card/70 dark:to-card/30 lg:col-span-2"
           >
-            <div className="absolute -top-12 -right-12 w-64 h-64 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors" />
-
-            <div className="flex items-center gap-4 mb-8 border-b border-white/5 pb-6">
-              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-primary">
-                <Settings className="h-5 w-5" />
-              </div>
+            <div className="mb-5 flex items-center gap-2.5 border-b border-border pb-4">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Settings className="h-[18px] w-[18px]" aria-hidden />
+              </span>
               <div>
-                <h2 className="text-xl font-black text-foreground tracking-tight">Signal Matrix</h2>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">External node connections</p>
+                <h2 className="text-sm font-bold text-foreground">Signal Matrix</h2>
+                <p className="text-xs text-muted-foreground">Social profiles linked in the footer</p>
               </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 relative z-10">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[
                 { key: "facebook_url", icon: Facebook, label: "Facebook Node", color: "text-blue-500" },
                 { key: "twitter_url", icon: Twitter, label: "X / Twitter Stream", color: "text-sky-400" },
@@ -458,8 +431,8 @@ const AdminWebsiteSettings = () => {
                 { key: "youtube_url", icon: Youtube, label: "YouTube Broadcast", color: "text-red-500" },
               ].map((social) => (
                 <div key={social.key} className="space-y-2">
-                  <Label htmlFor={social.key} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
-                    <social.icon className={`h-3 w-3 ${social.color}`} />
+                  <Label htmlFor={social.key} className={`${LABEL} flex items-center gap-1.5`}>
+                    <social.icon className={`h-3 w-3 ${social.color}`} aria-hidden />
                     {social.label}
                   </Label>
                   <Input
@@ -467,14 +440,15 @@ const AdminWebsiteSettings = () => {
                     value={settings[social.key]}
                     onChange={(e) => handleChange(social.key, e.target.value)}
                     placeholder="https://..."
-                    className="h-11 rounded-xl bg-white/5 border-white/10 focus:border-primary/50 focus:ring-primary/20 transition-all font-bold text-xs"
+                    className={`${FIELD} text-xs`}
                   />
                 </div>
               ))}
             </div>
-          </motion.div>
+          </motion.section>
         </div>
       </div>
+
     </AdminLayout>
   );
 };

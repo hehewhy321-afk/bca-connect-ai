@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
+import logoImg from "@/assets/logo.jpg";
 import { UserMenu } from "./UserMenu";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
@@ -83,25 +84,19 @@ export function Navbar() {
           : "bg-transparent py-4"
           }`}
       >
-        <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+        <div className="container mx-auto px-6">
           <nav className="flex items-center justify-between h-14 sm:h-16">
 
             {/* Logo Section */}
             <Link to="/" className="flex items-center gap-2 group" onClick={() => setIsOpen(false)}>
               <div className="w-9 h-9 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-primary to-accent p-[1px]">
                 <div className="w-full h-full rounded-2xl bg-muted flex items-center justify-center overflow-hidden">
-                  {settings?.site_logo ? (
-                    <img
-                      src={settings.site_logo}
-                      alt="Logo"
-                      onLoad={() => setLogoLoaded(true)}
-                      className={`w-full h-full object-cover transition-opacity duration-500 ${logoLoaded ? "opacity-100" : "opacity-0"}`}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-primary flex items-center justify-center text-primary-foreground font-black italic">
-                      B
-                    </div>
-                  )}
+                  <img
+                    src={settings?.site_logo || logoImg}
+                    alt=""
+                    onLoad={() => setLogoLoaded(true)}
+                    className={`w-full h-full object-cover transition-opacity duration-500 ${logoLoaded ? "opacity-100" : "opacity-0"}`}
+                  />
                 </div>
               </div>
               <div className="flex flex-col">

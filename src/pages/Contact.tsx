@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useWebsiteSettings } from "@/hooks/useWebsiteSettings";
 import {
   Mail,
   Phone,
@@ -17,42 +18,46 @@ import {
   Facebook,
   Instagram,
   Twitter,
-  Linkedin,
-  MessageSquare
+  Linkedin
 } from "lucide-react";
-
-const contactInfo = [
-  {
-    icon: MapPin,
-    title: "Address",
-    details: ["MMAMC College", "Biratnagar, Nepal"],
-  },
-  {
-    icon: Mail,
-    title: "Email",
-    details: ["contact@bcaassociation.com", "business@bcaassociation.com", "president@bcaassociation.com"],
-  },
-  {
-    icon: Phone,
-    title: "Phone",
-    details: ["+977-9800923746"],
-  },
-  {
-    icon: Clock,
-    title: "Office Hours",
-    details: ["Sunday - Friday", "10:00 AM - 5:00 PM"],
-  },
-];
-
-const socialLinks = [
-  { icon: Facebook, href: "#", label: "Facebook" },
-  { icon: Instagram, href: "#", label: "Instagram" },
-  { icon: Twitter, href: "#", label: "Twitter" },
-  { icon: Linkedin, href: "#", label: "LinkedIn" },
-];
 
 export default function Contact() {
   const { toast } = useToast();
+  const { data: settings } = useWebsiteSettings();
+  const reduceMotion = useReducedMotion();
+
+  const contactInfo = [
+    {
+      icon: MapPin,
+      title: "Address",
+      details: (settings?.address || "MMAMC College, Biratnagar, Nepal")
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean),
+    },
+    {
+      icon: Mail,
+      title: "Email",
+      details: [settings?.email_primary, settings?.email_secondary].filter(Boolean) as string[],
+    },
+    {
+      icon: Phone,
+      title: "Phone",
+      details: [settings?.phone].filter(Boolean) as string[],
+    },
+    {
+      icon: Clock,
+      title: "Office Hours",
+      details: ["Sunday - Friday", "10:00 AM - 5:00 PM"],
+    },
+  ].filter((info) => info.details.length > 0);
+
+  const socialLinks = [
+    { icon: Facebook, href: settings?.facebook_url, label: "Facebook" },
+    { icon: Instagram, href: settings?.instagram_url, label: "Instagram" },
+    { icon: Twitter, href: settings?.twitter_url, label: "Twitter" },
+    { icon: Linkedin, href: settings?.linkedin_url, label: "LinkedIn" },
+  ].filter((social) => Boolean(social.href));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -108,195 +113,215 @@ export default function Contact() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="pt-24 sm:pt-32 pb-10 sm:pb-16 px-4 bg-gradient-to-b from-primary/5 to-background">
-        <div className="container mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
+      <main className="container mx-auto px-6 pb-20 pt-28 sm:pt-32">
+        {/* Hero */}
+        <motion.header
+          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="max-w-2xl"
+        >
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            Contact <span className="italic text-primary">us</span>
+          </h1>
+          <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+            Questions about events, the study library, or joining the association? Send a
+            message and someone will get back to you.
+          </p>
+        </motion.header>
+
+        {/* Form + details */}
+        <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_1fr] lg:items-start">
+          {/* Form */}
+          <motion.section
+            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.4, delay: 0.05 }}
+            className="rounded-lg border border-border bg-card p-5 sm:p-6"
           >
-            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-primary/10 mb-4 sm:mb-6">
-              <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-            </div>
-            <h1 className="font-heading text-2xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4">
-              Contact Us
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl mx-auto px-2">
-              Have questions, suggestions, or want to collaborate? We'd love to hear from you.
+            <h2 className="font-heading text-lg font-semibold text-foreground">
+              Send us a message
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Fields marked with * are required.
             </p>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* Contact Content */}
-      <section className="py-10 sm:py-16 px-3 sm:px-4 pb-24 md:pb-16">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
-            {/* Contact Form */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="bg-card border border-border rounded-xl sm:rounded-2xl p-4 sm:p-8">
-                <h2 className="font-heading text-xl sm:text-2xl font-semibold text-foreground mb-4 sm:mb-6">
-                  Send us a Message
-                </h2>
-
-                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Your Name</Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        placeholder="full name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="ali@example.com"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number (Optional)</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      placeholder="+977 9800000000"
-                      value={formData.phone}
-                      onChange={handleChange}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="subject">Subject</Label>
-                    <Input
-                      id="subject"
-                      name="subject"
-                      placeholder="How can we help you?"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      placeholder="Your message here..."
-                      rows={6}
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      "Sending..."
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Send Message
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </div>
-            </motion.div>
-
-            {/* Contact Info */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              className="space-y-4 sm:space-y-6"
-            >
-              <h2 className="font-heading text-xl sm:text-2xl font-semibold text-foreground">
-                Get in Touch
-              </h2>
-
-              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-4">
-                {contactInfo.map((info, index) => (
-                  <motion.div
-                    key={info.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className="bg-card border border-border rounded-lg sm:rounded-xl p-4 sm:p-6"
-                  >
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
-                      <info.icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-                    </div>
-                    <h3 className="font-semibold text-foreground mb-1 sm:mb-2 text-sm sm:text-base">{info.title}</h3>
-                    {info.details.map((detail, i) => (
-                      <p key={i} className="text-muted-foreground text-xs sm:text-sm break-words">
-                        {detail}
-                      </p>
-                    ))}
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Social Links */}
-              <div className="bg-card border border-border rounded-lg sm:rounded-xl p-4 sm:p-6">
-                <h3 className="font-semibold text-foreground mb-2 sm:mb-4 text-sm sm:text-base">Follow Us</h3>
-                <p className="text-muted-foreground text-xs sm:text-sm mb-3 sm:mb-4">
-                  Stay connected with us on social media for updates and announcements.
-                </p>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  {socialLinks.map((social) => (
-                    <a
-                      key={social.label}
-                      href={social.href}
-                      aria-label={social.label}
-                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-                    >
-                      <social.icon className="w-5 h-5 sm:w-5 sm:h-5" />
-                    </a>
-                  ))}
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name" className="text-sm">Your name *</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="Full name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    className="h-10 rounded-md"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-sm">Email address *</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="h-10 rounded-md"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-sm">Phone number</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    placeholder="+977 9800000000"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="h-10 rounded-md"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="subject" className="text-sm">Subject *</Label>
+                  <Input
+                    id="subject"
+                    name="subject"
+                    placeholder="What is this about?"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    required
+                    className="h-10 rounded-md"
+                  />
                 </div>
               </div>
 
-              {/* Google Maps Embed */}
-              <div className="bg-card border border-border rounded-lg sm:rounded-xl overflow-hidden">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3571.8977654589453!2d87.27679867543865!3d26.454047976908867!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39ef744e8c5f1b47%3A0x5f0be6c0a1d9c8e9!2sMMAMC%20Biratnagar!5e0!3m2!1sen!2snp!4v1704067200000!5m2!1sen!2snp"
-                  width="100%"
-                  height="200"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="MMAMC College Location"
-                  className="w-full sm:h-[300px]"
+              <div className="space-y-1.5">
+                <Label htmlFor="message" className="text-sm">Message *</Label>
+                <Textarea
+                  id="message"
+                  name="message"
+                  placeholder="Tell us what you need"
+                  rows={6}
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
+                  className="rounded-md"
                 />
               </div>
-            </motion.div>
-          </div>
+
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="h-10 w-full rounded-md font-semibold sm:w-auto sm:px-6"
+              >
+                {isSubmitting ? (
+                  "Sending..."
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" aria-hidden />
+                    Send message
+                  </>
+                )}
+              </Button>
+            </form>
+          </motion.section>
+
+          {/* Details */}
+          <motion.aside
+            initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="space-y-6"
+          >
+            <section className="rounded-lg border border-border bg-card p-5 sm:p-6">
+              <h2 className="font-heading text-lg font-semibold text-foreground">
+                Get in touch
+              </h2>
+
+              <dl className="mt-5 divide-y divide-border">
+                {contactInfo.map((info) => (
+                  <div key={info.title} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      <info.icon className="h-[18px] w-[18px]" aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <dt className="text-sm font-semibold text-foreground">{info.title}</dt>
+                      <dd className="mt-0.5 space-y-0.5">
+                        {info.details.map((detail, i) => (
+                          <p key={i} className="break-words text-sm text-muted-foreground">
+                            {info.title === "Email" ? (
+                              <a href={`mailto:${detail}`} className="transition-colors hover:text-primary">
+                                {detail}
+                              </a>
+                            ) : info.title === "Phone" ? (
+                              <a href={`tel:${detail.replace(/\s/g, "")}`} className="transition-colors hover:text-primary">
+                                {detail}
+                              </a>
+                            ) : (
+                              detail
+                            )}
+                          </p>
+                        ))}
+                      </dd>
+                    </div>
+                  </div>
+                ))}
+              </dl>
+
+              {socialLinks.length > 0 && (
+                <div className="mt-5 border-t border-border pt-5">
+                  <h3 className="text-sm font-semibold text-foreground">Follow us</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Updates and announcements as they happen.
+                  </p>
+                  <div className="mt-3 flex items-center gap-2">
+                    {socialLinks.map((social) => (
+                      <a
+                        key={social.label}
+                        href={social.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={social.label}
+                        className="flex h-10 w-10 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <social.icon className="h-[18px] w-[18px]" aria-hidden />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+
+          </motion.aside>
         </div>
-      </section>
+
+        {/* Map spans the full width under the two columns */}
+        <motion.section
+          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mt-6 overflow-hidden rounded-lg border border-border bg-card"
+        >
+          <h2 className="border-b border-border px-5 py-4 font-heading text-lg font-semibold text-foreground sm:px-6">
+            Find us
+          </h2>
+            <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3571.8977654589453!2d87.27679867543865!3d26.454047976908867!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39ef744e8c5f1b47%3A0x5f0be6c0a1d9c8e9!2sMMAMC%20Biratnagar!5e0!3m2!1sen!2snp!4v1704067200000!5m2!1sen!2snp"
+            width="100%"
+            height="420"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="MMAMC College location"
+            className="block w-full"
+            />
+        </motion.section>
+      </main>
 
       <Footer />
     </div>

@@ -175,7 +175,7 @@ export function Footer() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.5 }}
-          className="mt-20 pt-10 border-t border-white/5 flex flex-col md:row gap-8 items-center justify-between"
+          className="mt-16 pt-10 border-t border-border dark:border-white/5 flex flex-col md:row gap-8 items-center justify-between"
         >
           {/* Social Icons */}
           <div className="flex items-center gap-3">
@@ -208,7 +208,7 @@ export function Footer() {
               >
                 Saif Ali
               </a>
-              <div className="flex gap-2 ml-2 border-l border-white/10 pl-2">
+              <div className="flex gap-2 ml-2 border-l border-border pl-2 dark:border-white/10">
                 <a href="https://github.com/mesaifali" target="_blank" className="hover:text-white transition-colors">
                   <Github className="w-4 h-4" />
                 </a>
