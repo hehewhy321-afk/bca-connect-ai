@@ -404,7 +404,7 @@ export function DashboardLayout({
         )}
 
         {/* Dynamic Page Content */}
-        <main className={fullBleed ? "flex min-h-0 flex-1 flex-col" : "flex-1 p-4 sm:p-6 md:p-8 lg:p-10"}>
+        <main className={fullBleed ? "flex min-h-0 flex-1 flex-col" : "flex-1 px-4 py-4 sm:px-6 sm:py-6 md:py-8 lg:py-10"}>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -416,7 +416,7 @@ export function DashboardLayout({
 
         {/* Dashboard Footer */}
         {!fullBleed && (
-          <footer className="p-4 sm:p-8 text-center border-t border-border dark:border-white/5">
+          <footer className="px-4 py-6 sm:px-6 sm:py-8 text-center border-t border-border dark:border-white/5">
             <p className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-40">
               © {new Date().getFullYear()} BCA Connect AI • All Rights Reserved
             </p>

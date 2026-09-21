@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,7 +11,6 @@ import {
     Clock,
     CheckCircle,
     PlayCircle,
-    Filter,
     Download,
     Percent,
     Globe
@@ -97,64 +95,52 @@ const Courses = () => {
 
     return (
         <DashboardLayout>
-            <div className="space-y-8 max-w-7xl mx-auto">
-
-                {/* Hero Section */}
-                <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-primary/20 via-primary/5 to-transparent border border-white/5 p-8 md:p-12 text-center md:text-left">
-                    <div className="relative z-10 max-w-2xl">
-                        <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tight mb-4">
-                            Master Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Skills</span>
-                        </h1>
-                        <p className="text-lg text-muted-foreground mb-8">
-                            Premium video courses designed to take your BCA journey to the next level.
-                            Learn from industry experts and seniors.
-                        </p>
-                        <div className="relative max-w-md mx-auto md:mx-0">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                            <Input
-                                placeholder="Find a course..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-12 h-14 rounded-2xl bg-background/50 backdrop-blur-sm border-white/10 text-lg shadow-xl focus:ring-primary/50"
-                            />
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent text-primary-foreground">
+                            <Video className="h-[18px] w-[18px]" aria-hidden />
+                        </span>
+                        <div>
+                            <h1 className="text-base font-bold text-foreground">
+                                Study <span className="italic text-primary">courses</span>
+                            </h1>
+                            <p className="text-xs text-muted-foreground">
+                                Work through lessons at your own pace
+                            </p>
                         </div>
                     </div>
 
-                    {/* Decorative Elements */}
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-[100px] -z-0 opacity-50 pointer-events-none" />
-                    <div className="hidden md:block absolute right-10 top-1/2 -translate-y-1/2">
-                        <Video className="w-64 h-64 text-primary/10 rotate-12" />
-                    </div>
-                </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <div className="group relative min-w-[200px] flex-1 lg:flex-none">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" aria-hidden />
+                            <Input
+                                placeholder="Search courses"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="h-9 rounded-md border-border bg-background/60 pl-9 text-sm"
+                            />
+                        </div>
 
-                {/* Filters */}
-                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Filter className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Filters:</span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-                        {/* Price Filter */}
                         <Select value={priceFilter} onValueChange={(value: "all" | "free" | "paid") => setPriceFilter(value)}>
-                            <SelectTrigger className="w-[180px] rounded-xl bg-background/50 border-white/10">
-                                <SelectValue placeholder="Select price" />
+                            <SelectTrigger className="h-9 w-[140px] rounded-md border-border bg-background/60 text-sm">
+                                <SelectValue placeholder="Price" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Courses</SelectItem>
-                                <SelectItem value="free">Free Only</SelectItem>
-                                <SelectItem value="paid">Paid Only</SelectItem>
+                                <SelectItem value="all">All prices</SelectItem>
+                                <SelectItem value="free">Free only</SelectItem>
+                                <SelectItem value="paid">Paid only</SelectItem>
                             </SelectContent>
                         </Select>
 
-                        {/* Category Filter */}
                         {categories.length > 0 && (
                             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                <SelectTrigger className="w-[180px] rounded-xl bg-background/50 border-white/10">
-                                    <SelectValue placeholder="Select category" />
+                                <SelectTrigger className="h-9 w-[160px] rounded-md border-border bg-background/60 text-sm">
+                                    <SelectValue placeholder="Category" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Categories</SelectItem>
+                                    <SelectItem value="all">All categories</SelectItem>
                                     {categories.map(category => (
                                         <SelectItem key={category} value={category}>
                                             {category}
@@ -166,123 +152,132 @@ const Courses = () => {
                     </div>
                 </div>
 
-                {/* Course Grid */}
-                <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                    {isLoading ? (
-                        <div className="col-span-full py-20 text-center">Loading courses...</div>
-                    ) : filteredCourses?.length === 0 ? (
-                        <div className="col-span-full py-20 text-center text-muted-foreground">
-                            No courses found matching your criteria.
-                        </div>
-                    ) : (
-                        filteredCourses?.map((course) => {
+                {/* Grid */}
+                {isLoading ? (
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="h-80 animate-pulse rounded-lg bg-muted" />
+                        ))}
+                    </div>
+                ) : filteredCourses?.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-border py-16 text-center">
+                        <BookOpen className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" aria-hidden />
+                        <h2 className="text-sm font-bold text-foreground">No courses match your filters</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Try a different search term, price or category.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {filteredCourses?.map((course) => {
                             const enrollment = getEnrollmentStatus(course.id);
                             const isEnrolled = !!enrollment;
                             const isApproved = enrollment?.status === "approved";
                             const isPending = enrollment?.status === "pending";
 
+                            const originalPrice = (course as any).original_price ?? course.price ?? 0;
+                            const offerPrice = (course as any).offer_price;
+                            const hasDiscount = offerPrice != null && offerPrice < originalPrice;
+                            const discount = hasDiscount
+                                ? Math.round(((originalPrice - offerPrice) / originalPrice) * 100)
+                                : 0;
+
                             return (
-                                <Card key={course.id} className="group glass-card border-white/5 overflow-hidden hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full rounded-3xl">
+                                <article
+                                    key={course.id}
+                                    className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/40"
+                                >
                                     {/* Thumbnail */}
-                                    <div className="relative aspect-video bg-black/40 overflow-hidden">
+                                    <div className="relative aspect-video overflow-hidden bg-muted">
                                         {course.thumbnail_url ? (
                                             <img
                                                 src={course.thumbnail_url}
-                                                alt={course.title}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                alt=""
+                                                loading="lazy"
+                                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                                                <BookOpen className="w-16 h-16" />
+                                            <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
+                                                <BookOpen className="h-10 w-10" aria-hidden />
                                             </div>
                                         )}
-                                        <Badge className="absolute top-4 right-4 bg-black/60 backdrop-blur-md border border-white/10">
-                                            {course.category || "General"}
-                                        </Badge>
-                                        {(course as any).language && (
-                                            <Badge className="absolute bottom-4 left-4 bg-primary/80 backdrop-blur-md border border-primary/20 text-white flex items-center gap-1">
-                                                <Globe className="w-3 h-3" />
-                                                {(course as any).language}
+
+                                        <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-2">
+                                            {isEnrolled ? (
+                                                <Badge className="rounded bg-green-500/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                                                    {isPending ? "Pending" : "Enrolled"}
+                                                </Badge>
+                                            ) : (
+                                                <span />
+                                            )}
+                                            <Badge className="rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
+                                                {course.category || "General"}
                                             </Badge>
-                                        )}
-                                        {isEnrolled && (
-                                            <Badge className="absolute top-4 left-4 bg-green-500/80 backdrop-blur-md border border-green-400/20 text-white">
-                                                {isApproved ? "Enrolled" : isPending ? "Pending" : "Enrolled"}
+                                        </div>
+
+                                        {(course as any).language && (
+                                            <Badge className="absolute bottom-2 left-2 flex items-center gap-1 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
+                                                <Globe className="h-3 w-3" aria-hidden />
+                                                {(course as any).language}
                                             </Badge>
                                         )}
                                     </div>
 
-                                    <CardHeader className="pb-2 flex-grow">
-                                        <CardTitle className="text-xl font-black tracking-tight line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+                                    {/* Body */}
+                                    <div className="flex flex-1 flex-col p-4">
+                                        <h2 className="line-clamp-2 text-sm font-bold text-foreground">
                                             {course.title}
-                                        </CardTitle>
-                                        <CardDescription className="line-clamp-3">
-                                            <div
-                                                dangerouslySetInnerHTML={{
-                                                    __html: DOMPurify.sanitize(course.description || "", {
-                                                        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
-                                                        ALLOWED_ATTR: []
-                                                    })
-                                                }}
-                                                className="prose prose-sm dark:prose-invert max-w-none"
-                                            />
-                                        </CardDescription>
-                                    </CardHeader>
+                                        </h2>
+                                        <div
+                                            dangerouslySetInnerHTML={{
+                                                __html: DOMPurify.sanitize(course.description || "", {
+                                                    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
+                                                    ALLOWED_ATTR: []
+                                                })
+                                            }}
+                                            className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground [&_p]:m-0"
+                                        />
 
-                                    <CardContent className="py-2">
-                                        <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                                            <div className="flex items-center gap-1.5">
-                                                <Video className="w-3 h-3" /> Online
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <Clock className="w-3 h-3" /> Self-paced
+                                        <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+                                            <span className="flex items-center gap-1.5">
+                                                <Video className="h-3 w-3" aria-hidden /> Online
+                                            </span>
+                                            <span className="flex items-center gap-1.5">
+                                                <Clock className="h-3 w-3" aria-hidden /> Self-paced
+                                            </span>
+                                        </div>
+
+                                        {/* Price + actions */}
+                                        <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
+                                            <div className="min-w-0">
+                                                {hasDiscount ? (
+                                                    <div className="flex items-baseline gap-2">
+                                                        <span className="text-base font-bold text-foreground">
+                                                            {offerPrice > 0 ? `NPR ${offerPrice}` : "Free"}
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground line-through">
+                                                            NPR {originalPrice}
+                                                        </span>
+                                                        <Badge className="flex items-center gap-0.5 rounded bg-green-500/15 px-1 py-0 text-[10px] font-semibold text-green-600 dark:text-green-500">
+                                                            <Percent className="h-2.5 w-2.5" aria-hidden />
+                                                            {discount}
+                                                        </Badge>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-base font-bold text-foreground">
+                                                        {originalPrice > 0 ? `NPR ${originalPrice}` : "Free"}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
-                                    </CardContent>
 
-                                    <CardFooter className="pt-4 mt-auto border-t border-white/5 flex flex-col gap-3">
-                                        <div className="flex items-center justify-between w-full">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Price</span>
-                                                {(() => {
-                                                    const originalPrice = (course as any).original_price ?? course.price ?? 0;
-                                                    const offerPrice = (course as any).offer_price;
-                                                    const hasDiscount = offerPrice != null && offerPrice < originalPrice;
-
-                                                    if (hasDiscount) {
-                                                        const discount = Math.round(((originalPrice - offerPrice) / originalPrice) * 100);
-                                                        return (
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-sm line-through text-muted-foreground">NPR {originalPrice}</span>
-                                                                    <span className="text-2xl font-medium text-primary">
-                                                                        {offerPrice > 0 ? `NPR ${offerPrice}` : "FREE"}
-                                                                    </span>
-                                                                </div>
-                                                                <Badge className="bg-green-500/20 text-green-500 border-green-500/30 flex items-center gap-1">
-                                                                    <Percent className="w-3 h-3" />
-                                                                    {discount}% OFF
-                                                                </Badge>
-                                                            </div>
-                                                        );
-                                                    } else {
-                                                        return (
-                                                            <span className="text-lg font-black text-foreground">
-                                                                {originalPrice > 0 ? `NPR ${originalPrice}` : "FREE"}
-                                                            </span>
-                                                        );
-                                                    }
-                                                })()}
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-2 w-full">
+                                        <div className="mt-3 flex gap-2">
                                             <Button
                                                 onClick={() => navigate(`/dashboard/courses/${course.id}`)}
                                                 variant="outline"
-                                                className="flex-1 rounded-xl font-bold border-white/10 bg-white/5 hover:bg-white/10"
+                                                className="h-9 flex-1 rounded-md border-border text-xs font-semibold"
                                             >
-                                                <PlayCircle className="w-4 h-4 mr-2" />
-                                                View Details
+                                                Details
                                             </Button>
                                             <Button
                                                 onClick={() => {
@@ -292,30 +287,29 @@ const Courses = () => {
                                                         navigate(`/dashboard/courses/${course.id}`);
                                                     }
                                                 }}
-                                                variant={isApproved ? "default" : course.price > 0 ? "default" : "secondary"}
-                                                className={`flex-1 rounded-xl font-bold ${isApproved || course.price > 0 ? 'shadow-lg shadow-primary/20' : ''}`}
                                                 disabled={isPending}
+                                                className="h-9 flex-1 rounded-md text-xs font-semibold"
                                             >
                                                 {isApproved ? (
                                                     <>
-                                                        <PlayCircle className="w-4 h-4 mr-2" />
-                                                        View Course
+                                                        <PlayCircle className="mr-1.5 h-4 w-4" aria-hidden />
+                                                        Continue
                                                     </>
                                                 ) : isPending ? (
-                                                    "Pending Approval"
-                                                ) : course.price > 0 ? (
-                                                    "Enroll Now"
+                                                    "Awaiting approval"
+                                                ) : originalPrice > 0 ? (
+                                                    "Enroll"
                                                 ) : (
-                                                    "Start Learning"
+                                                    "Start"
                                                 )}
                                             </Button>
                                         </div>
-                                    </CardFooter>
-                                </Card>
+                                    </div>
+                                </article>
                             );
-                        })
-                    )}
-                </div>
+                        })}
+                    </div>
+                )}
             </div>
         </DashboardLayout>
     );

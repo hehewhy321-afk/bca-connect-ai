@@ -1,27 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-    PlayCircle,
-    Lock,
-    CheckCircle,
-    Clock,
-    FileText,
-    Video,
-    Upload,
-    AlertCircle,
-    ChevronDown,
-    ChevronRight,
-    Download,
-    Percent,
-    Globe,
-    ExternalLink
-} from "lucide-react";
+import { PlayCircle, Lock, CheckCircle, Clock, FileText, Video, Upload, AlertCircle, ChevronDown, ChevronRight, Download, Percent, Globe, ExternalLink, ChevronLeft, BookOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -168,245 +153,309 @@ const CourseDetail = () => {
     const offerPrice = (course as any).offer_price;
     const effectivePrice = offerPrice ?? originalPrice;
     const isFree = effectivePrice === 0;
+    const courseExtras = course as {
+        language?: string | null;
+        resources_url?: string | null;
+    };
+    const totalLessons = chapters.reduce(
+        (total: number, chapter: { lessons?: unknown[] }) => total + (chapter.lessons?.length || 0),
+        0
+    );
     const hasDiscount = offerPrice != null && offerPrice < originalPrice;
 
     return (
         <DashboardLayout>
-            <div className="max-w-6xl mx-auto space-y-8">
+            <div className="space-y-6">
+                <Link
+                    to="/dashboard/courses"
+                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                    <ChevronLeft className="h-4 w-4" aria-hidden />
+                    All courses
+                </Link>
 
-                {/* Header/Hero */}
-                <div className="relative rounded-[3rem] overflow-hidden bg-black/40 border border-white/5 pb-8">
-                    <div className="h-64 w-full bg-cover bg-center masking-gradient" style={{ backgroundImage: `url(${course.thumbnail_url})` }}>
-                        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-                    </div>
-
-                    <div className="px-8 md:px-12 -mt-20 relative z-10 flex flex-col md:flex-row gap-8 items-end">
-                        <div className="w-48 h-48 rounded-3xl overflow-hidden border-4 border-background shadow-2xl flex-shrink-0 bg-muted">
-                            <img src={course.thumbnail_url} className="w-full h-full object-cover" alt="Thumb" />
-                        </div>
-
-                        <div className="flex-1 pb-4">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Badge className="bg-primary text-primary-foreground text-xs uppercase tracking-widest">{course.category}</Badge>
-                                {(course as any).language && (
-                                    <Badge className="bg-white/10 text-foreground text-xs flex items-center gap-1">
-                                        <Globe className="w-3 h-3" />
-                                        {(course as any).language}
-                                    </Badge>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+                    {/* Main column */}
+                    <div className="space-y-6">
+                        <div className="overflow-hidden rounded-lg border border-border bg-card">
+                            <div className="aspect-video w-full overflow-hidden bg-muted">
+                                {course.thumbnail_url ? (
+                                    <img
+                                        src={course.thumbnail_url}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
+                                        <Video className="h-10 w-10" aria-hidden />
+                                    </div>
                                 )}
                             </div>
-                            <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-foreground">{course.title}</h1>
-                            <div
-                                dangerouslySetInnerHTML={{
-                                    __html: DOMPurify.sanitize(course.description || "", {
-                                        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3'],
-                                        ALLOWED_ATTR: []
-                                    })
-                                }}
-                                className="prose prose-sm dark:prose-invert max-w-2xl line-clamp-3"
-                            />
+
+                            <div className="p-5">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Badge className="rounded bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
+                                        {course.category || "General"}
+                                    </Badge>
+                                    {courseExtras.language && (
+                                        <Badge className="flex items-center gap-1 rounded bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                            <Globe className="h-3 w-3" aria-hidden />
+                                            {courseExtras.language}
+                                        </Badge>
+                                    )}
+                                </div>
+
+                                <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground">
+                                    {course.title}
+                                </h1>
+
+                                <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                                    <span className="flex items-center gap-1.5">
+                                        <Video className="h-3.5 w-3.5" aria-hidden />
+                                        {totalLessons} {totalLessons === 1 ? "lesson" : "lessons"}
+                                    </span>
+                                    <span className="flex items-center gap-1.5">
+                                        <BookOpen className="h-3.5 w-3.5" aria-hidden />
+                                        {chapters.length} {chapters.length === 1 ? "chapter" : "chapters"}
+                                    </span>
+                                    <span className="flex items-center gap-1.5">
+                                        <Clock className="h-3.5 w-3.5" aria-hidden />
+                                        Self-paced
+                                    </span>
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="pb-4 flex-shrink-0 w-full md:w-auto space-y-3">
-                            {/* Pricing Display */}
-                            <div className="flex items-center gap-3">
-                                {hasDiscount ? (
-                                    <>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm line-through text-muted-foreground">NPR {originalPrice}</span>
-                                            <span className="text-3xl font-black text-primary">
-                                                {offerPrice > 0 ? `NPR ${offerPrice}` : "FREE"}
+                        <Tabs defaultValue="syllabus" className="w-full">
+                            <TabsList className="h-9 rounded-md bg-muted p-1">
+                                <TabsTrigger value="syllabus" className="rounded text-xs font-semibold data-[state=active]:bg-background">
+                                    Syllabus
+                                </TabsTrigger>
+                                <TabsTrigger value="overview" className="rounded text-xs font-semibold data-[state=active]:bg-background">
+                                    Overview
+                                </TabsTrigger>
+                            </TabsList>
+
+                    <TabsContent value="syllabus" className="space-y-4">
+                        {chapters.map((chapter: any, chapterIndex: number) => {
+                            const isExpanded = expandedChapters.includes(chapter.id);
+                            return (
+                                <div key={chapter.id} className="overflow-hidden rounded-lg border border-border bg-card">
+                                    <button
+                                        onClick={() => toggleChapter(chapter.id)}
+                                        className="flex w-full items-center justify-between gap-3 p-4 text-left text-sm font-bold transition-colors hover:bg-muted/60"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            {isExpanded ? (
+                                                <ChevronDown className="w-5 h-5 text-primary" />
+                                            ) : (
+                                                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                                            )}
+                                            <span>{chapter.title}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {chapter.resources_url && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 rounded-lg text-xs font-normal hover:bg-primary/10"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        window.open(chapter.resources_url, '_blank');
+                                                    }}
+                                                >
+                                                    <Download className="w-3 h-3 mr-1" />
+                                                    Resources
+                                                    <ExternalLink className="w-2 h-2 ml-1" />
+                                                </Button>
+                                            )}
+                                            <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                                                {chapter.lessons.length} Lessons
                                             </span>
                                         </div>
-                                        <Badge className="bg-green-500/20 text-green-500 border-green-500/30 flex items-center gap-1 h-fit">
-                                            <Percent className="w-4 h-4" />
-                                            {Math.round(((originalPrice - offerPrice) / originalPrice) * 100)}% OFF
-                                        </Badge>
-                                    </>
-                                ) : (
-                                    <span className="text-3xl font-black text-foreground">
-                                        {originalPrice > 0 ? `NPR ${originalPrice}` : "FREE"}
+                                    </button>
+                                    {isExpanded && (
+                                        <div className="divide-y divide-border border-t border-border">
+                                            {chapter.lessons.map((lesson: any) => {
+                                                const canPlay = isApproved || isFree || lesson.is_free_preview;
+                                                return (
+                                                    <div
+                                                        key={lesson.id}
+                                                        className={`flex items-center gap-3 p-3 transition-colors ${canPlay ? 'cursor-pointer hover:bg-muted/60' : 'opacity-60'}`}
+                                                        onClick={() => {
+                                                            if (canPlay) {
+                                                                navigate(`/dashboard/courses/${id}/learn`);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                                                            {canPlay ? <PlayCircle size={16} /> : <Lock size={16} />}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                                                {lesson.title}
+                                                                {lesson.is_free_preview && !isApproved && !isFree && <Badge variant="secondary" className="text-[10px] h-5">Free Preview</Badge>}
+                                                            </h4>
+                                                            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-3">
+                                                                <span className="flex items-center gap-1"><Video size={10} /> Video</span>
+                                                                {lesson.duration && <span className="flex items-center gap-1"><Clock size={10} /> {lesson.duration}</span>}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </TabsContent>
+
+                            <TabsContent value="overview" className="mt-4">
+                                <div className="rounded-lg border border-border bg-card p-5">
+                                    <div
+                                        dangerouslySetInnerHTML={{
+                                            __html: DOMPurify.sanitize(course.description || "", {
+                                                ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'blockquote', 'code', 'pre', 'a'],
+                                                ALLOWED_ATTR: ['href', 'target', 'rel']
+                                            })
+                                        }}
+                                        className="prose prose-sm dark:prose-invert max-w-none leading-relaxed text-muted-foreground"
+                                    />
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+                    </div>
+
+                    {/* Enrolment sidebar */}
+                    <aside className="rounded-lg border border-border bg-card p-5 lg:sticky lg:top-24">
+                        <div className="flex items-baseline gap-2">
+                            {hasDiscount ? (
+                                <>
+                                    <span className="text-2xl font-bold text-foreground">
+                                        {offerPrice > 0 ? `NPR ${offerPrice}` : "Free"}
                                     </span>
-                                )}
-                            </div>
-
-                            {/* Course Resources Download */}
-                            {(course as any).resources_url && (
-                                <Button
-                                    variant="outline"
-                                    className="w-full md:w-auto rounded-xl font-bold border-primary/30 hover:bg-primary/10"
-                                    onClick={() => window.open((course as any).resources_url, '_blank')}
-                                >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    Download Course Resources
-                                    <ExternalLink className="w-3 h-3 ml-2" />
-                                </Button>
+                                    <span className="text-sm text-muted-foreground line-through">
+                                        NPR {originalPrice}
+                                    </span>
+                                    <Badge className="flex items-center gap-0.5 rounded bg-green-500/15 px-1.5 py-0 text-[11px] font-semibold text-green-600 dark:text-green-500">
+                                        <Percent className="h-2.5 w-2.5" aria-hidden />
+                                        {Math.round(((originalPrice - offerPrice) / originalPrice) * 100)}
+                                    </Badge>
+                                </>
+                            ) : (
+                                <span className="text-2xl font-bold text-foreground">
+                                    {originalPrice > 0 ? `NPR ${originalPrice}` : "Free"}
+                                </span>
                             )}
+                        </div>
 
-                            {/* Enrollment Button */}
+                        <div className="mt-4 space-y-2">
                             {isApproved || isFree ? (
                                 <Button
                                     onClick={() => navigate(`/dashboard/courses/${id}/learn`)}
-                                    className="w-full md:w-auto h-14 rounded-2xl text-lg font-bold bg-green-500 hover:bg-green-600 shadow-xl shadow-green-500/20"
+                                    className="h-10 w-full rounded-md font-semibold"
                                 >
-                                    <PlayCircle className="w-6 h-6 mr-2" /> Continue Learning
+                                    <PlayCircle className="mr-2 h-4 w-4" aria-hidden />
+                                    {isApproved ? "Continue learning" : "Start learning"}
                                 </Button>
                             ) : isPending ? (
-                                <Button disabled className="w-full md:w-auto h-14 rounded-2xl text-lg font-bold bg-yellow-500/20 text-yellow-500 border border-yellow-500/50">
-                                    <Clock className="w-6 h-6 mr-2" /> Approval Pending
+                                <Button disabled className="h-10 w-full rounded-md font-semibold">
+                                    <Clock className="mr-2 h-4 w-4" aria-hidden />
+                                    Awaiting approval
                                 </Button>
                             ) : (
-                                <Dialog open={isEnrollDialogOpen} onOpenChange={setIsEnrollDialogOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button className="w-full md:w-auto h-14 rounded-2xl text-lg font-bold px-8 shadow-xl shadow-primary/20">
-                                            Enroll Now - {hasDiscount ? `NPR ${offerPrice}` : `NPR ${originalPrice}`}
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="sm:max-w-md bg-card border-white/10">
-                                        <DialogHeader>
-                                            <DialogTitle>Unlock Full Access</DialogTitle>
-                                            <DialogDescription>
-                                                Scan the QR code to pay <strong>NPR {effectivePrice}</strong> and upload the screenshot.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-6 py-4">
-                                            {/* Placeholder QR */}
-                                            <div className="flex justify-center">
-                                                <div className="w-48 h-48 bg-white p-2 rounded-xl">
-                                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=esewa_payment_link_placeholder" alt="QR" className="w-full h-full" />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-3">
-                                                <Label>Upload Payment Screenshot</Label>
-                                                <div className="grid w-full max-w-sm items-center gap-1.5">
-                                                    <Input type="file" onChange={handleFileUpload} disabled={uploading} />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-3">
-                                                <Label>Transaction ID (Optional)</Label>
-                                                <Input
-                                                    placeholder="e.g. TXN-123456"
-                                                    value={transactionId}
-                                                    onChange={(e) => setTransactionId(e.target.value)}
-                                                />
-                                            </div>
-
-                                            <Button
-                                                onClick={() => enrollMutation.mutate()}
-                                                className="w-full font-bold"
-                                                disabled={!paymentScreenshot || enrollMutation.isPending}
-                                            >
-                                                {enrollMutation.isPending ? "Submitting..." : "Submit Payment"}
-                                            </Button>
+                        <Dialog open={isEnrollDialogOpen} onOpenChange={setIsEnrollDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button className="h-10 w-full rounded-md font-semibold">
+                                    Enroll Now - {hasDiscount ? `NPR ${offerPrice}` : `NPR ${originalPrice}`}
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md rounded-lg">
+                                <DialogHeader>
+                                    <DialogTitle>Unlock Full Access</DialogTitle>
+                                    <DialogDescription>
+                                        Scan the QR code to pay <strong>NPR {effectivePrice}</strong> and upload the screenshot.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-6 py-4">
+                                    {/* Placeholder QR */}
+                                    <div className="flex justify-center">
+                                        <div className="w-48 h-48 bg-white p-2 rounded-xl">
+                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=esewa_payment_link_placeholder" alt="QR" className="w-full h-full" />
                                         </div>
-                                    </DialogContent>
-                                </Dialog>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Label>Upload Payment Screenshot</Label>
+                                        <div className="grid w-full max-w-sm items-center gap-1.5">
+                                            <Input type="file" onChange={handleFileUpload} disabled={uploading} />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <Label>Transaction ID (Optional)</Label>
+                                        <Input
+                                            placeholder="e.g. TXN-123456"
+                                            value={transactionId}
+                                            onChange={(e) => setTransactionId(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <Button
+                                        onClick={() => enrollMutation.mutate()}
+                                        className="w-full font-bold"
+                                        disabled={!paymentScreenshot || enrollMutation.isPending}
+                                    >
+                                        {enrollMutation.isPending ? "Submitting..." : "Submit Payment"}
+                                    </Button>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                            )}
+
+                            {courseExtras.resources_url && (
+                                <Button
+                                    variant="outline"
+                                    className="h-10 w-full rounded-md border-border text-sm font-semibold"
+                                    onClick={() => window.open(courseExtras.resources_url ?? '', '_blank')}
+                                >
+                                    <Download className="mr-2 h-4 w-4" aria-hidden />
+                                    Course resources
+                                    <ExternalLink className="ml-2 h-3 w-3" aria-hidden />
+                                </Button>
                             )}
                         </div>
-                    </div>
-                </div>
 
-                {/* Content Tabs */}
-                <div className="max-w-5xl mx-auto">
-                    <Tabs defaultValue="syllabus" className="w-full">
-                        <TabsList className="bg-white/5 rounded-2xl p-1 mb-6 w-full md:w-auto flex">
-                            <TabsTrigger value="syllabus" className="rounded-xl flex-1 md:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">Syllabus</TabsTrigger>
-                            <TabsTrigger value="overview" className="rounded-xl flex-1 md:flex-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">Overview</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="syllabus" className="space-y-4">
-                            {chapters.map((chapter: any, chapterIndex: number) => {
-                                const isExpanded = expandedChapters.includes(chapter.id);
-                                return (
-                                    <div key={chapter.id} className="glass-card rounded-2xl border border-white/5 overflow-hidden">
-                                        <button
-                                            onClick={() => toggleChapter(chapter.id)}
-                                            className="w-full bg-white/5 p-4 font-bold text-lg flex items-center justify-between hover:bg-white/10 transition-colors"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                {isExpanded ? (
-                                                    <ChevronDown className="w-5 h-5 text-primary" />
-                                                ) : (
-                                                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                                                )}
-                                                <span>{chapter.title}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                {chapter.resources_url && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-7 rounded-lg text-xs font-normal hover:bg-primary/10"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            window.open(chapter.resources_url, '_blank');
-                                                        }}
-                                                    >
-                                                        <Download className="w-3 h-3 mr-1" />
-                                                        Resources
-                                                        <ExternalLink className="w-2 h-2 ml-1" />
-                                                    </Button>
-                                                )}
-                                                <span className="text-xs font-normal text-muted-foreground bg-white/5 px-2 py-1 rounded-md">
-                                                    {chapter.lessons.length} Lessons
-                                                </span>
-                                            </div>
-                                        </button>
-                                        {isExpanded && (
-                                            <div className="divide-y divide-white/5">
-                                                {chapter.lessons.map((lesson: any) => {
-                                                    const canPlay = isApproved || isFree || lesson.is_free_preview;
-                                                    return (
-                                                        <div
-                                                            key={lesson.id}
-                                                            className={`p-4 flex items-center gap-4 transition-colors ${canPlay ? 'hover:bg-white/5 cursor-pointer' : 'opacity-60'}`}
-                                                            onClick={() => {
-                                                                if (canPlay) {
-                                                                    navigate(`/dashboard/courses/${id}/learn`);
-                                                                }
-                                                            }}
-                                                        >
-                                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                                                                {canPlay ? <PlayCircle size={16} /> : <Lock size={16} />}
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <h4 className="font-medium text-sm md:text-base flex items-center gap-2">
-                                                                    {lesson.title}
-                                                                    {lesson.is_free_preview && !isApproved && !isFree && <Badge variant="secondary" className="text-[10px] h-5">Free Preview</Badge>}
-                                                                </h4>
-                                                                <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-3">
-                                                                    <span className="flex items-center gap-1"><Video size={10} /> Video</span>
-                                                                    {lesson.duration && <span className="flex items-center gap-1"><Clock size={10} /> {lesson.duration}</span>}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </TabsContent>
-
-                        <TabsContent value="overview">
-                            <div className="glass-card rounded-3xl p-8">
-                                <div
-                                    dangerouslySetInnerHTML={{
-                                        __html: DOMPurify.sanitize(course.description || "", {
-                                            ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'blockquote', 'code', 'pre', 'a'],
-                                            ALLOWED_ATTR: ['href', 'target', 'rel']
-                                        })
-                                    }}
-                                    className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground leading-relaxed"
-                                />
+                        <dl className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
+                            <div className="flex items-center justify-between gap-3">
+                                <dt className="text-muted-foreground">Lessons</dt>
+                                <dd className="font-semibold text-foreground">{totalLessons}</dd>
                             </div>
-                        </TabsContent>
-                    </Tabs>
-                </div>
+                            <div className="flex items-center justify-between gap-3">
+                                <dt className="text-muted-foreground">Chapters</dt>
+                                <dd className="font-semibold text-foreground">{chapters.length}</dd>
+                            </div>
+                            {courseExtras.language && (
+                                <div className="flex items-center justify-between gap-3">
+                                    <dt className="text-muted-foreground">Language</dt>
+                                    <dd className="font-semibold text-foreground">{courseExtras.language}</dd>
+                                </div>
+                            )}
+                            <div className="flex items-center justify-between gap-3">
+                                <dt className="text-muted-foreground">Access</dt>
+                                <dd className="font-semibold text-foreground">Lifetime</dd>
+                            </div>
+                        </dl>
 
+                        {isPending && (
+                            <p className="mt-4 rounded-md border border-yellow-500/20 bg-yellow-500/10 p-3 text-xs leading-relaxed text-yellow-600 dark:text-yellow-500">
+                                Your payment is with the admin team. You'll get access as soon as it's
+                                approved.
+                            </p>
+                        )}
+                    </aside>
+                </div>
             </div>
         </DashboardLayout>
     );

@@ -438,7 +438,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 p-6 md:p-8 lg:p-10">
+        <main className="flex-1 px-6 py-6 md:py-8 lg:py-10">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -455,7 +455,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </main>
 
         {/* Admin Footer */}
-        <footer className="p-8 text-center border-t border-border dark:border-white/5">
+        <footer className="px-6 py-8 text-center border-t border-border dark:border-white/5">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] opacity-40">
             Internal Admin Portal • BCA Association • {new Date().getFullYear()}
           </p>
